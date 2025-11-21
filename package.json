@@ -1,0 +1,17 @@
+{
+  "name": "dadabase.net8.web.azdo",
+  "version": "1.0.0",
+  "description": "This repository is simple web app that can be used as an example for CICD deploys, unit testing, Playwright UI testing, and integration of all of that into pipelines.",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@azure/identity": "^4.11.1",
+    "@azure/playwright": "^1.0.0",
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^20.11.0",
+    "dotenv": "^17.2.1"
+  }
+}

@@ -1,0 +1,109 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# GHA Workflow to deploy Function App Only
+# ------------------------------------------------------------------------------------------------------------------------
+# You need to set up secrets in the GitHub Secrets Repository before running these workflows.
+#   See Docs\CreateGitHubSecrets\.md for details
+# ------------------------------------------------------------------------------------------------------------------------
+name: 3.build.deploy.app
+on:
+  workflow_dispatch:
+    inputs:
+      deployEnvironment:
+        description: 'Environment'
+        required: true
+        default: 'dev' 
+        type: choice
+        options:
+          - dev
+          - qa
+          - prod
+      runSecurityScan:
+        description: 'Run Security Scan'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - true
+          - false
+      runBuildDeploy:
+        description: 'Build and Deploy App'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - true
+          - false
+      runSmokeTest:
+        description: 'Run Smoke Tests'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - true
+          - false
+      logLevel:
+        description: 'Log level'     
+        required: true
+        default: 'warning' 
+        type: choice
+        options:
+          - info
+          - warning
+          - debug 
+
+# ------------------------------------------------------------------------------------------------------------------------
+permissions:
+  id-token: write
+  contents: write
+  actions: read
+  pages: write
+  issues: read
+  pull-requests: read
+  security-events: write # needed for security scan to write to logs
+  checks: write  # needed to write test results back to the run
+
+# ------------------------------------------------------------------------------------------------------------------------
+jobs:
+  scan-code:
+    name: Scan Source Code
+    uses: ./.github/workflows/template-scan-code.yml
+    secrets: inherit
+    with:
+      runSecurityScan: ${{ inputs.runSecurityScan == 'true' }}
+
+# ------------------------------------------------------------------------------------------------------------------------
+  build-app:
+    name: Build Function App
+    uses: ./.github/workflows/template-function-app-build.yml
+    if: inputs.runBuildDeploy == 'true' || inputs.runSmokeTest == 'true'
+    secrets: inherit
+    with:
+      envCode: ${{ inputs.deployEnvironment }}
+      rootDirectory: 'src/DadABase.Function'
+      projectName: 'DadABase.Function.Net8'
+      testDirectory: 'src/DadABase.Function.Tests'
+      testProjectName: 'DadABase.Tests'
+      testApplication: true
+      listFilesAfterBuild: true
+
+# ------------------------------------------------------------------------------------------------------------------------
+  deploy-app:
+    name: Deploy App
+    needs: build-app
+    uses: ./.github/workflows/template-function-app-deploy.yml
+    if: inputs.runBuildDeploy == 'true' || inputs.runSmokeTest == 'true'
+    secrets: inherit
+    with:
+      envCode: ${{ inputs.deployEnvironment }}
+      
+# ------------------------------------------------------------------------------------------------------------------------
+  run-smoke-test:
+    name: Smoke Test ${{ inputs.deployEnvironment }}
+    uses: ./.github/workflows/template-smoke-test.yml
+    if: inputs.runSmokeTest == 'true'
+    needs: deploy-app
+    secrets: inherit
+    with:
+      envCode: ${{ inputs.deployEnvironment }}
+      testPath: 'playwright/api-tests'
+      testType: 'api'

@@ -1,0 +1,103 @@
+# ----------------------------------------------------------------------------------------------------
+# Variables common to all environments
+# ----------------------------------------------------------------------------------------------------
+variables:
+  # - name: appName
+  #   value: 'this is unique to you - define in a variable group or on the pipeline variables!'
+  # - name: serviceConnectionName
+  #   value: 'this is unique to you - define in a variable group or on the pipeline variables!'
+
+  - name: resourceGroupPrefix
+    value: 'rg_dadabase_web'
+  - name: applicationTitle
+    value: 'Dadabase Demo'
+  - name: location
+    value: 'eastus'
+
+  - name: webSiteSku 
+    value: 'B1'
+  - name: storageSku 
+    value: 'Standard_LRS'
+
+  - name: webAppFolderName
+    value: 'src/web'
+  - name: webAppSolutionName
+    value: 'DadABase.Net8.Web'
+
+  - name: webAppProjectFolderName
+    value: 'DadABase.Web'
+  - name: webAppProjectName
+    value: 'DadABase.Web'
+  - name: webAppProjectExtension
+    value: 'csproj'
+
+  - name: webTestFolderName 
+    value: 'DadABase.Tests'
+  - name: webTestProjectName
+    value: 'DadABase.Tests'
+
+  - name: functionAppSku
+    value: 'Y1'
+  - name: functionAppSkuFamily
+    value: 'Y'
+  - name: functionAppSkuTier
+    value: 'Dynamic'
+  - name: functionKind
+    value: 'functionapp,linux'
+
+  - name: functionFolderName
+    value: 'src/function'
+  - name: functionSolutionName
+    value: 'DadABase.Function.Net8'
+
+  - name: functionProjectFolderName
+    value: 'DadABase.Function'
+  - name: functionProjectName
+    value: 'DadABase.Function.Net8'
+  - name: functionProjectExtension
+    value: 'csproj'
+
+  - name: functionTestFolderName 
+    value: 'DadABase.Function.Tests'
+  - name: functionTestProjectName
+    value: 'DadABase.Tests'
+
+
+  - name: consoleAppFolderName
+    value: 'src/console'
+  - name: consoleAppSolutionName
+    value: 'DadABase.Net8.Web'
+
+  - name: consoleAppProjectFolderName
+    value: 'DadABase.Console'
+  - name: consoleAppProjectName
+    value: 'DadABase.Console'
+  - name: consoleAppProjectExtension
+    value: 'csproj'
+
+  - name: consoleTestFolderName 
+    value: 'DadABase.Tests'
+  - name: consoleTestProjectName
+    value: 'DadABase.Tests'
+
+
+
+  - name: buildPlatform
+    value: 'Any CPU'
+  - name: buildConfiguration
+    value: 'Release'
+  - name: runtime 
+    value: 'win-x64'
+
+  - name: playwrightAPITestType
+    value: 'api'
+  - name: playwrightAPITestPath
+    value: 'playwright/api-tests'
+
+  - name: playwrightWebsitePrefix
+    value: 'lci-dadabase-web'
+
+  - name: workingDirectoryInfra
+    value: '/infra/bicep'
+  - name: workingDirectoryIgnore
+    value: '/Docs'

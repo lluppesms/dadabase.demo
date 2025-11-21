@@ -1,0 +1,35 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DadABase.Net10.Tests", "Tests\DadABase.Net10.Tests.csproj", "{39B0D7C3-3AB2-D9F2-A461-619C3303E5B6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DadABase.Net10.Web", "Website\DadABase.Net10.Web.csproj", "{A436C417-4207-8EB6-C7D7-286A5CDEE5A2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{39B0D7C3-3AB2-D9F2-A461-619C3303E5B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{39B0D7C3-3AB2-D9F2-A461-619C3303E5B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{39B0D7C3-3AB2-D9F2-A461-619C3303E5B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{39B0D7C3-3AB2-D9F2-A461-619C3303E5B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A436C417-4207-8EB6-C7D7-286A5CDEE5A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A436C417-4207-8EB6-C7D7-286A5CDEE5A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A436C417-4207-8EB6-C7D7-286A5CDEE5A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A436C417-4207-8EB6-C7D7-286A5CDEE5A2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B8B45257-6F92-2056-C604-0B0403C3F118} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{39B0D7C3-3AB2-D9F2-A461-619C3303E5B6} = {B8B45257-6F92-2056-C604-0B0403C3F118}
+		{A436C417-4207-8EB6-C7D7-286A5CDEE5A2} = {B8B45257-6F92-2056-C604-0B0403C3F118}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {713D58A6-B9F5-45FB-8075-C7CA9ECB7225}
+	EndGlobalSection
+EndGlobal

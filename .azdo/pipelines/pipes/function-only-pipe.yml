@@ -1,0 +1,69 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Pipeline Template to build and deploy Application Only
+# ------------------------------------------------------------------------------------------------------------------------
+parameters:
+- name: environments
+  type: object
+  default: ['DEV']
+- name: singleEnvironment
+  default: 'false'
+- name: runUnitTests
+  default: 'false'
+- name: runSmokeTests
+  default: 'false'
+- name: runGHASScan
+  default: 'false'
+- name: runMSDevSecOpsScan
+  default: 'false'
+
+# ----------------------------------------------------------------------------------------------------
+stages:
+- stage: ScanApplication
+  displayName: Scan Application
+  jobs:
+  - ${{ if or(eq(lower(parameters.runMSDevSecOpsScan), 'true'), eq(lower(parameters.runGHASScan), 'true')) }}:
+    - template: templates/scan-code-template.yml
+      parameters:
+        environmentName: 'DEV'
+        runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
+        runGHASScan: ${{ parameters.runGHASScan }}
+  - ${{ else }}:
+    - job: ScanSkippedJob
+      displayName: Skipping Scan
+
+# ----------------------------------------------------------------------------------------------------
+- stage: BuildApp
+  displayName: Build Application
+  dependsOn: ScanApplication
+  jobs:
+  - template: templates/build-function-template.yml
+    parameters:
+      environmentName: 'DEV'
+      runUnitTests: ${{ parameters.runUnitTests }}
+
+# ----------------------------------------------------------------------------------------------------
+- ${{ each environmentName in parameters.environments }} :
+  - stage: DeployApp${{ environmentName }}
+    # Condition is scan complete and a single environment is being deployed, 
+    # or the environment is 'dev', or if qa/prod, the previous stage (dev->qa or qa->prod) succeeded
+    condition: or(eq(${{ parameters.singleEnvironment }}, 'true'), and(eq(upper('${{ environmentName }}'), 'DEV'), succeeded('BuildApp')), and(eq(upper('${{ environmentName }}'), 'QA'), succeeded('DeployAppDEV')), and(eq(upper('${{ environmentName }}'), 'PROD'), succeeded('DeployAppQA')))
+    displayName: Deploy ${{ environmentName }} Application
+    jobs:
+    - template: templates/deploy-function-template.yml
+      parameters:
+        environmentName: ${{ environmentName }}
+
+  - ${{ if eq(lower(parameters.runSmokeTests), 'true') }}:
+    - stage: SmokeTest${{ environmentName }}App
+      displayName: Smoke Test ${{ environmentName }}
+      dependsOn: DeployApp${{ environmentName }}
+      condition: succeeded('DeployApp${{ environmentName }}')
+      variables:
+        - template: ../vars/var-common.yml
+      jobs:
+      - template: templates/playwright-template.yml
+        parameters:
+          environment: ${{ environmentName }}
+          testType: '${{ variables.playwrightAPITestType }}'
+          testPath: ${{ variables.playwrightAPITestPath }}
+          debug: true

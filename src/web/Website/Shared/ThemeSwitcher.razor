@@ -1,0 +1,71 @@
+@* ThemeSwitcher.razor: Dropdown to select Light, Dark, or System theme. Uses localStorage to persist choice. JS interop only in OnAfterRenderAsync. *@
+@using Microsoft.JSInterop
+@namespace DadABase.Web.Shared
+
+<NavLink class="nav-tab-top">
+    <div class="theme-switcher dropdown" style="text-align: center;">
+        <div id="themeDropdown" data-bs-toggle="dropdown">
+          <Icon Name="IconName.Settings" />
+          <br />
+          <span>Theme</span>
+        </div>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="themeDropdown">
+            <li><a class="dropdown-item" href="#" @onclick="() => SetTheme(ThemeMode.Light)"><i class="fas fa-sun"></i> Light</a></li>
+            <li><a class="dropdown-item" href="#" @onclick="() => SetTheme(ThemeMode.Dark)"><i class="fas fa-moon"></i> Dark</a></li>
+            <li><a class="dropdown-item" href="#" @onclick="() => SetTheme(ThemeMode.System)"><i class="fas fa-desktop"></i> System Default</a></li>
+        </ul>
+    </div>
+</NavLink>
+
+@code {
+    private enum ThemeMode { Light, Dark, System }
+    private const string ThemeKey = "theme-mode";
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+    private bool _initialized = false;
+    private string _pendingTheme = null;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_initialized)
+        {
+            _initialized = true;
+            var mode = await JS.InvokeAsync<string>("localStorage.getItem", ThemeKey);
+            if (!string.IsNullOrEmpty(mode))
+                await ApplyTheme(mode);
+            else
+                await ApplyTheme("system");
+        }
+        else if (_pendingTheme is not null)
+        {
+            await ApplyTheme(_pendingTheme);
+            _pendingTheme = null;
+        }
+    }
+
+    private async Task SetTheme(ThemeMode mode)
+    {
+        var modeStr = mode.ToString().ToLower();
+        await JS.InvokeVoidAsync("localStorage.setItem", ThemeKey, modeStr);
+        _pendingTheme = modeStr;
+        StateHasChanged();
+    }
+
+    private async Task ApplyTheme(string mode)
+    {
+        // Remove all theme classes
+        await JS.InvokeVoidAsync("eval", "document.body.classList.remove('theme-light','theme-dark','theme-system');");
+        if (mode == "light")
+        {
+            await JS.InvokeVoidAsync("eval", "document.body.classList.add('theme-light'); document.body.setAttribute('data-bs-theme','light');");
+        }
+        else if (mode == "dark")
+        {
+            await JS.InvokeVoidAsync("eval", "document.body.classList.add('theme-dark'); document.body.setAttribute('data-bs-theme','dark');");
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("eval", "document.body.classList.add('theme-system'); document.body.removeAttribute('data-bs-theme');");
+        }
+    }
+}
