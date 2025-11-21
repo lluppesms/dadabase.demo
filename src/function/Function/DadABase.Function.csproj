@@ -31,8 +31,8 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DataLayer\DadABase.Net10.DataLayer.csproj" />
-    <ProjectReference Include="..\Entities\DadABase.Net10.Entities.csproj" />
+    <ProjectReference Include="..\DataLayer\DadABase.DataLayer.csproj" />
+    <ProjectReference Include="..\Entities\DadABase.Entities.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">

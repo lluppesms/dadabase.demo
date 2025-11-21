@@ -46,8 +46,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DataLayer\DadABase.Net10.DataLayer.csproj" />
-    <ProjectReference Include="..\Entities\DadABase.Net10.Entities.csproj" />
+    <ProjectReference Include="..\DataLayer\DadABase.DataLayer.csproj" />
+    <ProjectReference Include="..\Entities\DadABase.Entities.csproj" />
   </ItemGroup>
 
 </Project>

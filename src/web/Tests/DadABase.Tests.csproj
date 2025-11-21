@@ -42,7 +42,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DadABase.Web\DadABase.Web.csproj" />
+    <ProjectReference Include="..\Website\DadABase.Web.csproj" />
   </ItemGroup>
 
 </Project>

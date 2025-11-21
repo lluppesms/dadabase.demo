@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Entities\DadABase.Net10.Entities.csproj" />
+    <ProjectReference Include="..\Entities\DadABase.Entities.csproj" />
   </ItemGroup>
 
 </Project>
