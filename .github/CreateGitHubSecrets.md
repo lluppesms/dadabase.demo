@@ -45,10 +45,18 @@ gh secret set LOGIN_TENANTID -b "<yourTenantId>"
 
 gh variable set RESOURCEGROUP_LOCATION -b "eastus"
 
-gh variable set APP_PROJECT_FOLDER_NAME -b "src\Dadabase\DadABase.Web"
-gh variable set APP_PROJECT_NAME -b "DadABase.Web"
-gh variable set APP_TEST_FOLDER_NAME -b "src\Dadabase\DadABase.Tests"
-gh variable set APP_TEST_PROJECT_NAME -b "DadABase.Tests"
+gh variable set WEB_APP_PROJECT_FOLDER_NAME -b "src\web\Website\DadABase.Web"
+gh variable set WEB_APP_PROJECT_NAME -b "DadABase.Web"
+gh variable set WEB_APP_TEST_FOLDER_NAME -b "src\web\Tests\DadABase.Tests"
+gh variable set WEB_APP_TEST_PROJECT_NAME -b "DadABase.Tests"
+
+gh variable set FUNCTION_APP_PROJECT_FOLDER_NAME -b "src\function\DadABase.Function"
+gh variable set FUNCTION_APP_PROJECT_NAME -b "DadABase.Function"
+gh variable set FUNCTION_APP_TEST_FOLDER_NAME -b "src\function\DadABase.Function.Tests"
+gh variable set FUNCTION_APP_TEST_PROJECT_NAME -b "DadABase.Function.Tests"
+
+gh variable set CONSOLE_APP_PROJECT_FOLDER_NAME -b "src\console\dadabase.net10.console"
+gh variable set CONSOLE_APP_PROJECT_NAME -b "dadabase.net10.console"
 ```
 
 ---
