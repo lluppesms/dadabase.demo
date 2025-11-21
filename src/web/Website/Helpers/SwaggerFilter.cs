@@ -6,6 +6,8 @@
 // Custom Swagger Filter
 // </summary>
 //-----------------------------------------------------------------------
+using Microsoft.OpenApi;
+
 namespace DadABase.Web;
 
 /// <summary>
