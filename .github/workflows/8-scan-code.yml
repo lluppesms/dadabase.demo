@@ -1,8 +1,8 @@
 # ------------------------------------------------------------------------------------------------------------------------
 # GHA Workflow to Scan Bicep on a schedule
 # ------------------------------------------------------------------------------------------------------------------------
-name: 7.scan.code.scheduled
-run-name: '7 - Scheduled Scan Code'
+name: 8.scan.code.scheduled
+run-name: '8 - Scheduled Scan Code'
 
 on:
   workflow_dispatch:
@@ -15,10 +15,10 @@ on:
         description: Run GitHub Advanced Security Scan
         default: true
         type: boolean
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  # push:
+  #   branches: [ "main" ]
+  # pull_request:
+  #   branches: [ "main" ]
 
   schedule:
     # temporarily -- run this every weekday at 3am even if no pushes or PRs

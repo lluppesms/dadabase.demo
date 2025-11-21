@@ -3,8 +3,8 @@
 # ------------------------------------------------------------------------------------------------------------------------
 # FYI: You need to set up some secrets before running this workflows - see CreateGitHubSecrets.md for details.
 # ------------------------------------------------------------------------------------------------------------------------
-name: 5.smoke.test
-run-name: '5 - Smoke Test by @${{ github.actor }} using ENV ${{ inputs.deployEnvironment }} '
+name: 6.smoke.test
+run-name: '6 - Smoke Test by @${{ github.actor }} using ENV ${{ inputs.deployEnvironment }} '
 
 on:
   workflow_dispatch:

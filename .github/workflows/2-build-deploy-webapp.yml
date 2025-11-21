@@ -3,8 +3,8 @@
 # ------------------------------------------------------------------------------------------------------------------------
 # FYI: You need to set up some secrets before running this workflows - see CreateGitHubSecrets.md for details.
 # ------------------------------------------------------------------------------------------------------------------------
-name: 3.build.deploy.app
-run-name: '3 - Build & Deploy App: using ENV ${{ inputs.deployEnvironment }} by @${{ github.actor }}'
+name: 2.build.deploy.webapp
+run-name: '2 - Build & Deploy Web App: using ENV ${{ inputs.deployEnvironment }} by @${{ github.actor }}'
 
 on:
   workflow_dispatch:
