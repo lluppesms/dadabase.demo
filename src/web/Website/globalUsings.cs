@@ -26,7 +26,7 @@ global using Microsoft.Extensions.Configuration.AzureAppConfiguration;
 global using Microsoft.Identity.Web;
 global using Microsoft.Identity.Web.UI;
 global using Microsoft.JSInterop;
-global using Microsoft.OpenApi.Models;
+
 global using Newtonsoft.Json;
 global using Swashbuckle.AspNetCore.SwaggerGen;
 global using System.ComponentModel.DataAnnotations;
