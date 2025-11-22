@@ -80,7 +80,7 @@ jobs:
   deploy-app:
     name: Deploy WebApp ${{ inputs.deployEnvironment }}
     uses: ./.github/workflows/template-webapp-deploy.yml
-    if: inputs.runDeploy
+    if: inputs.runDeploy || inputs.runSmokeTest
     needs: build-app
     secrets: inherit
     with:

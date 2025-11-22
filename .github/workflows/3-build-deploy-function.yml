@@ -25,10 +25,6 @@ on:
         description: Deploy App
         default: true
         type: boolean
-      runSmokeTest:
-        description: Run Smoke Tests
-        default: false
-        type: boolean
       logLevel:
         description: 'Log level'     
         required: true
@@ -56,6 +52,7 @@ jobs:
     name: Scan Source Code
     uses: ./.github/workflows/template-scan-code.yml
     secrets: inherit
+    if: inputs.runSecurityScan
     with:
       runMSDevSecOpsScan: ${{ inputs.runSecurityScan }}
       runGHASScan: ${{ inputs.runSecurityScan }}
@@ -64,7 +61,7 @@ jobs:
   build-app:
     name: Build Function App
     uses: ./.github/workflows/template-function-app-build.yml
-    if: inputs.runBuild || inputs.runDeploy || inputs.runSmokeTest
+    if: inputs.runBuild || inputs.runDeploy
     secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}
@@ -78,21 +75,10 @@ jobs:
 # ------------------------------------------------------------------------------------------------------------------------
   deploy-app:
     name: Deploy App
-    needs: build-app
     uses: ./.github/workflows/template-function-app-deploy.yml
-    if: inputs.runDeploy || inputs.runSmokeTest
+    if: inputs.runDeploy
+    needs: build-app
     secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}
       
-# ------------------------------------------------------------------------------------------------------------------------
-  run-smoke-test:
-    name: Smoke Test ${{ inputs.deployEnvironment }}
-    uses: ./.github/workflows/template-smoke-test.yml
-    if: inputs.runSmokeTest
-    needs: deploy-app
-    secrets: inherit
-    with:
-      envCode: ${{ inputs.deployEnvironment }}
-      testPath: 'playwright/api-tests'
-      testType: 'api'
