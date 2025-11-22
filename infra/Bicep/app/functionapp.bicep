@@ -12,7 +12,7 @@ param appInsightsLocation string = resourceGroup().location
 param commonTags object = {}
 
 param managedIdentityId string
-param keyVaultName string
+param keyVaultName string = ''
 
 @allowed([ 'functionapp', 'functionapp,linux' ])
 param functionKind string = 'functionapp,linux'

@@ -1,4 +1,7 @@
 // -----------------------------------------------------------------------------------------------
+// ERROR: Key based authentication is not permitted on this storage account. 
+//  ... why is this doing key based auth...???
+// -----------------------------------------------------------------------------------------------
 // This BICEP file will generate a list of secrets in a KeyVault to use for dup checks, like this:
 // ";BlobStorageConnectionString;CosmosConnectionString;GenericSecret;IotHubConnectionString;"
 // Each start and end with ";" so you can confidently search for ";mySecret;" and not get fooled
@@ -8,7 +11,7 @@ param location string = resourceGroup().location
 param utcValue string = utcNow()
 param userManagedIdentityId string = ''
 
-resource getKeyVaultSecretNames 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
+resource getKeyVaultSecretNames 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
   name: 'getKeyVaultSecretNameList'
   location: location
   kind: 'AzurePowerShell'
@@ -17,7 +20,7 @@ resource getKeyVaultSecretNames 'Microsoft.Resources/deploymentScripts@2020-10-0
     userAssignedIdentities: { '${ userManagedIdentityId }': {} }
   }
   properties: {
-    azPowerShellVersion: '8.1'
+    azPowerShellVersion: '11.0'
     forceUpdateTag: utcValue
     retentionInterval: 'PT1H'
     timeout: 'PT5M'

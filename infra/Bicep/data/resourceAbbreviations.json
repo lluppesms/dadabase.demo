@@ -6,6 +6,7 @@
     "containerAppEnvironment": "cae",
     "containerApp": "ca",
     "cosmosDatabase": "cosmos",
+    "functionApp": "func",
     "identitySuffix": "id",
     "keyVaultAbbreviation": "vault",
     "logWorkspaceSuffix": "law",

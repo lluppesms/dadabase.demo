@@ -4,16 +4,25 @@
 // To deploy this Bicep manually:
 // 	 az login
 //   az account set --subscription <subscriptionId>
-//   az deployment group create -n "manual-$(Get-Date -Format 'yyyyMMdd-HHmmss')" --resource-group rg_dadabase_test --template-file 'main.bicep' --parameters appName=xxx-dadabase-test environmentCode=demo keyVaultOwnerUserId=xxxxxxxx-xxxx-xxxx
+//   az deployment group create -n "manual-$(Get-Date -Format 'yyyyMMdd-HHmmss')" --resource-group rg_dadabase_web_full --template-file 'main.bicep' --parameters appName=xxx-dad-full environmentCode=dev adminUserId=xxxxxxxx-xxxx-xxxx
 // --------------------------------------------------------------------------------
 param appName string = ''
 param environmentCode string = 'azd'
 param location string = resourceGroup().location
 
-param storageSku string = 'Standard_LRS'
-param webSiteSku string = 'B1'
+param servicePlanName string = ''
+param servicePlanResourceGroupName string = '' // if using an existing service plan in a different resource group
 
-param apiKey string = ''
+param webAppKind string = 'linux' // 'linux' or 'windows'
+param webSiteSku string = 'B1'
+param webStorageSku string = 'Standard_LRS'
+param webApiKey string = ''
+
+param functionStorageSku string = 'Standard_LRS'
+param functionAppSku string = 'B1' //  'Y1'
+param functionAppSkuFamily string = 'B' // 'Y'
+param functionAppSkuTier string = 'Dynamic'
+param environmentSpecificFunctionName string = ''
 
 param adInstance string = environment().authentication.loginEndpoint // 'https://login.microsoftonline.com/'
 param adDomain string = ''
@@ -23,9 +32,6 @@ param adCallbackPath string = '/signin-oidc'
 
 param appDataSource string = 'JSON'
 param appSwaggerEnabled string = 'true'
-param servicePlanName string = ''
-param servicePlanResourceGroupName string = '' // if using an existing service plan in a different resource group
-param webAppKind string = 'linux' // 'linux' or 'windows'
 
 param azureOpenAIChatEndpoint string = ''
 param azureOpenAIChatDeploymentName string = ''
@@ -37,19 +43,16 @@ param azureOpenAIImageEndpoint string = ''
 param azureOpenAIImageDeploymentName string = ''
 param azureOpenAIImageApiKey string = ''
 
-// @description('Admin IP Address to add to Key Vault and Container Registry?')
-// param myIpAddress string = ''
-// @description('Add Role Assignments for the user assigned identity?')
-// param addRoleAssignments bool = true
-// // --------------------------------------------------------------------------------------------------------------
-// // You may supply an existing Container Registry
-// // --------------------------------------------------------------------------------------------------------------
-// @description('Name of an existing Container Registry to use')
-// param existing_ACR_Name string = ''
-// @description('Name of ResourceGroup for an existing Container Registry')
-// param existing_ACR_ResourceGroupName string = ''
-// param deployContainerAppEnvironment bool = false
+@description('Add Role Assignments for the user assigned identity?')
+param addRoleAssignments bool = true
 
+@description('Run script to deplicate secrets?')
+param deDuplicateSecrets bool = false
+
+@description('Add this Admin User Id to KeyVault Access')
+param adminUserId string = ''
+
+// calculated variables disguised as parameters
 param runDateTime string = utcNow()
 
 // --------------------------------------------------------------------------------
@@ -68,10 +71,13 @@ module resourceNames 'resourcenames.bicep' = {
   params: {
     appName: appName
     environmentCode: environmentCode
+    functionStorageNameSuffix: 'func'
+    dataStorageNameSuffix: 'data'
+    environmentSpecificFunctionName: environmentSpecificFunctionName
   }
 }
 // --------------------------------------------------------------------------------
-module logAnalyticsWorkspaceModule 'loganalyticsworkspace.bicep' = {
+module logAnalyticsWorkspaceModule 'app/loganalyticsworkspace.bicep' = {
   name: 'logAnalytics${deploymentSuffix}'
   params: {
     logAnalyticsWorkspaceName: resourceNames.outputs.logAnalyticsWorkspaceName
@@ -81,17 +87,95 @@ module logAnalyticsWorkspaceModule 'loganalyticsworkspace.bicep' = {
 }
 
 // --------------------------------------------------------------------------------
-module storageModule 'storageaccount.bicep' = {
+module storageModule 'app/storageaccount.bicep' = {
   name: 'storage${deploymentSuffix}'
   params: {
-    storageSku: storageSku
+    storageSku: webStorageSku
     storageAccountName: resourceNames.outputs.storageAccountName
     location: location
     commonTags: commonTags
   }
 }
 
-module appServicePlanModule 'websiteserviceplan.bicep' = {
+module functionStorageModule 'app/storageaccount.bicep' = {
+  name: 'functionstorage${deploymentSuffix}'
+  params: {
+    storageSku: functionStorageSku
+    storageAccountName: resourceNames.outputs.functionStorageName
+    location: location
+    commonTags: commonTags
+    allowNetworkAccess: 'Allow'
+    publicNetworkAccess: 'Enabled'
+  }
+}
+
+// --------------------------------------------------------------------------------
+module identity './security/identity.bicep' = {
+  name: 'appIdentity${deploymentSuffix}'
+  params: {
+    identityName: resourceNames.outputs.userAssignedIdentityName
+    location: location
+  }
+}
+module appRoleAssignments './security/roleassignments.bicep' = if (addRoleAssignments) {
+  name: 'appRoleAssignments${deploymentSuffix}'
+  params: {
+    identityPrincipalId: identity.outputs.managedIdentityPrincipalId
+    principalType: 'ServicePrincipal'
+    storageAccountName: functionStorageModule.outputs.name
+    keyVaultName:  keyVaultModule.outputs.name
+  }
+}
+module adminRoleAssignments './security/roleassignments.bicep' = if (addRoleAssignments) {
+  name: 'userRoleAssignments${deploymentSuffix}'
+  params: {
+    identityPrincipalId: adminUserId
+    principalType: 'User'
+    storageAccountName: functionStorageModule.outputs.name
+    keyVaultName:  keyVaultModule.outputs.name
+  }
+}
+
+
+// --------------------------------------------------------------------------------
+module keyVaultModule './security/keyvault.bicep' = {
+  name: 'keyVault${deploymentSuffix}'
+  params: {
+    keyVaultName: resourceNames.outputs.keyVaultName
+    location: location
+    commonTags: commonTags
+    adminUserObjectIds: [ adminUserId ]
+    applicationUserObjectIds: [ ]
+    workspaceId: logAnalyticsWorkspaceModule.outputs.id
+    managedIdentityName: identity.outputs.managedIdentityName
+    managedIdentityPrincipalId: identity.outputs.managedIdentityPrincipalId
+    managedIdentityTenantId: identity.outputs.managedIdentityTenantId
+    publicNetworkAccess: 'Enabled'
+    allowNetworkAccess: 'Allow'
+    useRBAC: true
+  }
+}
+
+module keyVaultSecretList './security/keyvaultlistsecretnames.bicep' = if (deDuplicateSecrets) {
+  name: 'keyVaultSecretListNames${deploymentSuffix}'
+  params: {
+    keyVaultName: keyVaultModule.outputs.name
+    location: location
+    userManagedIdentityId: keyVaultModule.outputs.userManagedIdentityId
+  }
+}
+module keyVaultStorageSecret './security/keyvaultsecretstorageconnection.bicep' = {
+  name: 'keyVaultStorageSecret${deploymentSuffix}'
+  params: {
+    keyVaultName: keyVaultModule.outputs.name
+    secretName: 'azurefilesconnectionstring'
+    storageAccountName: functionStorageModule.outputs.name
+    existingSecretNames: deDuplicateSecrets ? keyVaultSecretList.outputs.secretNameList : ''
+  }
+}
+
+// --------------------------------------------------------------------------------
+module appServicePlanModule 'app/websiteserviceplan.bicep' = {
   name: 'appService${deploymentSuffix}'
   params: {
     location: location
@@ -105,8 +189,7 @@ module appServicePlanModule 'websiteserviceplan.bicep' = {
   }
 }
 
-
-module webSiteModule 'website.bicep' = {
+module webSiteModule 'app/website.bicep' = {
   name: 'webSite${deploymentSuffix}'
   params: {
     webSiteName: resourceNames.outputs.webSiteName
@@ -125,7 +208,7 @@ module webSiteModule 'website.bicep' = {
 // configured in App Service as AppSettings__MyKey for the key name. 
 // In other words, any : should be replaced by __ (double underscore).
 // NOTE: See https://learn.microsoft.com/en-us/azure/app-service/configure-common?tabs=portal  
-module webSiteAppSettingsModule 'websiteappsettings.bicep' = {
+module webSiteAppSettingsModule 'app/websiteappsettings.bicep' = {
   name: 'webSiteAppSettings${deploymentSuffix}'
   params: {
     webAppName: webSiteModule.outputs.name
@@ -136,7 +219,7 @@ module webSiteAppSettingsModule 'websiteappsettings.bicep' = {
       AppSettings__EnvironmentName: environmentCode
       AppSettings__EnableSwagger: appSwaggerEnabled
       AppSettings__DataSource: appDataSource
-      AppSettings__ApiKey: apiKey
+      AppSettings__ApiKey: webApiKey
       AppSettings__AzureOpenAI__Chat__Endpoint: azureOpenAIChatEndpoint
       AppSettings__AzureOpenAI__Chat__DeploymentName: azureOpenAIChatDeploymentName
       AppSettings__AzureOpenAI__Chat__ApiKey: azureOpenAIChatApiKey
@@ -155,89 +238,50 @@ module webSiteAppSettingsModule 'websiteappsettings.bicep' = {
   }
 }
 
-// module identity 'identity.bicep' = if (deployContainerAppEnvironment) {
-//   name: 'app-identity${deploymentSuffix}'
+// --------------------------------------------------------------------------------
+// Creation of storage file share failed with: 'The remote server returned an error: (403) Forbidden.'. Please check if the storage account is accessible.
+// --------------------------------------------------------------------------------
+// module functionModule 'app/functionapp.bicep' = {
+//   name: 'function${deploymentSuffix}'
+//   dependsOn: [ appRoleAssignments ]
 //   params: {
-//     identityName: resourceNames.outputs.userAssignedIdentityName
+//     functionAppName: resourceNames.outputs.functionAppName
+//     functionAppServicePlanName: appServicePlanModule.outputs.name // resourceNames.outputs.functionAppServicePlanName
+//     functionInsightsName: resourceNames.outputs.functionInsightsName
+//     managedIdentityId: identity.outputs.managedIdentityId
+//     keyVaultName: keyVaultModule.outputs.name
+
+//     appInsightsLocation: location
 //     location: location
-//   }
-// }
-// module roleAssignments 'role-assignments.bicep' = if (deployContainerAppEnvironment && addRoleAssignments) {
-//   name: 'identity-access${deploymentSuffix}'
-//   params: {
-//     registryName: containerRegistry.outputs.name
-//     storageAccountName: storageModule.outputs.name
-//     identityPrincipalId: identity.outputs.managedIdentityPrincipalId
+//     commonTags: commonTags
+
+//     functionKind: 'functionapp,linux'
+//     functionAppSku: functionAppSku
+//     functionAppSkuFamily: functionAppSkuFamily
+//     functionAppSkuTier: functionAppSkuTier
+//     functionStorageAccountName: functionStorageModule.outputs.name
+//     workspaceId: logAnalyticsWorkspaceModule.outputs.id
 //   }
 // }
 
-// // --------------------------------------------------------------------------------------------------------------
-// // -- Container Registry ----------------------------------------------------------------------------------------
-// // --------------------------------------------------------------------------------------------------------------
-// module containerRegistry 'containerRegistry.bicep' = if (deployContainerAppEnvironment) {
-//   name: 'containerregistry${deploymentSuffix}'
+// module functionAppSettingsModule 'app/functionappsettings.bicep' = {
+//   name: 'functionAppSettings${deploymentSuffix}'
 //   params: {
-//     existingRegistryName: existing_ACR_Name
-//     existing_ACR_ResourceGroupName: existing_ACR_ResourceGroupName
-//     newRegistryName: resourceNames.outputs.containerRegistryName
-//     location: location
-//     acrSku: 'Premium'
-//     tags: commonTags
-//     publicAccessEnabled: true // publicAccessEnabled
-//     myIpAddress: myIpAddress
-//   }
-// }
-// // --------------------------------------------------------------------------------------------------------------
-// // -- Container App Environment ---------------------------------------------------------------------------------
-// // --------------------------------------------------------------------------------------------------------------
-// module managedEnvironment 'containerAppEnvironment.bicep' = if (deployContainerAppEnvironment) {
-//   name: 'cae${deploymentSuffix}'
-//   params: {
-//     newEnvironmentName: resourceNames.outputs.caManagedEnvName
-//     location: location
-//     logAnalyticsWorkspaceName: logAnalyticsWorkspaceModule.outputs.name
-//     logAnalyticsRgName: resourceGroupName
-//     tags: commonTags
-//     publicAccessEnabled: true // publicAccessEnabled
+//     functionAppName: functionModule.outputs.name
+//     functionStorageAccountName: functionModule.outputs.storageAccountName
+//     functionInsightsKey: functionModule.outputs.insightsKey
+//     keyVaultName: keyVaultModule.outputs.name
+//     customAppSettings: {
+//       OpenApi__HideSwaggerUI: 'false'
+//       OpenApi__HideDocument: 'false'
+//       OpenApi__DocTitle: 'Isolated .NET10 Functions Demo APIs'
+//       OpenApi__DocDescription: 'This repo is an example of how to use Isolated .NET10 Azure Functions'
+//     }
 //   }
 // }
 
-// // --------------------------------------------------------------------------------------------------------------
-// // -- UI Application Definition ---------------------------------------------------------------------------------
-// // --------------------------------------------------------------------------------------------------------------
-// module app 'containerApp.bicep' = if (deployContainerAppEnvironment) {
-//   name: 'ui-app${deploymentSuffix}'
-//   params: {
-//     name: resourceNames.outputs.containerAppUIName
-//     location: location
-//     tags: commonTags
-//     applicationInsightsName: webSiteModule.outputs.appInsightsName
-//     managedEnvironmentName: managedEnvironment.outputs.name
-//     managedEnvironmentRg: managedEnvironment.outputs.resourceGroupName
-//     containerRegistryName: containerRegistry.outputs.name
-//     imageName: resourceNames.outputs.containerAppUIName
-//     exists: false
-//     identityName: identity.outputs.managedIdentityName
-//     deploymentSuffix: deploymentSuffix
-//     env: [
-//       { name: 'AzureStorageAccountEndPoint', value: 'https://${storageModule.outputs.name}.blob.${environment().suffixes.storage}' }
-//       { name: 'AzureStorageUserUploadContainer', value: 'content' }
-//       { name: 'UserAssignedManagedIdentityClientId', value: identity.outputs.managedIdentityClientId }
-//       { name: 'AZURE_CLIENT_ID', value: identity.outputs.managedIdentityClientId }
-//     ]
-//     port: 8080
-//     secrets: {}
-//     // secrets: {
-//     //   cosmos: 'https://${keyVault.outputs.name}${environment().suffixes.keyvaultDns}/secrets/${cosmos.outputs.connectionStringSecretName}'
-//     //   aikey: 'https://${keyVault.outputs.name}${environment().suffixes.keyvaultDns}/secrets/${azureOpenAi.outputs.cognitiveServicesKeySecretName}'
-//     //   searchkey: 'https://${keyVault.outputs.name}${environment().suffixes.keyvaultDns}/secrets/${searchService.outputs.searchKeySecretName}'
-//     //   docintellikey: 'https://${keyVault.outputs.name}${environment().suffixes.keyvaultDns}/secrets/${documentIntelligence.outputs.keyVaultSecretName}'
-//     //   apikey: 'https://${keyVault.outputs.name}${environment().suffixes.keyvaultDns}/secrets/api-key'
-//     // }
-//   }
-// }
-//output ACA_HOST_NAME string = deployContainerAppEnvironment ? app.outputs.hostName : ''
-
+// --------------------------------------------------------------------------------
 output SUBSCRIPTION_ID string = subscription().subscriptionId
 output RESOURCE_GROUP_NAME string = resourceGroupName
-output HOST_NAME string = webSiteModule.outputs.hostName
+output WEB_HOST_NAME string = webSiteModule.outputs.hostName
+// output FUNCTION_HOST_NAME string = functionModule.outputs.hostname

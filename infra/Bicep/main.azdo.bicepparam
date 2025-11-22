@@ -14,6 +14,8 @@ param adClientId = '#{adClientId}#'
 param apiKey = '#{apiKey}#'
 param location = '#{location}#'
 param servicePlanName = '#{servicePlanName}#'
+param servicePlanResourceGroupName = '#{servicePlanResourceGroupName}#'
+param webAppKind = 'linux' // 'linux' or 'windows'
 
 param azureOpenAIChatEndpoint = '#{azureOpenAIChatEndpoint}#'
 param azureOpenAIChatDeploymentName = '#{azureOpenAIChatDeploymentName}#'

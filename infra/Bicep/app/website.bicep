@@ -22,7 +22,7 @@ var tags = union(commonTags, templateTag)
 var webSiteTags = union(commonTags, templateTag, azdTag)
 
 // --------------------------------------------------------------------------------
-var linuxFxVersion = webAppKind == 'linux' ? 'DOTNETCORE|8.0' : '' // 	The runtime stack of web app
+var linuxFxVersion = webAppKind == 'linux' ? 'DOTNETCORE|10.0' : '' // 	The runtime stack of web app
 var appInsightsName = toLower('${webSiteName}-insights')
 
 // --------------------------------------------------------------------------------
@@ -62,6 +62,7 @@ resource webSiteResource 'Microsoft.Web/sites@2023-01-01' = {
       minTlsVersion: '1.2'
       ftpsState: 'FtpsOnly'
       remoteDebuggingEnabled: false
+      minimumElasticInstanceCount: 1
       appSettings: [
         { 
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
