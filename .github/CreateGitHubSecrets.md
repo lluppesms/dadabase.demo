@@ -43,17 +43,17 @@ gh secret set LOGIN_DOMAIN -b "<yourdomain>.onmicrosoft.com"
 gh secret set LOGIN_INSTANCEENDPOINT -b "https://login.microsoftonline.com/"
 gh secret set LOGIN_TENANTID -b "<yourTenantId>"
 
-gh variable set WEB_APP_PROJECT_FOLDER_NAME -b "src\web\Website"
+gh variable set WEB_APP_PROJECT_FOLDER_NAME -b "src/web/Website"
 gh variable set WEB_APP_PROJECT_NAME -b "DadABase.Web"
-gh variable set WEB_APP_TEST_FOLDER_NAME -b "src\web\Tests"
+gh variable set WEB_APP_TEST_FOLDER_NAME -b "src/web/Tests"
 gh variable set WEB_APP_TEST_PROJECT_NAME -b "DadABase.Tests"
 
-gh variable set FUNCTION_APP_PROJECT_FOLDER_NAME -b "src\function\DadABase.Function"
+gh variable set FUNCTION_APP_PROJECT_FOLDER_NAME -b "src/function/Function"
 gh variable set FUNCTION_APP_PROJECT_NAME -b "DadABase.Function"
-gh variable set FUNCTION_APP_TEST_FOLDER_NAME -b "src\function\DadABase.Function.Tests"
+gh variable set FUNCTION_APP_TEST_FOLDER_NAME -b "src/function/Tests"
 gh variable set FUNCTION_APP_TEST_PROJECT_NAME -b "DadABase.Function.Tests"
 
-gh variable set CONSOLE_APP_PROJECT_FOLDER_NAME -b "src\console\dadabase.net10.console"
+gh variable set CONSOLE_APP_PROJECT_FOLDER_NAME -b "src/console/dadabase.net10.console"
 gh variable set CONSOLE_APP_PROJECT_NAME -b "dadabase.net10.console"
 ```
 
