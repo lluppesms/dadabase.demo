@@ -1,13 +1,15 @@
 ﻿@if (myJoke != null)
 {
-    <div class="JokeCard" style="margin-top: 30px;">
-        <div class="JokeCategory">
-            @myJoke.JokeCategoryTxt
+    <div class=\"joke-wrapper\">
+        <div class=\"JokeCard\">
+            <div class=\"JokeCategory\">
+                @myJoke.JokeCategoryTxt
+            </div>
+            <div class=\"JokeText\">
+                @((MarkupString)myFullText)
+            </div>
         </div>
-        <div class="JokeText">
-            @((MarkupString)myFullText)
-            <br />
-        </div>
+    </div>
         @*
         <AuthorizeView Roles="Admin">
             @if (!showJokeEditor)
@@ -25,8 +27,8 @@
             }
             <br />
         </div>
-        *@
    </div>
+        *@
    @*
     @if (supportsRatings && !string.IsNullOrEmpty(myFullText))
     {

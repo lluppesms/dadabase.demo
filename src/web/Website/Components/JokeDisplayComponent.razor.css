@@ -1,0 +1,27 @@
+.joke-wrapper {
+    margin: 1.5rem 0;
+    animation: fadeInCard 0.5s ease-out;
+}
+
+@keyframes fadeInCard {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.joke-attribution {
+    font-style: italic;
+    color: #718096;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+body[data-bs-theme='dark'] .joke-attribution,
+.theme-dark .joke-attribution {
+    color: #a0aec0;
+}

@@ -3,36 +3,41 @@
 
 <PageTitle>@Data.Constants.ApplicationTitle</PageTitle>
 
-<Row Style="padding: 20px; width: 95%;">
-    <Column ColumnSize="ColumnSize.Is8.OnDesktop.Is8.OnTablet.Is12.OnMobile">
-        <h1>Tell me a Joke, Dad!</h1>
-        <LoadingIndicator @ref="jokeLoadingIndicator">
-            <ul id="jokeList" style="list-style-type: none;">
-              <li><JokeDisplayComponent myJoke="@myJoke" /></li>
-            </ul>
-        </LoadingIndicator>
-        <button class="btn btn-primary" @onclick="ExecuteRandom" style="margin-top: 40px;">Tell me another one!</button>
+<div class="page-container">
+    <Row Style="width: 100%;">
+        <Column ColumnSize="ColumnSize.Is10.OnDesktop.Is12.OnTablet.Is12.OnMobile" Style="margin: 0 auto;">
+            <h1>Tell me a Joke, Dad!</h1>
+            <LoadingIndicator @ref="jokeLoadingIndicator">
+                <div class="joke-container">
+                    <ul id="jokeList" style="list-style-type: none; padding: 0;">
+                      <li><JokeDisplayComponent myJoke="@myJoke" /></li>
+                    </ul>
+                </div>
+            </LoadingIndicator>
+            <div class="button-group">
+                <button class="btn btn-primary" @onclick="ExecuteRandom">Tell me another one!</button>
 
-
-        @if (imageDescriptionGenerated && showButtons)
-        {
-            <button class="btn btn-primary" @onclick="CreatePicture" style="margin-top: 40px; margin-left: 20px;">Paint me a picture!</button>
-        }
-        <br /><span style="margin-top: 40px; font-size: 1.2em; font-style: italic;">@jokeImageMessage</span>
-        @if (imageGenerating)
-        {
-          <br /><span style="margin-top: 15px; font-size: 0.8em;">@jokeImageDescription</span>
-        }
-        <LoadingIndicator @ref="imageLoadingIndicator">
-            <br />
-            @if (!string.IsNullOrEmpty(jokeImageUrl)) {
-              <img src="@jokeImageUrl" width="300" style="cursor: pointer;" @onclick="ShowImageDescriptionPopup" />
-            }
-            else
-            {
-              <span style="margin-top: 15px; font-size: 0.8em;">@jokeImageDescription</span>
-            }
-        </LoadingIndicator>
+                @if (imageDescriptionGenerated && showButtons)
+                {
+                    <button class="btn btn-primary" @onclick="CreatePicture">Paint me a picture!</button>
+                }
+            </div>
+            <div class="joke-image-section">
+                <p style="font-size: 1.2em; font-style: italic; color: #667eea;">@jokeImageMessage</p>
+                @if (imageGenerating)
+                {
+                  <p style="font-size: 0.9em; color: #718096;">@jokeImageDescription</p>
+                }
+                <LoadingIndicator @ref="imageLoadingIndicator">
+                    @if (!string.IsNullOrEmpty(jokeImageUrl)) {
+                      <img src="@jokeImageUrl" class="joke-image" width="400" style="cursor: pointer;" @onclick="ShowImageDescriptionPopup" />
+                    }
+                    else if (!string.IsNullOrEmpty(jokeImageDescription))
+                    {
+                      <p style="font-size: 0.9em; color: #718096;">@jokeImageDescription</p>
+                    }
+                </LoadingIndicator>
+            </div>
         <Modal @ref="imageDescriptionPopup">
             <ModalContent Centered>
                 <ModalHeader>
@@ -50,29 +55,30 @@
 
 
 
-        @if (jokeHistory.Any())
-        {
-            <div style="margin-top: 40px;">
-                <h5 style="display: flex; align-items: center; cursor: pointer; user-select: none; font-size: 1rem;"
-                    tabindex="0"
-                    @onclick="ToggleHistory"
-                    @onkeydown="@(e => { if (e.Key == "Enter" || e.Key == " ") ToggleHistory(); })">
-                    Joke History
-                    <span style="margin-left: 8px; font-size: 1.2em;">
-                        @(isHistoryCollapsed ? "👁️" : "🙈")
-                    </span>
-                </h5>
-                @if (!isHistoryCollapsed)
-                {
-                    <ul style="list-style-type: none; padding-left: 0;">
-                        @foreach (var joke in jokeHistory)
-                        {
-                            <li><JokeDisplayComponent myJoke="@joke" /></li>
-                        }
-                    </ul>
-                }
-            </div>
-        }
-    </Column>
-</Row>
+            @if (jokeHistory.Any())
+            {
+                <div class="history-section">
+                    <h5 class="history-toggle"
+                        tabindex="0"
+                        @onclick="ToggleHistory"
+                        @onkeydown="@(e => { if (e.Key == "Enter" || e.Key == " ") ToggleHistory(); })">
+                        Joke History
+                        <span style="margin-left: 8px; font-size: 1.2em;">
+                            @(isHistoryCollapsed ? "👁️" : "🙈")
+                        </span>
+                    </h5>
+                    @if (!isHistoryCollapsed)
+                    {
+                        <ul style="list-style-type: none; padding: 0;">
+                            @foreach (var joke in jokeHistory)
+                            {
+                                <li><JokeDisplayComponent myJoke="@joke" /></li>
+                            }
+                        </ul>
+                    }
+                </div>
+            }
+        </Column>
+    </Row>
+</div>
 <SnackbarStack @ref="snackbarstack" Location="SnackbarStackLocation.BottomEnd" />
