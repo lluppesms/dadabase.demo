@@ -73,13 +73,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<HttpContextAccessor>();
 
 //// ---- Add third party component startups ------------------------------------------------------------
-builder.Services
-    .AddBlazorise(options =>
-    {
-        // options.ChangeTextOnKeyPress = true;
-    })
-    .AddBootstrap5Providers()
-    .AddFontAwesomeIcons();
+builder.Services.AddMudServices();
 builder.Services.AddSweetAlert2(options =>
 {
     options.Theme = SweetAlertTheme.Default;

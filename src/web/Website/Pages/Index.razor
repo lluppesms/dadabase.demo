@@ -4,16 +4,20 @@
 <PageTitle>@Data.Constants.ApplicationTitle</PageTitle>
 
 <div class="page-container">
-    <Row Style="width: 100%;">
-        <Column ColumnSize="ColumnSize.Is10.OnDesktop.Is12.OnTablet.Is12.OnMobile" Style="margin: 0 auto;">
-            <h1>Tell me a Joke, Dad!</h1>
-            <LoadingIndicator @ref="jokeLoadingIndicator">
-                <div class="joke-container">
-                    <ul id="jokeList" style="list-style-type: none; padding: 0;">
-                      <li><JokeDisplayComponent myJoke="@myJoke" /></li>
-                    </ul>
-                </div>
-            </LoadingIndicator>
+    <MudContainer MaxWidth="MaxWidth.Large">
+        <h1>Tell me a Joke, Dad!</h1>
+        @if (jokeLoading)
+        {
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        }
+        else
+        {
+            <div class="joke-container">
+                <ul id="jokeList" style="list-style-type: none; padding: 0;">
+                  <li><JokeDisplayComponent myJoke="@myJoke" /></li>
+                </ul>
+            </div>
+        }
             <div class="button-group">
                 <button class="btn btn-primary" @onclick="ExecuteRandom">Tell me another one!</button>
 
@@ -28,7 +32,12 @@
                 {
                   <p style="font-size: 0.9em; color: #718096;">@jokeImageDescription</p>
                 }
-                <LoadingIndicator @ref="imageLoadingIndicator">
+                @if (imageLoading)
+                {
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                }
+                else
+                {
                     @if (!string.IsNullOrEmpty(jokeImageUrl)) {
                       <img src="@jokeImageUrl" class="joke-image" width="400" style="cursor: pointer;" @onclick="ShowImageDescriptionPopup" />
                     }
@@ -36,22 +45,19 @@
                     {
                       <p style="font-size: 0.9em; color: #718096;">@jokeImageDescription</p>
                     }
-                </LoadingIndicator>
+                }
             </div>
-        <Modal @ref="imageDescriptionPopup">
-            <ModalContent Centered>
-                <ModalHeader>
-                    <ModalTitle>Image Description</ModalTitle>
-                    <CloseButton />
-                </ModalHeader>
-                <ModalBody>
-                    <p>@jokeImageDescription</p>
-                </ModalBody>
-                <ModalFooter>
-                    <Button Color="Color.Secondary" Clicked="@CloseImageDescriptionPopup">Close</Button>
-                </ModalFooter>
-            </ModalContent>
-        </Modal>
+        <MudDialog @bind-Visible="@imageDescriptionDialogVisible">
+            <TitleContent>
+                <MudText Typo="Typo.h6">Image Description</MudText>
+            </TitleContent>
+            <DialogContent>
+                <p>@jokeImageDescription</p>
+            </DialogContent>
+            <DialogActions>
+                <MudButton Color="Color.Secondary" OnClick="@CloseImageDescriptionPopup">Close</MudButton>
+            </DialogActions>
+        </MudDialog>
 
 
 
@@ -78,7 +84,5 @@
                     }
                 </div>
             }
-        </Column>
-    </Row>
+    </MudContainer>
 </div>
-<SnackbarStack @ref="snackbarstack" Location="SnackbarStackLocation.BottomEnd" />

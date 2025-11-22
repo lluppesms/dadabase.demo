@@ -6,21 +6,20 @@
 
     <div class="search-form">
         <div style="margin-bottom: 1.5rem;">
-            <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Search For:</label>
-            <input type="text" id="inputText" @bind="SearchTerm" class="form-control search-input" @onkeydown="@CheckForEnterKey" placeholder="Enter search term..." />
+            <MudTextField @bind-Value="SearchTerm" Label="Search For" Variant="Variant.Outlined" 
+                          OnKeyDown="@CheckForEnterKey" Placeholder="Enter search term..." />
         </div>
         <div style="margin-bottom: 1.5rem;">
-            <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Category:</label>
-            @* If you want multi-select:  <Select TValue="string" SelectedValuesChanged="@OnMultiSelectValuesChanged" Multiple> *@
-            <Select TValue="string" SelectedValueChanged="@OnSelectedValueChanged" Style="border-radius: 12px; border: 2px solid rgba(102, 126, 234, 0.2);">
-                <SelectItem Value="AllJokesConstant" selected>All Categories</SelectItem>
+            <MudSelect T="string" @bind-Value="SelectedCategory" Label="Category" Variant="Variant.Outlined"
+                       Style="border-radius: 12px;">
+                <MudSelectItem Value="@AllJokesConstant">All Categories</MudSelectItem>
                 @foreach (var category in JokeCategories)
                 {
-                    <SelectItem Value="@category">@category</SelectItem>
+                    <MudSelectItem Value="@category">@category</MudSelectItem>
                 }
-            </Select>
+            </MudSelect>
         </div>
-        <button class="btn btn-primary" id="btnSearch" @onclick="ExecuteSearch" @onkeydown="@CheckForEnterKey">Search</button>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" id="btnSearch" OnClick="ExecuteSearch">Search</MudButton>
     </div>
 
     <div class="search-results">

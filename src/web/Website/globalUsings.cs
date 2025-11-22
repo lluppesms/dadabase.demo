@@ -1,10 +1,7 @@
 ﻿global using AutoMapper;
 global using Blazored.LocalStorage;
-global using Blazorise;
-global using Blazorise.Bootstrap5;
-global using Blazorise.Icons.FontAwesome;
-global using Blazorise.LoadingIndicator;
-global using Blazorise.Snackbar;
+global using MudBlazor;
+global using MudBlazor.Services;
 global using CurrieTechnologies.Razor.SweetAlert2;
 global using DadABase.Data;
 global using DadABase.Helpers;

@@ -19,11 +19,11 @@ public partial class Index : ComponentBase
     [Inject] IJSRuntime JsInterop { get; set; }
     [Inject] IJokeRepository JokeRepository { get; set; }
     [Inject] IAIHelper GenAIAgent { get; set; }
+    [Inject] ISnackbar Snackbar { get; set; }
 
     private Joke myJoke = new();
     private readonly bool addDelay = false;
-    private LoadingIndicator jokeLoadingIndicator;
-    private SnackbarStack snackbarstack;
+    private bool jokeLoading = false;
 
     // Store the last 10 jokes
     private List<Joke> jokeHistory = new();
@@ -35,8 +35,8 @@ public partial class Index : ComponentBase
     private string jokeImageUrl = string.Empty;
     private bool showButtons = false;
     private bool imageGenerating = false;
-    private LoadingIndicator imageLoadingIndicator;
-    private Modal imageDescriptionPopup;
+    private bool imageLoading = false;
+    private bool imageDescriptionDialogVisible = false;
 
     /// <summary>
     /// Initialization
@@ -58,7 +58,9 @@ public partial class Index : ComponentBase
         showButtons = false;
         imageDescriptionGenerated = false;
         myJoke = new();
-        await jokeLoadingIndicator.Show();
+        jokeLoading = true;
+        StateHasChanged();
+        
         var timer = Stopwatch.StartNew();
         if (addDelay) { await Task.Delay(500).ConfigureAwait(false); } // I want to see the spinners for now...
         myJoke = JokeRepository.GetRandomJoke();
@@ -70,8 +72,8 @@ public partial class Index : ComponentBase
                 jokeHistory.RemoveAt(jokeHistory.Count - 1);
         }
         var elaspsedMS = timer.ElapsedMilliseconds;
-        await jokeLoadingIndicator.Hide().ConfigureAwait(false);
-        await snackbarstack.PushAsync($"Joke Elapsed: {(decimal)elaspsedMS / 1000m:0.0} seconds", SnackbarColor.Info).ConfigureAwait(false);
+        jokeLoading = false;
+        Snackbar.Add($"Joke Elapsed: {(decimal)elaspsedMS / 1000m:0.0} seconds", Severity.Info);
 
         jokeImageMessage = string.Empty;
         jokeImageUrl = string.Empty;
@@ -79,7 +81,7 @@ public partial class Index : ComponentBase
 
         jokeImageMessage = "🚀 Generating a mental image of this scenario...";
 
-        await imageLoadingIndicator.Show();
+        imageLoading = true;
         StateHasChanged();
 
         jokeImageUrl = string.Empty;
@@ -90,21 +92,22 @@ public partial class Index : ComponentBase
         jokeImageMessage = string.Empty;
         imageDescriptionGenerated = success;
         showButtons = true;
-        await imageLoadingIndicator.Hide();
+        imageLoading = false;
+        StateHasChanged();
     }
     private async Task CreatePicture()
     {
         showButtons = false;
         imageGenerating = true;
         jokeImageMessage = "🚀 OK - I've got an idea! Let me draw that for you! (gimme a sec...)";
-        await imageLoadingIndicator.Show();
+        imageLoading = true;
         StateHasChanged();
 
         (jokeImageUrl, var genSuccess, var genErrorMessage) = await GenAIAgent.GenerateAnImage(jokeImageDescription);
         jokeImageMessage = genSuccess ? string.Empty : genErrorMessage;
         showButtons = true;
         imageGenerating = false;
-        await imageLoadingIndicator.Hide();
+        imageLoading = false;
         StateHasChanged();
     }
     private void ToggleHistory()
@@ -114,11 +117,11 @@ public partial class Index : ComponentBase
 
     private void ShowImageDescriptionPopup()
     {
-        imageDescriptionPopup.Show();
+        imageDescriptionDialogVisible = true;
     }
 
     private void CloseImageDescriptionPopup()
     {
-        imageDescriptionPopup.Hide();
+        imageDescriptionDialogVisible = false;
     }
 }

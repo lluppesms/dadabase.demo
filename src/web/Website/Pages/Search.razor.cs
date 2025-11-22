@@ -17,6 +17,7 @@ public partial class Search : ComponentBase
     [Inject] IJSRuntime JsInterop { get; set; }
 
     private string SearchTerm = string.Empty;
+    private string SelectedCategory = "ALL";
     private IReadOnlyList<string> SelectedCategoryList = null;
     private List<Joke> myJokes = new();
     private List<string> JokeCategories = new();
@@ -33,7 +34,7 @@ public partial class Search : ComponentBase
         {
             await JsInterop.InvokeVoidAsync("syncHeaderTitle");
             JokeCategories = JokeRepository.GetJokeCategories().ToList();
-            //SelectedCategory = "ALL";
+            SelectedCategory = AllJokesConstant;
             await JsInterop.InvokeVoidAsync("focusOnInputField", "inputText");
             StateHasChanged();
         }
@@ -58,9 +59,7 @@ public partial class Search : ComponentBase
 
     private async void ExecuteSearch()
     {
-        // join the Selected Categories into a comma-delimited string
-        var selectedCategories = SelectedCategoryList != null ? string.Join(",", SelectedCategoryList) : "ALL";
-        selectedCategories = selectedCategories.StartsWith($"{AllJokesConstant},") ? AllJokesConstant : selectedCategories;
+        var selectedCategories = !string.IsNullOrEmpty(SelectedCategory) ? SelectedCategory : AllJokesConstant;
 
         await JsInterop.InvokeVoidAsync("focusOnInputField", "btnSearch");
         await JsInterop.InvokeVoidAsync("focusOnInputField", "inputText");

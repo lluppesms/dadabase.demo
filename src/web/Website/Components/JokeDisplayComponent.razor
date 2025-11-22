@@ -33,12 +33,11 @@
     @if (supportsRatings && !string.IsNullOrEmpty(myFullText))
     {
         <div>
-            <Rating Color="Color.Primary" MaxValue="5" @bind-SelectedValue="@displayRatingValue" onclick="@((MouseEventArgs e) => SubmitRating(e))" />
+            <MudRating @bind-SelectedValue="@displayRatingValue" MaxValue="5" Color="Color.Primary" />
         </div>
     }
     *@
 }
-<SnackbarStack @ref="snackbarstack" Location="SnackbarStackLocation.BottomEnd" />
 
 @code {
     [Parameter]
@@ -47,12 +46,12 @@
     [Inject] IJokeRepository JokeRepository { get; set; }
     [Inject] HttpContextAccessor Context { get; set; }
     [Inject] SweetAlertService SweetAlert { get; set; }
+    [Inject] ISnackbar Snackbar { get; set; }
 
     private string myJokeText = string.Empty;
     private string myFullText = string.Empty;
     //private int displayRatingValue = 0;
     //private bool supportsRatings = false;
-    private SnackbarStack snackbarstack;
     // private bool showJokeEditor = false;
     // private Joke editJoke = new Joke();
 
@@ -107,7 +106,7 @@
     //     var userName = userIdentity != null ? userIdentity.Identity.Name : "ANON";
     //     var newAverageRatingValue = JokeRepository.AddRating(newJokeRatingRecord, userName);
     //     displayRatingValue = Convert.ToInt16(Math.Round(newAverageRatingValue));
-    //     await snackbarstack.PushAsync($"Your Rating: {newValue}, Average Rating: {newAverageRatingValue}", SnackbarColor.Info).ConfigureAwait(false);
+    //     Snackbar.Add($"Your Rating: {newValue}, Average Rating: {newAverageRatingValue}", Severity.Info);
     //     _ = await Task.FromResult(true);
     // }
 
@@ -118,7 +117,7 @@
     //     editJoke.JokeId = myJoke.JokeId;
     //     editJoke.JokeTxt = myJoke.JokeTxt;
     //     editJoke.JokeTxt = myJoke.JokeTxt;
-    //     await snackbarstack.PushAsync($"Editor is not complete and changes will not be saved!", SnackbarColor.Warning).ConfigureAwait(false);
+    //     Snackbar.Add($"Editor is not complete and changes will not be saved!", Severity.Warning);
     //     _ = await Task.FromResult(true);
     // }
     // private async void JokeEditorSave()
@@ -127,7 +126,7 @@
     //     myJoke.JokeTxt = editJoke.JokeTxt;
     //     // TODO: put code here to update the database...
     //     // HOWEVER... the current edit form blows away all the line breaks and other formatting so it's not ready for prime time...!
-    //     await snackbarstack.PushAsync("This feature is not complete and the edits have NOT been saved!", SnackbarColor.Danger).ConfigureAwait(false);
+    //     Snackbar.Add("This feature is not complete and the edits have NOT been saved!", Severity.Error);
     //     showJokeEditor = !showJokeEditor;
     // }
     // private void JokeEditorCancel()
