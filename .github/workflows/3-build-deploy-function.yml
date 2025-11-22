@@ -10,38 +10,25 @@ on:
   workflow_dispatch:
     inputs:
       deployEnvironment:
-        description: 'Environment'
-        required: true
+        description: Environment
         default: 'dev' 
-        type: choice
-        options:
-          - dev
-          - qa
-          - prod
+        type: environment
       runSecurityScan:
-        description: 'Run Security Scan'
-        required: false
-        default: 'false'
-        type: choice
-        options:
-          - true
-          - false
-      runBuildDeploy:
-        description: 'Build and Deploy App'
-        required: false
-        default: 'true'
-        type: choice
-        options:
-          - true
-          - false
+        description: Run Security Scan
+        default: false
+        type: boolean
+      runBuild:
+        description: Build App
+        default: true
+        type: boolean
+      runDeploy:
+        description: Deploy App
+        default: true
+        type: boolean
       runSmokeTest:
-        description: 'Run Smoke Tests'
-        required: false
-        default: 'true'
-        type: choice
-        options:
-          - true
-          - false
+        description: Run Smoke Tests
+        default: false
+        type: boolean
       logLevel:
         description: 'Log level'     
         required: true
@@ -58,10 +45,10 @@ permissions:
   contents: write
   actions: read
   pages: write
+  checks: write  # needed to write test results back to the run
   issues: read
   pull-requests: read
   security-events: write # needed for security scan to write to logs
-  checks: write  # needed to write test results back to the run
 
 # ------------------------------------------------------------------------------------------------------------------------
 jobs:
@@ -70,20 +57,21 @@ jobs:
     uses: ./.github/workflows/template-scan-code.yml
     secrets: inherit
     with:
-      runSecurityScan: ${{ inputs.runSecurityScan == 'true' }}
+      runMSDevSecOpsScan: ${{ inputs.runSecurityScan }}
+      runGHASScan: ${{ inputs.runSecurityScan }}
 
 # ------------------------------------------------------------------------------------------------------------------------
   build-app:
     name: Build Function App
     uses: ./.github/workflows/template-function-app-build.yml
-    if: inputs.runBuildDeploy == 'true' || inputs.runSmokeTest == 'true'
+    if: inputs.runBuild || inputs.runDeploy || inputs.runSmokeTest
     secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}
-      rootDirectory: 'src/DadABase.Function'
-      projectName: 'DadABase.Function.Net8'
-      testDirectory: 'src/DadABase.Function.Tests'
-      testProjectName: 'DadABase.Tests'
+      rootDirectory: '${{ vars.FUNCTION_APP_PROJECT_FOLDER_NAME }}'
+      projectName: '${{ vars.FUNCTION_APP_PROJECT_NAME }}'
+      testDirectory: '${{ vars.FUNCTION_APP_TEST_FOLDER_NAME }}'
+      testProjectName: '${{ vars.FUNCTION_APP_TEST_PROJECT_NAME }}'
       testApplication: true
       listFilesAfterBuild: true
 
@@ -92,7 +80,7 @@ jobs:
     name: Deploy App
     needs: build-app
     uses: ./.github/workflows/template-function-app-deploy.yml
-    if: inputs.runBuildDeploy == 'true' || inputs.runSmokeTest == 'true'
+    if: inputs.runDeploy || inputs.runSmokeTest
     secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}
@@ -101,7 +89,7 @@ jobs:
   run-smoke-test:
     name: Smoke Test ${{ inputs.deployEnvironment }}
     uses: ./.github/workflows/template-smoke-test.yml
-    if: inputs.runSmokeTest == 'true'
+    if: inputs.runSmokeTest
     needs: deploy-app
     secrets: inherit
     with:
