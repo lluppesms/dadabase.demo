@@ -33,9 +33,9 @@ Secret Values:
 ``` bash
 gh auth login
 
-gh variable set APP_NAME -b "xxx-dadabase"
-gh variable set RESOURCEGROUP_LOCATION -b "eastus"
-gh variable set RESOURCEGROUP_PREFIX -b "rg_dadabase-webg" 
+gh variable set APP_NAME -b "full-dadabase"
+gh variable set RESOURCEGROUP_LOCATION -b "centralus"
+gh variable set RESOURCEGROUP_PREFIX -b "rg_dadabase-full" 
 gh variable set API_KEY -b "somesecretstring"
 
 gh secret set LOGIN_CLIENTID -b "<yourADClientId>"
@@ -43,11 +43,9 @@ gh secret set LOGIN_DOMAIN -b "<yourdomain>.onmicrosoft.com"
 gh secret set LOGIN_INSTANCEENDPOINT -b "https://login.microsoftonline.com/"
 gh secret set LOGIN_TENANTID -b "<yourTenantId>"
 
-gh variable set RESOURCEGROUP_LOCATION -b "eastus"
-
-gh variable set WEB_APP_PROJECT_FOLDER_NAME -b "src\web\Website\DadABase.Web"
+gh variable set WEB_APP_PROJECT_FOLDER_NAME -b "src\web\Website"
 gh variable set WEB_APP_PROJECT_NAME -b "DadABase.Web"
-gh variable set WEB_APP_TEST_FOLDER_NAME -b "src\web\Tests\DadABase.Tests"
+gh variable set WEB_APP_TEST_FOLDER_NAME -b "src\web\Tests"
 gh variable set WEB_APP_TEST_PROJECT_NAME -b "DadABase.Tests"
 
 gh variable set FUNCTION_APP_PROJECT_FOLDER_NAME -b "src\function\DadABase.Function"
