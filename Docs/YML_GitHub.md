@@ -144,8 +144,8 @@ jobs:
   - `AZURE_TENANT_ID`: Azure tenant ID
 
 - **Environment Variables**:
-  - `RESOURCEGROUP_PREFIX`: Prefix for resource group names
-  - `RESOURCEGROUP_LOCATION`: Azure region for deployments
+  - `RESOURCE_GROUP_PREFIX`: Prefix for resource group names
+  - `RESOURCE_GROUP_LOCATION`: Azure region for deployments
 
 ### Variable Scope
 - **Organization-Level**: Shared across repositories
