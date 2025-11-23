@@ -13,10 +13,10 @@ on:
         description: Environment
         default: 'dev' 
         type: environment
-      runSecurityScan:
-        description: Run Security Scan
-        default: false
+      createResourceGroup:
+        description: Create Resource Group?
         type: boolean
+        default: false
       runCreateInfra:
         description: Deploy Bicep
         default: true
@@ -28,13 +28,13 @@ on:
         options:
           - create
           - whatIf
-      createResourceGroup:
-        description: Create Resource Group?
-        type: boolean
-        default: false
       runBuildDeploy:
-        description: Build and Deploy App
+        description: Build and Deploy Web App
         default: true
+        type: boolean
+      runSecurityScan:
+        description: Run Security Scan
+        default: false
         type: boolean
       runSmokeTest:
         description: Run Smoke Tests
