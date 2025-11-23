@@ -19,9 +19,9 @@ param webStorageSku string = 'Standard_LRS'
 param webApiKey string = ''
 
 param functionStorageSku string = 'Standard_LRS'
-param functionAppSku string = 'B1' //  'Y1'
-param functionAppSkuFamily string = 'B' // 'Y'
-param functionAppSkuTier string = 'Dynamic'
+// param functionAppSku string = 'B1' //  'Y1'
+// param functionAppSkuFamily string = 'B' // 'Y'
+// param functionAppSkuTier string = 'Dynamic'
 param environmentSpecificFunctionName string = ''
 
 param adInstance string = environment().authentication.loginEndpoint // 'https://login.microsoftonline.com/'
