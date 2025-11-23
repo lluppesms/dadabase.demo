@@ -10,46 +10,36 @@ on:
   workflow_dispatch:
     inputs:
       deployEnvironment:
-        description: 'Environment'
-        required: true
+        description: Environment
         default: 'dev' 
-        type: choice
-        options:
-          - dev
-          - qa
-          - prod
-      runSecurityScan:
-        description: 'Run Security Scan'
-        required: false
-        default: 'false'
-        type: choice
-        options:
-          - true
-          - false
+        type: environment
+      createResourceGroup:
+        description: Create Resource Group?
+        type: boolean
+        default: true
       runCreateInfra:
-        description: 'Deploy Bicep'
-        required: false
-        default: 'true'
+        description: Deploy Bicep
+        default: true
+        type: boolean
+      bicepDeploymentMode:
+        description: Bicep Mode
+        default: create
         type: choice
         options:
-          - true
-          - false
+          - create
+          - whatIf
       runBuildDeploy:
-        description: 'Build and Deploy App'
-        required: false
-        default: 'true'
-        type: choice
-        options:
-          - true
-          - false
+        description: 'Build and Deploy Function App'
+        default: true
+        type: boolean
+      runSecurityScan:
+        description: Run Security Scan
+        default: false
+        type: boolean
       runSmokeTest:
         description: 'Run Smoke Tests'
-        required: false
-        default: 'true'
-        type: choice
-        options:
-          - true
-          - false
+        default: false
+        type: boolean
       logLevel:
         description: 'Log level'     
         required: false
@@ -77,30 +67,16 @@ jobs:
     name: Scan Source Code
     uses: ./.github/workflows/template-scan-code.yml
     secrets: inherit
+    if: inputs.runSecurityScan
     with:
-      runSecurityScan: ${{ inputs.runSecurityScan == 'true' }}
-
-# ------------------------------------------------------------------------------------------------------------------------
-  build-app:
-    name: Build Function App
-    uses: ./.github/workflows/template-function-app-build.yml
-    if: inputs.runBuildDeploy == 'true' || inputs.runSmokeTest == 'true'
-    secrets: inherit
-    with:
-      envCode: ${{ inputs.deployEnvironment }}
-      rootDirectory: 'src/DadABase.Function'
-      projectName: 'DadABase.Function.Net8'
-      testDirectory: 'src/DadABase.Function.Tests'
-      testProjectName: 'DadABase.Tests'
-      testApplication: true
-      listFilesAfterBuild: true
+      runMSDevSecOpsScan: ${{ inputs.runSecurityScan }}
+      runGHASScan: ${{ inputs.runSecurityScan }}
 
 # ------------------------------------------------------------------------------------------------------------------------
   create-infra:
     name: Create Infra ${{ inputs.deployEnvironment }}
-    needs: build-app
     uses: ./.github/workflows/template-create-infra.yml
-    if: inputs.runCreateInfra == 'true' || inputs.runBuildDeploy == 'true'
+    if: inputs.runCreateInfra || inputs.runBuildDeploy
     secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}
@@ -108,13 +84,32 @@ jobs:
       templateFile: 'main.bicep'
       parameterFile: 'main.gha.bicepparam'
       parameterFileReplaceTokens: 'true'
+      requestorName: ${{ github.actor }}
+      createResourceGroup: ${{ inputs.createResourceGroup }}
+      bicepDeploymentMode: ${{ inputs.bicepDeploymentMode }}
 
 # ------------------------------------------------------------------------------------------------------------------------
-  deploy-app:
-    name: Deploy App
+  build-function:
+    name: Build Function App
+    uses: ./.github/workflows/template-function-app-build.yml
+    if: inputs.runBuildDeploy || inputs.runSmokeTest
     needs: create-infra
-    if: inputs.runBuildDeploy == 'true' || inputs.runSmokeTest == 'true'
+    secrets: inherit
+    with:
+      envCode: ${{ inputs.deployEnvironment }}
+      rootDirectory: '${{ vars.FUNCTION_APP_PROJECT_FOLDER_NAME }}'
+      projectName: '${{ vars.FUNCTION_APP_PROJECT_NAME }}'
+      testDirectory: '${{ vars.FUNCTION_APP_TEST_FOLDER_NAME }}'
+      testProjectName: '${{ vars.FUNCTION_APP_TEST_PROJECT_NAME }}'
+      testApplication: true
+      listFilesAfterBuild: true
+
+# ------------------------------------------------------------------------------------------------------------------------
+  deploy-function:
+    name: Deploy Function App
     uses: ./.github/workflows/template-function-app-deploy.yml
+    if: inputs.runBuildDeploy || inputs.runSmokeTest
+    needs: build-function
     secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}
@@ -123,10 +118,10 @@ jobs:
   run-smoke-test:
     name: Smoke Test ${{ inputs.deployEnvironment }}
     uses: ./.github/workflows/template-smoke-test.yml
-    if: inputs.runSmokeTest == 'true'
-    needs: deploy-app
+    if: inputs.runSmokeTest
+    needs: deploy-function
     secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}
-      testPath: 'playwright/api-tests'
-      testType: 'api'
+      testPath: 'playwright/function-tests'
+      testType: 'function'

@@ -14,6 +14,10 @@ on:
         required: true
         default: 'dev' 
         type: environment
+      createResourceGroup:
+        description: Create Resource Group?
+        type: boolean
+        default: true
       bicepDeploymentMode:
         description: Bicep Mode
         default: create
@@ -21,10 +25,6 @@ on:
         options:
           - create
           - whatIf
-      createResourceGroup:
-        description: Create Resource Group?
-        type: boolean
-        default: false
       runSecurityScan:
         description: Run Security Scan
         type: boolean

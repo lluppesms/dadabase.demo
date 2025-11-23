@@ -16,7 +16,7 @@ on:
       createResourceGroup:
         description: Create Resource Group?
         type: boolean
-        default: false
+        default: true
       runCreateInfra:
         description: Deploy Bicep
         default: true
@@ -90,7 +90,7 @@ jobs:
       bicepDeploymentMode: ${{ inputs.bicepDeploymentMode }}
 
 # ------------------------------------------------------------------------------------------------------------------------
-  build-app:
+  build-web-app:
     name: Build WebApp
     uses: ./.github/workflows/template-webapp-build.yml
     if: inputs.runBuildDeploy|| inputs.runSmokeTest
@@ -106,11 +106,11 @@ jobs:
       listFilesAfterBuild: true
 
 # ------------------------------------------------------------------------------------------------------------------------
-  deploy-app:
+  deploy-web-app:
     name: Deploy WebApp ${{ inputs.deployEnvironment }}
     uses: ./.github/workflows/template-webapp-deploy.yml
     if: inputs.runBuildDeploy || inputs.runSmokeTest
-    needs: build-app
+    needs: build-web-app
     secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}
@@ -121,7 +121,7 @@ jobs:
     name: Smoke Test ${{ inputs.deployEnvironment }}
     uses: ./.github/workflows/template-smoke-test.yml
     if: inputs.runSmokeTest
-    needs: deploy-app
+    needs: deploy-web-app
     secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}
