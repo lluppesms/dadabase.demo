@@ -145,7 +145,7 @@ module keyVaultModule './security/keyvault.bicep' = {
     location: location
     commonTags: commonTags
     adminUserObjectIds: [ adminUserId ]
-    applicationUserObjectIds: [ ]
+    applicationUserObjectIds: [ identity.outputs.managedIdentityPrincipalId ]
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
     managedIdentityName: identity.outputs.managedIdentityName
     managedIdentityPrincipalId: identity.outputs.managedIdentityPrincipalId
@@ -198,6 +198,8 @@ module webSiteModule 'app/website.bicep' = {
     commonTags: commonTags
     environmentCode: environmentCode
     webAppKind: webAppKind
+    managedIdentityId: identity.outputs.managedIdentityId
+    managedIdentityPrincipalId: identity.outputs.managedIdentityPrincipalId
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
     appServicePlanName: appServicePlanModule.outputs.name
     appServicePlanResourceGroupName: appServicePlanModule.outputs.resourceGroupName
