@@ -27,8 +27,12 @@ on:
         options:
           - create
           - whatIf
-      runBuildDeploy:
-        description: Build and Deploy Function App
+      runBuild:
+        description: Build Function App
+        default: true
+        type: boolean
+      runDeploy:
+        description: Deploy Function App
         default: true
         type: boolean
       runSecurityScan:
@@ -76,9 +80,9 @@ jobs:
   create-infra:
     name: Create Infra ${{ inputs.deployEnvironment }}
     uses: ./.github/workflows/template-create-infra.yml
-    if: inputs.runCreateInfra || inputs.runBuildDeploy
     secrets: inherit
     with:
+      runCreateInfra: ${{ inputs.runCreateInfra }}
       envCode: ${{ inputs.deployEnvironment }}
       templatePath: './infra/Bicep/'
       templateFile: 'main.bicep'
@@ -92,7 +96,7 @@ jobs:
   build-function:
     name: Build Function App
     uses: ./.github/workflows/template-function-app-build.yml
-    if: inputs.runBuildDeploy || inputs.runSmokeTest
+    if: inputs.runBuild || inputs.runDeploy
     needs: create-infra
     secrets: inherit
     with:
@@ -108,7 +112,7 @@ jobs:
   deploy-function:
     name: Deploy Function App
     uses: ./.github/workflows/template-function-app-deploy.yml
-    if: inputs.runBuildDeploy || inputs.runSmokeTest
+    if: inputs.runDeploy
     needs: build-function
     secrets: inherit
     with:

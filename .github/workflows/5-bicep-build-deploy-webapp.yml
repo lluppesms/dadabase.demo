@@ -28,8 +28,12 @@ on:
         options:
           - create
           - whatIf
-      runBuildDeploy:
-        description: Build and Deploy Web App
+      runBuild:
+        description: Build Web App
+        default: true
+        type: boolean
+      runDeploy:
+        description: Deploy Web App
         default: true
         type: boolean
       runSecurityScan:
@@ -77,9 +81,9 @@ jobs:
   create-infra:
     name: Create Infra ${{ inputs.deployEnvironment }}
     uses: ./.github/workflows/template-create-infra.yml
-    if: inputs.runCreateInfra || inputs.runBuildDeploy
     secrets: inherit
     with:
+      runCreateInfra: ${{ inputs.runCreateInfra }}
       envCode: ${{ inputs.deployEnvironment }}
       templatePath: './infra/Bicep/'
       templateFile: 'main.bicep'
@@ -93,7 +97,7 @@ jobs:
   build-web-app:
     name: Build WebApp
     uses: ./.github/workflows/template-webapp-build.yml
-    if: inputs.runBuildDeploy|| inputs.runSmokeTest
+    if: inputs.runBuild || inputs.runDeploy
     needs: create-infra
     secrets: inherit
     with:
@@ -109,7 +113,7 @@ jobs:
   deploy-web-app:
     name: Deploy WebApp ${{ inputs.deployEnvironment }}
     uses: ./.github/workflows/template-webapp-deploy.yml
-    if: inputs.runBuildDeploy || inputs.runSmokeTest
+    if: inputs.runDeploy
     needs: build-web-app
     secrets: inherit
     with:
