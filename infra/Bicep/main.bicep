@@ -127,15 +127,15 @@ module appRoleAssignments './security/roleassignments.bicep' = if (addRoleAssign
     keyVaultName:  keyVaultModule.outputs.name
   }
 }
-module adminRoleAssignments './security/roleassignments.bicep' = if (addRoleAssignments) {
-  name: 'userRoleAssignments${deploymentSuffix}'
-  params: {
-    identityPrincipalId: adminUserId
-    principalType: 'User'
-    storageAccountName: functionStorageModule.outputs.name
-    keyVaultName:  keyVaultModule.outputs.name
-  }
-}
+// module adminRoleAssignments './security/roleassignments.bicep' = if (addRoleAssignments) {
+//   name: 'userRoleAssignments${deploymentSuffix}'
+//   params: {
+//     identityPrincipalId: adminUserId
+//     principalType: 'User'
+//     storageAccountName: functionStorageModule.outputs.name
+//     keyVaultName:  keyVaultModule.outputs.name
+//   }
+// }
 
 
 // --------------------------------------------------------------------------------
