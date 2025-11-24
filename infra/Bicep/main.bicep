@@ -19,9 +19,9 @@ param webStorageSku string = 'Standard_LRS'
 param webApiKey string = ''
 
 param functionStorageSku string = 'Standard_LRS'
-// param functionAppSku string = 'B1' //  'Y1'
-// param functionAppSkuFamily string = 'B' // 'Y'
-// param functionAppSkuTier string = 'Dynamic'
+param functionAppSku string = 'B1' //  'Y1'
+param functionAppSkuFamily string = 'B' // 'Y'
+param functionAppSkuTier string = 'Dynamic'
 param environmentSpecificFunctionName string = ''
 
 param adInstance string = environment().authentication.loginEndpoint // 'https://login.microsoftonline.com/'
@@ -106,6 +106,7 @@ module functionStorageModule 'app/storageaccount.bicep' = {
     commonTags: commonTags
     allowNetworkAccess: 'Allow'
     publicNetworkAccess: 'Enabled'
+    addSecurityControlIgnoreTag: true
   }
 }
 
@@ -240,47 +241,45 @@ module webSiteAppSettingsModule 'app/websiteappsettings.bicep' = {
   }
 }
 
-// --------------------------------------------------------------------------------
-// Creation of storage file share failed with: 'The remote server returned an error: (403) Forbidden.'. Please check if the storage account is accessible.
-// --------------------------------------------------------------------------------
-// module functionModule 'app/functionapp.bicep' = {
-//   name: 'function${deploymentSuffix}'
-//   dependsOn: [ appRoleAssignments ]
-//   params: {
-//     functionAppName: resourceNames.outputs.functionAppName
-//     functionAppServicePlanName: appServicePlanModule.outputs.name // resourceNames.outputs.functionAppServicePlanName
-//     functionInsightsName: resourceNames.outputs.functionInsightsName
-//     managedIdentityId: identity.outputs.managedIdentityId
-//     keyVaultName: keyVaultModule.outputs.name
+//--------------------------------------------------------------------------------
+module functionModule 'app/functionapp.bicep' = {
+  name: 'function${deploymentSuffix}'
+  dependsOn: [ appRoleAssignments ]
+  params: {
+    functionAppName: resourceNames.outputs.functionAppName
+    functionAppServicePlanName: appServicePlanModule.outputs.name
+    functionInsightsName: resourceNames.outputs.functionInsightsName
+    managedIdentityId: identity.outputs.managedIdentityId
+    keyVaultName: keyVaultModule.outputs.name
 
-//     appInsightsLocation: location
-//     location: location
-//     commonTags: commonTags
+    appInsightsLocation: location
+    location: location
+    commonTags: commonTags
 
-//     functionKind: 'functionapp,linux'
-//     functionAppSku: functionAppSku
-//     functionAppSkuFamily: functionAppSkuFamily
-//     functionAppSkuTier: functionAppSkuTier
-//     functionStorageAccountName: functionStorageModule.outputs.name
-//     workspaceId: logAnalyticsWorkspaceModule.outputs.id
-//   }
-// }
+    functionKind: 'functionapp,linux'
+    functionAppSku: functionAppSku
+    functionAppSkuFamily: functionAppSkuFamily
+    functionAppSkuTier: functionAppSkuTier
+    functionStorageAccountName: functionStorageModule.outputs.name
+    workspaceId: logAnalyticsWorkspaceModule.outputs.id
+  }
+}
 
-// module functionAppSettingsModule 'app/functionappsettings.bicep' = {
-//   name: 'functionAppSettings${deploymentSuffix}'
-//   params: {
-//     functionAppName: functionModule.outputs.name
-//     functionStorageAccountName: functionModule.outputs.storageAccountName
-//     functionInsightsKey: functionModule.outputs.insightsKey
-//     keyVaultName: keyVaultModule.outputs.name
-//     customAppSettings: {
-//       OpenApi__HideSwaggerUI: 'false'
-//       OpenApi__HideDocument: 'false'
-//       OpenApi__DocTitle: 'Isolated .NET10 Functions Demo APIs'
-//       OpenApi__DocDescription: 'This repo is an example of how to use Isolated .NET10 Azure Functions'
-//     }
-//   }
-// }
+module functionAppSettingsModule 'app/functionappsettings.bicep' = {
+  name: 'functionAppSettings${deploymentSuffix}'
+  params: {
+    functionAppName: functionModule.outputs.name
+    functionStorageAccountName: functionModule.outputs.storageAccountName
+    functionInsightsKey: functionModule.outputs.insightsKey
+    keyVaultName: keyVaultModule.outputs.name
+    customAppSettings: {
+      OpenApi__HideSwaggerUI: 'false'
+      OpenApi__HideDocument: 'false'
+      OpenApi__DocTitle: 'Isolated .NET10 Functions Demo APIs'
+      OpenApi__DocDescription: 'This repo is an example of how to use Isolated .NET10 Azure Functions'
+    }
+  }
+}
 
 // --------------------------------------------------------------------------------
 output SUBSCRIPTION_ID string = subscription().subscriptionId

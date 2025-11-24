@@ -14,10 +14,12 @@ param containerNames array = ['input','output']
 param publicNetworkAccess string = 'Enabled'
 @allowed(['Allow','Deny'])
 param allowNetworkAccess string = 'Deny' // except for Azure Services
+param addSecurityControlIgnoreTag bool = false
 
 // --------------------------------------------------------------------------------
 var templateTag = { TemplateFile: '~storageAccount.bicep' }
-var tags = union(commonTags, templateTag)
+var securityControlIgnoreTag = addSecurityControlIgnoreTag ? { SecurityControl: 'Ignore' } : {}
+var tags = union(commonTags, templateTag, securityControlIgnoreTag)
 
 // --------------------------------------------------------------------------------
 resource storageAccountResource 'Microsoft.Storage/storageAccounts@2023-01-01' = {
