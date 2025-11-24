@@ -3,8 +3,8 @@
 # ------------------------------------------------------------------------------------------------------------------------
 # FYI: You need to set up some secrets before running this workflows - see CreateGitHubSecrets.md for details.
 # ------------------------------------------------------------------------------------------------------------------------
-name: 7.pr.scan.build
-run-name: '7 - PR Scan & Build'
+name: 5.pr.scan.build
+run-name: '5 - PR Scan & Build'
 
 on: 
   pull_request:

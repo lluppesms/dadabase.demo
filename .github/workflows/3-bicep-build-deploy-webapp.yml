@@ -1,10 +1,11 @@
 # ------------------------------------------------------------------------------------------------------------------------
-# GHA Workflow to deploy Azure Resources and Function App
+# GHA Workflow to deploy Azure Resources and WebApp
 # ------------------------------------------------------------------------------------------------------------------------
 # FYI: You need to set up some secrets before running this workflows - see CreateGitHubSecrets.md for details.
 # ------------------------------------------------------------------------------------------------------------------------
-name: 4.bicep.build.deploy.function
-run-name: '4 - Deploy Bicep/Build & Deploy Function: ${{ inputs.bicepDeploymentMode }} using ENV ${{ inputs.deployEnvironment }} by @${{ github.actor }}'
+name: 3.bicep.build.deploy.webapp
+run-name: '3 - Deploy Bicep/Build & Deploy Web App: ${{ inputs.bicepDeploymentMode }} using ENV ${{ inputs.deployEnvironment }} by @${{ github.actor }}'
+
 on: 
   workflow_dispatch:
     inputs:
@@ -28,11 +29,11 @@ on:
           - create
           - whatIf
       runBuild:
-        description: Build Function App
+        description: Build Web App
         default: true
         type: boolean
       runDeploy:
-        description: Deploy Function App
+        description: Deploy Web App
         default: true
         type: boolean
       runSecurityScan:
@@ -93,27 +94,27 @@ jobs:
       bicepDeploymentMode: ${{ inputs.bicepDeploymentMode }}
 
 # ------------------------------------------------------------------------------------------------------------------------
-  build-function:
-    name: Build Function App
-    uses: ./.github/workflows/template-function-app-build.yml
+  build-web-app:
+    name: Build WebApp
+    uses: ./.github/workflows/template-webapp-build.yml
     if: inputs.runBuild || inputs.runDeploy
     needs: create-infra
     secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}
-      rootDirectory: '${{ vars.FUNCTION_APP_PROJECT_FOLDER_NAME }}'
-      projectName: '${{ vars.FUNCTION_APP_PROJECT_NAME }}'
-      testDirectory: '${{ vars.FUNCTION_APP_TEST_FOLDER_NAME }}'
-      testProjectName: '${{ vars.FUNCTION_APP_TEST_PROJECT_NAME }}'
+      rootDirectory: '${{ vars.WEB_APP_PROJECT_FOLDER_NAME }}'
+      projectName: '${{ vars.WEB_APP_PROJECT_NAME }}'
+      testDirectory: '${{ vars.WEB_APP_TEST_FOLDER_NAME }}'
+      testProjectName: '${{ vars.WEB_APP_TEST_PROJECT_NAME }}'
       testApplication: true
       listFilesAfterBuild: true
 
 # ------------------------------------------------------------------------------------------------------------------------
-  deploy-function:
-    name: Deploy Function App
-    uses: ./.github/workflows/template-function-app-deploy.yml
+  deploy-web-app:
+    name: Deploy WebApp ${{ inputs.deployEnvironment }}
+    uses: ./.github/workflows/template-webapp-deploy.yml
     if: inputs.runDeploy
-    needs: build-function
+    needs: build-web-app
     secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}
@@ -123,9 +124,9 @@ jobs:
     name: Smoke Test ${{ inputs.deployEnvironment }}
     uses: ./.github/workflows/template-smoke-test.yml
     if: inputs.runSmokeTest
-    needs: deploy-function
+    needs: deploy-web-app
     secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}
-      testPath: 'playwright/function-tests'
-      testType: 'function'
+      testPath: 'playwright/ui-tests'
+      testType: 'ui'
