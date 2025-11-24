@@ -115,7 +115,6 @@ jobs:
     with:
       envCode: ${{ inputs.deployEnvironment }}
 
-      
 # ------------------------------------------------------------------------------------------------------------------------
   run-smoke-test:
     name: Smoke Test ${{ inputs.deployEnvironment }}

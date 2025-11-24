@@ -1,8 +1,7 @@
 # ------------------------------------------------------------------------------------------------------------------------
 # GHA Workflow to deploy Azure Resources and Function App
 # ------------------------------------------------------------------------------------------------------------------------
-# You need to set up secrets in the GitHub Secrets Repository before running these workflows.
-#   See Docs\CreateGitHubSecrets\.md for details
+# FYI: You need to set up some secrets before running this workflows - see CreateGitHubSecrets.md for details.
 # ------------------------------------------------------------------------------------------------------------------------
 name: 4.bicep.build.deploy.function
 run-name: '4 - Deploy Bicep/Build & Deploy Function: ${{ inputs.bicepDeploymentMode }} using ENV ${{ inputs.deployEnvironment }} by @${{ github.actor }}'
@@ -29,7 +28,7 @@ on:
           - create
           - whatIf
       runBuildDeploy:
-        description: 'Build and Deploy Function App'
+        description: Build and Deploy Function App
         default: true
         type: boolean
       runSecurityScan:
@@ -37,11 +36,11 @@ on:
         default: false
         type: boolean
       runSmokeTest:
-        description: 'Run Smoke Tests'
+        description: Run Smoke Tests
         default: false
         type: boolean
       logLevel:
-        description: 'Log level'     
+        description: Log level
         required: false
         default: 'warning' 
         type: choice
@@ -56,10 +55,11 @@ permissions:
   contents: write
   actions: read
   pages: write
+  security-events: write
+  checks: write
   issues: read
   pull-requests: read
-  security-events: write # needed for security scan to write to logs
-  checks: write  # needed to write test results back to the run
+  packages: read
 
 # ------------------------------------------------------------------------------------------------------------------------
 jobs:
@@ -72,7 +72,7 @@ jobs:
       runMSDevSecOpsScan: ${{ inputs.runSecurityScan }}
       runGHASScan: ${{ inputs.runSecurityScan }}
 
-# ------------------------------------------------------------------------------------------------------------------------
+  # ------------------------------------------------------------------------------------------------------------------------
   create-infra:
     name: Create Infra ${{ inputs.deployEnvironment }}
     uses: ./.github/workflows/template-create-infra.yml
