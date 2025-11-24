@@ -17,6 +17,8 @@ param servicePlanName = '#{SERVICEPLAN_NAME}#'
 param servicePlanResourceGroupName = '#{SERVICEPLAN_RESOURCE_GROUP_NAME}#'
 param webAppKind = 'linux' // 'linux' or 'windows'
 
+param adminUserId = '#{KEYVAULT_OWNER_USERID}#'
+
 param azureOpenAIChatEndpoint = '#{OPENAI_CHAT_ENDPOINT}#'
 param azureOpenAIChatDeploymentName = '#{OPENAI_CHAT_DEPLOYMENTNAME}#'
 param azureOpenAIChatApiKey = '#{OPENAI_CHAT_APIKEY}#'

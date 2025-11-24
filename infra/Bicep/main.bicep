@@ -148,9 +148,9 @@ module keyVaultModule './security/keyvault.bicep' = {
     adminUserObjectIds: [ adminUserId ]
     applicationUserObjectIds: [ identity.outputs.managedIdentityPrincipalId ]
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
-    managedIdentityName: identity.outputs.managedIdentityName
-    managedIdentityPrincipalId: identity.outputs.managedIdentityPrincipalId
-    managedIdentityTenantId: identity.outputs.managedIdentityTenantId
+    // managedIdentityName: identity.outputs.managedIdentityName
+    // managedIdentityPrincipalId: identity.outputs.managedIdentityPrincipalId
+    // managedIdentityTenantId: identity.outputs.managedIdentityTenantId
     publicNetworkAccess: 'Enabled'
     allowNetworkAccess: 'Allow'
     useRBAC: true
@@ -162,7 +162,7 @@ module keyVaultSecretList './security/keyvaultlistsecretnames.bicep' = if (deDup
   params: {
     keyVaultName: keyVaultModule.outputs.name
     location: location
-    userManagedIdentityId: keyVaultModule.outputs.userManagedIdentityId
+    userManagedIdentityId: identity.outputs.managedIdentityId
   }
 }
 module keyVaultStorageSecret './security/keyvaultsecretstorageconnection.bicep' = {
