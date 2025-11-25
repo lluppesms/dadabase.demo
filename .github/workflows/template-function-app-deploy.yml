@@ -12,45 +12,54 @@ on:
       envCode:
         required: true
         type: string
+      listFilesBeforeDeploy:
+        required: false
+        type: boolean
+        default: false
 
 # ------------------------------------------------------------------------------------------------------------------------
 jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-    
     environment:
       name: ${{ inputs.envCode }}
-
     env:
       artifactName: functionapp
       generatedAppEnvName: ${{ vars.APP_NAME }}-${{ inputs.envCode }}
 
     steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
     - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
         name: ${{ env.artifactName }}
 
-    # - name: List Files
-    #   run: 
-    #     tree ${{ env.GITHUB_ACTION_PATH }}
-    #   continue-on-error: true
-
-    # https://learn.microsoft.com/en-us/entra/workload-id/workload-identity-federation-create-trust
-    - name: Login to Azure
-      uses: azure/login@v2
-      # Login option using OICD Federated Credentials
+    - name: List Files Before Build
+      if: inputs.listFilesBeforeDeploy == true
+      run: 
+        tree ${{ github.action_path }}
+      continue-on-error: true
+  
+    - name: Azure Login (Reusable Action)
+      uses: ./.github/actions/login-action
       with:
-        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        client-id: ${{ secrets.CICD_CLIENT_ID }}
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      # Login option using a client secret:
-      #   with:
-      #     creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
+        # client-secret: ${{ secrets.CICD_CLIENT_SECRET }}
 
     - name: Deploy Azure Function Zip
       uses: Azure/functions-action@v1
       with:
         app-name: ${{ env.generatedAppEnvName }}
         package: .
+
+    - name: Logout and cleanup
+      shell: bash
+      run: |
+        az logout
+        az cache purge
+        az account clear
