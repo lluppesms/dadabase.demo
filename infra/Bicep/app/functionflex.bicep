@@ -16,21 +16,33 @@ param appInsightsLocation string = resourceGroup().location
 param commonTags object = {}
 param managedIdentityId string
 
+param keyVaultName string = ''
+
 @description('The workspace to store audit logs.')
 param workspaceId string = ''
 
+param usePlaceholderDotNetIsolated string = '1'
+param use32BitProcess string = 'false'
+param functionsWorkerRuntime string = 'DOTNET-ISOLATED'
+param functionsExtensionVersion string = '~4'
+param nodeDefaultVersion string = '8.11.1'
 
 // --------------------------------------------------------------------------------
 var templateTag = { TemplateFile: '~functionapp.bicep' }
 var azdTag = { 'azd-service-name': 'function' }
 var tags = union(commonTags, templateTag)
 var functionTags = union(commonTags, templateTag, azdTag)
-// var useKeyVaultConnection = false
+var useKeyVaultConnection = false
 
 // --------------------------------------------------------------------------------
 resource appServiceResource 'Microsoft.Web/serverfarms@2021-03-01' existing = {
   name: functionAppServicePlanName
 }
+
+resource storageAccountResource 'Microsoft.Storage/storageAccounts@2019-06-01' existing = { name: functionStorageAccountName }
+var accountKey = storageAccountResource.listKeys().keys[0].value
+var functionStorageAccountConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${storageAccountResource.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${accountKey}'
+var functionStorageAccountKeyVaultReference = '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=azurefilesconnectionstring)'
 
 resource appInsightsResource 'Microsoft.Insights/components@2020-02-02-preview' = {
   name: functionInsightsName
@@ -91,6 +103,56 @@ resource functionAppResource 'Microsoft.Web/sites@2024-11-01' = {
       http20Enabled: true
       functionAppScaleLimit: 100
       minimumElasticInstanceCount: 0
+      appSettings: [
+        {
+          name: 'AzureWebJobsStorage'
+          value: useKeyVaultConnection ? functionStorageAccountKeyVaultReference : functionStorageAccountConnectionString
+        }
+        {
+          name: 'AzureWebJobsDashboard'
+          value: useKeyVaultConnection ? functionStorageAccountKeyVaultReference : functionStorageAccountConnectionString
+        }
+        {
+          name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
+          value: useKeyVaultConnection ? functionStorageAccountKeyVaultReference : functionStorageAccountConnectionString
+        }
+        {
+          name: 'StorageAccountConnectionString'
+          value: useKeyVaultConnection ? functionStorageAccountKeyVaultReference : functionStorageAccountConnectionString
+        }
+        {
+          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+          value: appInsightsResource.properties.InstrumentationKey
+        }
+        {
+          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+          value: 'InstrumentationKey=${appInsightsResource.properties.InstrumentationKey}'
+        }
+        {
+          name: 'FUNCTIONS_WORKER_RUNTIME'
+          value: functionsWorkerRuntime
+        }
+        {
+          name: 'FUNCTIONS_EXTENSION_VERSION'
+          value: functionsExtensionVersion
+        }
+        {
+          name: 'WEBSITE_NODE_DEFAULT_VERSION'
+          value: nodeDefaultVersion
+        }
+        {
+          name: 'USE32BITWORKERPROCESS'
+          value: use32BitProcess
+        }
+        {
+          name: 'NET_FRAMEWORK_VERSION'
+          value: netFrameworkVersion
+        }
+        {
+          name: 'WEBSITE_USE_PLACEHOLDER_DOTNETISOLATED'
+          value: usePlaceholderDotNetIsolated
+        }
+      ]
     }
     functionAppConfig: {
       runtime: {

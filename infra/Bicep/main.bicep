@@ -288,6 +288,7 @@ module functionFlexModule 'app/functionflex.bicep' = {
     functionAppServicePlanName: appServicePlanModule.outputs.name
     functionInsightsName: resourceNames.outputs.functionFlexInsightsName
     managedIdentityId: identity.outputs.managedIdentityId
+    keyVaultName: keyVaultModule.outputs.name
     appInsightsLocation: location
     location: location
     commonTags: commonTags
