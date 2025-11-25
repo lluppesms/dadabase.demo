@@ -6,8 +6,7 @@ param appName string = ''
 param environmentCode string = 'azd'
 
 param functionStorageNameSuffix string = 'func'
-param functionFlexStorageNameSuffix string = 'funcflex'
-param dataStorageNameSuffix string = 'data'
+param functionFlexStorageNameSuffix string = 'flex'
 param environmentSpecificFunctionName string = ''
 
 // --------------------------------------------------------------------------------

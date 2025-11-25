@@ -68,8 +68,6 @@ module resourceNames 'resourcenames.bicep' = {
   params: {
     appName: appName
     environmentCode: environmentCode
-    functionStorageNameSuffix: 'func'
-    dataStorageNameSuffix: 'data'
     environmentSpecificFunctionName: environmentSpecificFunctionName
   }
 }
@@ -106,19 +104,6 @@ module functionStorageModule 'app/storageaccount.bicep' = {
     addSecurityControlIgnoreTag: true
   }
 }
-module functionFlexStorageModule 'app/storageaccount.bicep' = {
-  name: 'functionFlexStorage${deploymentSuffix}'
-  params: {
-    storageSku: functionStorageSku
-    storageAccountName: resourceNames.outputs.functionFlexStorageName
-    location: location
-    commonTags: commonTags
-    allowNetworkAccess: 'Allow'
-    publicNetworkAccess: 'Enabled'
-    addSecurityControlIgnoreTag: true
-  }
-}
-
 
 // --------------------------------------------------------------------------------
 module identity './security/identity.bicep' = {
@@ -287,7 +272,7 @@ module functionFlexModule 'app/functionflex.bicep' = {
     functionAppName: resourceNames.outputs.functionFlexAppName
     functionAppServicePlanName: resourceNames.outputs.functionFlexAppServicePlanName
     functionInsightsName: resourceNames.outputs.functionFlexInsightsName
-    functionStorageAccountName: functionFlexStorageModule.outputs.name
+    functionStorageAccountName: resourceNames.outputs.functionFlexStorageName
     location: location
     commonTags: commonTags
     workspaceId: logAnalyticsWorkspaceModule.outputs.id

@@ -1,5 +1,6 @@
 // ----------------------------------------------------------------------------------------------------
 // This BICEP file will create an .NET 10 Isolated Azure Function
+// See: https://github.com/Azure-Samples/azure-functions-flex-consumption-samples/blob/main/IaC/bicep/main.bicep
 // ----------------------------------------------------------------------------------------------------
 param functionAppName string = 'll-flex-test-2'
 param functionAppServicePlanName string
