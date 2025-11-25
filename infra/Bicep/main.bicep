@@ -281,7 +281,7 @@ module functionAppSettingsModule 'app/functionappsettings.bicep' = {
 
 //--------------------------------------------------------------------------------
 module functionFlexModule 'app/functionflex.bicep' = {
-  name: 'function${deploymentSuffix}'
+  name: 'functionFlex${deploymentSuffix}'
   dependsOn: [ appRoleAssignments ]
   params: {
     functionAppName: resourceNames.outputs.functionFlexAppName
