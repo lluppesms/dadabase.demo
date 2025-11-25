@@ -36,20 +36,6 @@ param publicNetworkAccess string = 'Enabled'
 @allowed(['Allow','Deny'])
 param allowNetworkAccess string = 'Allow'
 
-// @description('The user assigned identity name that will be granted access to secrets')
-// param managedIdentityName string = ''
-// @description('The user assigned identity principal Id that will be granted access to secrets')
-// param managedIdentityPrincipalId string = ''
-// @description('The user assigned identity tenant Id that will be granted access to secrets')
-// param managedIdentityTenantId string = ''
-
-// @description('The DAPR identity name that will be granted access to secrets')
-// param daprIdentityName string = ''
-// @description('The DAPR identity principal Id that will be granted access to secrets')
-// param daprIdentityPrincipalId string = ''
-// @description('The DAPR tenant Id that will be granted access to secrets')
-// param daprIdentityTenantId string = ''
-
 @description('The workspace to store audit logs.')
 @metadata({
   strongType: 'Microsoft.OperationalInsights/workspaces'
@@ -129,43 +115,6 @@ resource keyVaultResource 'Microsoft.KeyVault/vaults@2023-07-01' = {
     }
   }
 }
-
-// // this will grant access to an application identity that can be used to get secrets
-// var grantManagedIdentityAccess = !empty(managedIdentityPrincipalId)
-// resource existingManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-07-31-preview' existing = if (grantManagedIdentityAccess) {
-//   name: managedIdentityName
-// }
-// var userAssignedIdentityPolicies = (!grantManagedIdentityAccess) ? [] : [{
-//   tenantId: managedIdentityTenantId
-//   objectId: managedIdentityPrincipalId
-//   permissions: {
-//     secrets: ['get','list','set']
-//   }
-// }]
-
-// // this will grant access to an identity for DAPR that can be used to get secrets
-// var grantDAPRIdentityAccess = !empty(daprIdentityTenantId)
-// resource existingDaprIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-07-31-preview' existing = if (grantDAPRIdentityAccess) {
-//   name: daprIdentityName
-// }
-// var daprIdentityPolicies = (!grantDAPRIdentityAccess) ? [] : [{
-//   tenantId: daprIdentityTenantId
-//   objectId: daprIdentityPrincipalId
-//   permissions: {
-//     secrets: ['get','list']
-//   }
-// }]
-
-// // you can only do one add Policy in a Bicep file, so we union the policies together
-// var userIdentityPolicies = union(userAssignedIdentityPolicies, daprIdentityPolicies)
-
-// resource userAssignedIdentityKeyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01' = if (!useRBAC && (grantManagedIdentityAccess || grantDAPRIdentityAccess)) {
-//   name: 'add'
-//   parent: keyVaultResource
-//   properties: {
-//     accessPolicies: userIdentityPolicies
-//   }
-// }
 
 resource keyVaultAuditLogging 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (workspaceId != '') {
   name: '${keyVaultResource.name}-auditlogs'

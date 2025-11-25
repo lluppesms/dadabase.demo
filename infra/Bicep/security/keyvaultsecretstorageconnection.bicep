@@ -7,14 +7,10 @@
 param keyVaultName string = 'myKeyVault'
 param secretName string = 'mySecretName'
 param storageAccountName string = 'myStorageAccountName'
-param enabledDate string = utcNow()
-param expirationDate string = dateTimeAdd(utcNow(), 'P2Y')
-param existingSecretNames string = ''
-param forceSecretCreation bool = false
+param enabledDate string = '${substring(utcNow(), 0, 4)}-01-01T00:00:00Z'  // January 1st of current year
+param expirationDate string = '${string(int(substring(utcNow(), 0, 4)) + 1)}-12-31T23:59:59Z'  // December 31st of next year
 
 // --------------------------------------------------------------------------------
-var secretExists = contains(toLower(existingSecretNames), ';${toLower(trim(secretName))};')
-
 resource storageAccountResource 'Microsoft.Storage/storageAccounts@2021-04-01' existing = { name: storageAccountName }
 var accountKey = storageAccountResource.listKeys().keys[0].value
 var storageAccountConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${storageAccountResource.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${accountKey}'
@@ -24,7 +20,8 @@ resource keyVaultResource 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
   name: keyVaultName
 }
 
-resource createSecretValue 'Microsoft.KeyVault/vaults/secrets@2021-04-01-preview' = if (!secretExists || forceSecretCreation) {
+@onlyIfNotExists()
+resource createSecretValue 'Microsoft.KeyVault/vaults/secrets@2021-04-01-preview' = {
   name: secretName
   parent: keyVaultResource
   properties: {
@@ -36,6 +33,6 @@ resource createSecretValue 'Microsoft.KeyVault/vaults/secrets@2021-04-01-preview
   }
 }
 
-var createMessage = secretExists ? 'Secret ${secretName} already exists!' : 'Added secret ${secretName}!'
-output message string = secretExists && forceSecretCreation ? 'Secret ${secretName} already exists but was recreated!' : createMessage
-output secretCreated bool = !secretExists
+var createMessage = 'Added secret ${secretName}!'
+output message string = createMessage
+output secretCreated bool = true

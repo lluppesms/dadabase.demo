@@ -46,9 +46,6 @@ param azureOpenAIImageApiKey string = ''
 @description('Add Role Assignments for the user assigned identity?')
 param addRoleAssignments bool = true
 
-@description('Run script to deplicate secrets?')
-param deDuplicateSecrets bool = false
-
 @description('Add this Admin User Id to KeyVault Access')
 param adminUserId string = ''
 
@@ -148,30 +145,18 @@ module keyVaultModule './security/keyvault.bicep' = {
     adminUserObjectIds: [ adminUserId ]
     applicationUserObjectIds: [ identity.outputs.managedIdentityPrincipalId ]
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
-    // managedIdentityName: identity.outputs.managedIdentityName
-    // managedIdentityPrincipalId: identity.outputs.managedIdentityPrincipalId
-    // managedIdentityTenantId: identity.outputs.managedIdentityTenantId
     publicNetworkAccess: 'Enabled'
     allowNetworkAccess: 'Allow'
     useRBAC: true
   }
 }
 
-module keyVaultSecretList './security/keyvaultlistsecretnames.bicep' = if (deDuplicateSecrets) {
-  name: 'keyVaultSecretListNames${deploymentSuffix}'
-  params: {
-    keyVaultName: keyVaultModule.outputs.name
-    location: location
-    userManagedIdentityId: identity.outputs.managedIdentityId
-  }
-}
 module keyVaultStorageSecret './security/keyvaultsecretstorageconnection.bicep' = {
   name: 'keyVaultStorageSecret${deploymentSuffix}'
   params: {
     keyVaultName: keyVaultModule.outputs.name
     secretName: 'azurefilesconnectionstring'
     storageAccountName: functionStorageModule.outputs.name
-    existingSecretNames: deDuplicateSecrets ? keyVaultSecretList.outputs.secretNameList : ''
   }
 }
 
