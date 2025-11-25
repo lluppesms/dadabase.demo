@@ -12,6 +12,9 @@ on:
       envCode:
         required: true
         type: string
+      functionType:
+        type: string
+        default: 'func'
       listFilesBeforeDeploy:
         required: false
         type: boolean
@@ -26,7 +29,7 @@ jobs:
       name: ${{ inputs.envCode }}
     env:
       artifactName: functionapp
-      generatedAppEnvName: ${{ vars.APP_NAME }}-${{ inputs.envCode }}
+      generatedAppEnvName: ${{ vars.APP_NAME }}-${{ inputs.functionType }}-${{ inputs.envCode }}
 
     steps:
     - name: Checkout Code

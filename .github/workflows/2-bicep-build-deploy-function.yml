@@ -117,6 +117,19 @@ jobs:
     secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}
+      functionType: 'func'
+
+      
+# ------------------------------------------------------------------------------------------------------------------------
+  deploy-flex:
+    name: Deploy Flex Function
+    uses: ./.github/workflows/template-function-app-deploy.yml
+    if: inputs.runDeploy
+    needs: build-function
+    secrets: inherit
+    with:
+      envCode: ${{ inputs.deployEnvironment }}
+      functionType: 'flex'
 
 # ------------------------------------------------------------------------------------------------------------------------
   run-smoke-test:
