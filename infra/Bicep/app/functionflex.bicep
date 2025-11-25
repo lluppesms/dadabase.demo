@@ -22,6 +22,7 @@ param commonTags object = {}
 param workspaceId string = ''
 @description('Id of the user running this template, to be used for testing and debugging for access to Azure resources. This is not required in production. Leave empty if not needed.')
 param adminPrincipalId string = ''
+param deploymentSuffix string = ''
 
 // --------------------------------------------------------------------------------
 var templateTag = { TemplateFile: '~functionapp.bicep' }
@@ -33,7 +34,7 @@ var deploymentStorageContainerName = 'app-package-${take(functionAppName, 32)}-$
 
 // --------------------------------------------------------------------------------
 module applicationInsights 'br/public:avm/res/insights/component:0.6.0' = {
-  name: '${uniqueString(deployment().name, location)}-appinsights'
+  name: 'flexappinsights${deploymentSuffix}'
   params: {
     name: functionInsightsName
     location: location
@@ -45,7 +46,7 @@ module applicationInsights 'br/public:avm/res/insights/component:0.6.0' = {
 
 // Backing storage for Azure Functions
 module storageAccountResource 'br/public:avm/res/storage/storage-account:0.25.0' = {
-  name: 'storage'
+  name: 'flexstorage${deploymentSuffix}'
   params: {
     name: functionStorageAccountName
     allowBlobPublicAccess: false
@@ -69,7 +70,7 @@ module storageAccountResource 'br/public:avm/res/storage/storage-account:0.25.0'
 
 // Create an App Service Plan to group applications under the same payment plan and SKU
 module appServiceResource 'br/public:avm/res/web/serverfarm:0.1.1' = {
-  name: 'appserviceplan'
+  name: 'flexappservice${deploymentSuffix}'
   params: {
     name: functionAppServicePlanName
     sku: {
@@ -85,6 +86,7 @@ module appServiceResource 'br/public:avm/res/web/serverfarm:0.1.1' = {
 // --------------------------------------------------------------------------------
 //resource functionAppResource 'Microsoft.Web/sites@2024-11-01' = {
 module functionAppResource 'br/public:avm/res/web/site:0.16.0' = {
+  name: 'flexapp${deploymentSuffix}'
   params: {
     name: functionAppName
     location: location
@@ -135,13 +137,13 @@ module functionAppResource 'br/public:avm/res/web/site:0.16.0' = {
 
 // Consolidated Role Assignments
 module rbacAssignments './functionflexrbac.bicep' = {
-  name: 'rbacAssignments'
+  name: 'flexrbac${deploymentSuffix}'
   params: {
     storageAccountName: storageAccountResource.outputs.name
     appInsightsName: applicationInsights.outputs.name
     managedIdentityPrincipalId: functionAppResource.outputs.?systemAssignedMIPrincipalId ?? ''
-    userIdentityPrincipalId: adminPrincipalId
-    allowUserIdentityPrincipal: !empty(adminPrincipalId)
+    //userIdentityPrincipalId: adminPrincipalId
+    //allowUserIdentityPrincipal: !empty(adminPrincipalId)
   }
 }
 

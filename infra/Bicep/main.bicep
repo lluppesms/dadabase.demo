@@ -277,6 +277,7 @@ module functionFlexModule 'app/functionflex.bicep' = {
     commonTags: commonTags
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
     adminPrincipalId: adminUserId
+    deploymentSuffix: deploymentSuffix
   }
 }
 
