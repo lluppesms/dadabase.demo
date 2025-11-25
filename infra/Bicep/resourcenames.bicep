@@ -21,8 +21,8 @@ var resourceAbbreviations = loadJsonContent('./data/resourceAbbreviations.json')
 // if there's an environment specific function name specified, use that, otherwise if it's azd -- 
 // other resource names can be changed if desired, but if using the "azd deploy" command it expects the
 // function name to be exactly "{appName}function" so don't change the functionAppName format if using azd
-var functionAppName = environmentSpecificFunctionName == '' ? environmentCode == 'azd' ? '${sanitizedAppName}${resourceAbbreviations.functionApp}' : toLower('${sanitizedAppName}-${resourceAbbreviations.functionApp}-${sanitizedEnvironment}') : environmentSpecificFunctionName
-var functionFlexAppName = toLower('${sanitizedAppName}-${resourceAbbreviations.functionFlexApp}-${sanitizedEnvironment}')
+var functionAppName = environmentSpecificFunctionName == '' ? environmentCode == 'azd' ? '${sanitizedAppNameWithDashes}${resourceAbbreviations.functionApp}' : toLower('${sanitizedAppNameWithDashes}-${resourceAbbreviations.functionApp}-${sanitizedEnvironment}') : environmentSpecificFunctionName
+var functionFlexAppName = toLower('${sanitizedAppNameWithDashes}-${resourceAbbreviations.functionFlexApp}-${sanitizedEnvironment}')
 var baseStorageName = toLower('${sanitizedAppName}${sanitizedEnvironment}${resourceAbbreviations.storageAccountSuffix}')
 var webSiteName     = toLower('${sanitizedAppNameWithDashes}-${sanitizedEnvironment}')
 
