@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------------
-// This BICEP file will create an .NET 8 Isolated Azure Function
+// This BICEP file will create an .NET 10 Isolated Azure Function
 // Changed to use Managed Identity Storage (no connection string)
 // ----------------------------------------------------------------------------------------------------
 param functionAppName string

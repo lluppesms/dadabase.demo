@@ -25,11 +25,11 @@ If you are in WSL and it says `ERROR: Cannot connect to the Docker daemon... Is 
 sudo service docker start
 ```
 
-## .NET 8 Notes
+## .NET 10 Notes
 
 I tried lots of things that didn't work...  lots of errors...
 
-Found this note: .NET 8 changed the default port from 80 to 8080...  things have changed...?
+Found this note: .NET 10 changed the default port from 80 to 8080...  things have changed...?
 [https://learn.microsoft.com/en-us/dotnet/core/compatibility/containers/8.0/aspnet-port](https://learn.microsoft.com/en-us/dotnet/core/compatibility/containers/8.0/aspnet-port)
 
 ## Run with a parameter

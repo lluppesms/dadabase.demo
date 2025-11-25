@@ -106,6 +106,19 @@ module functionStorageModule 'app/storageaccount.bicep' = {
     addSecurityControlIgnoreTag: true
   }
 }
+module functionFlexStorageModule 'app/storageaccount.bicep' = {
+  name: 'functionFlexStorage${deploymentSuffix}'
+  params: {
+    storageSku: functionStorageSku
+    storageAccountName: resourceNames.outputs.functionFlexStorageName
+    location: location
+    commonTags: commonTags
+    allowNetworkAccess: 'Allow'
+    publicNetworkAccess: 'Enabled'
+    addSecurityControlIgnoreTag: true
+  }
+}
+
 
 // --------------------------------------------------------------------------------
 module identity './security/identity.bicep' = {
@@ -266,8 +279,27 @@ module functionAppSettingsModule 'app/functionappsettings.bicep' = {
   }
 }
 
+//--------------------------------------------------------------------------------
+module functionFlexModule 'app/functionflex.bicep' = {
+  name: 'function${deploymentSuffix}'
+  dependsOn: [ appRoleAssignments ]
+  params: {
+    functionAppName: resourceNames.outputs.functionFlexAppName
+    functionAppServicePlanName: appServicePlanModule.outputs.name
+    functionInsightsName: resourceNames.outputs.functionFlexInsightsName
+    managedIdentityId: identity.outputs.managedIdentityId
+    appInsightsLocation: location
+    location: location
+    commonTags: commonTags
+    functionStorageAccountName: functionFlexStorageModule.outputs.name
+    workspaceId: logAnalyticsWorkspaceModule.outputs.id
+  }
+}
+
+
 // --------------------------------------------------------------------------------
 output SUBSCRIPTION_ID string = subscription().subscriptionId
 output RESOURCE_GROUP_NAME string = resourceGroupName
 output WEB_HOST_NAME string = webSiteModule.outputs.hostName
-// output FUNCTION_HOST_NAME string = functionModule.outputs.hostname
+output FUNCTION_HOST_NAME string = functionModule.outputs.hostname
+output FLEX_FUNCTION_HOST_NAME string = functionFlexModule.outputs.hostname

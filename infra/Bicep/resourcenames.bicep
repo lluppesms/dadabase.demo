@@ -6,6 +6,7 @@ param appName string = ''
 param environmentCode string = 'azd'
 
 param functionStorageNameSuffix string = 'func'
+param functionFlexStorageNameSuffix string = 'funcflex'
 param dataStorageNameSuffix string = 'data'
 param environmentSpecificFunctionName string = ''
 
@@ -21,7 +22,8 @@ var resourceAbbreviations = loadJsonContent('./data/resourceAbbreviations.json')
 // if there's an environment specific function name specified, use that, otherwise if it's azd -- 
 // other resource names can be changed if desired, but if using the "azd deploy" command it expects the
 // function name to be exactly "{appName}function" so don't change the functionAppName format if using azd
-var functionAppName = environmentSpecificFunctionName == '' ? environmentCode == 'azd' ? '${sanitizedAppName}${resourceAbbreviations.functionApp}' : toLower('${sanitizedAppName}-${sanitizedEnvironment}') : environmentSpecificFunctionName
+var functionAppName = environmentSpecificFunctionName == '' ? environmentCode == 'azd' ? '${sanitizedAppName}${resourceAbbreviations.functionApp}' : toLower('${sanitizedAppName}-${resourceAbbreviations.functionApp}-${sanitizedEnvironment}') : environmentSpecificFunctionName
+var functionFlexAppName = toLower('${sanitizedAppName}-${resourceAbbreviations.functionFlexApp}-${sanitizedEnvironment}')
 var baseStorageName = toLower('${sanitizedAppName}${sanitizedEnvironment}${resourceAbbreviations.storageAccountSuffix}')
 var webSiteName     = toLower('${sanitizedAppNameWithDashes}-${sanitizedEnvironment}')
 
@@ -36,10 +38,14 @@ output functionAppName string            = functionAppName
 output functionAppServicePlanName string = '${functionAppName}-${resourceAbbreviations.appServicePlanSuffix}'
 output functionInsightsName string       = '${functionAppName}-${resourceAbbreviations.appInsightsSuffix}'
 
+output functionFlexAppName string        = functionFlexAppName
+output functionFlexInsightsName string   = '${functionFlexAppName}-${resourceAbbreviations.appInsightsSuffix}'
+
 output userAssignedIdentityName string   = toLower('${sanitizedAppName}-app-${resourceAbbreviations.managedIdentity}')
 
 // Key Vaults and Storage Accounts can only be 24 characters long
 output keyVaultName string               = take('${sanitizedAppName}${resourceAbbreviations.keyVaultAbbreviation}${sanitizedEnvironment}', 24)
 output storageAccountName string         = take('${sanitizedAppName}${resourceAbbreviations.storageAccountSuffix}${sanitizedEnvironment}', 24)
-output functionStorageName string        = take('${baseStorageName}${functionStorageNameSuffix}', 24)
 output dataStorageName string            = take('${baseStorageName}${dataStorageNameSuffix}', 24)
+output functionStorageName string        = take('${baseStorageName}${functionStorageNameSuffix}', 24)
+output functionFlexStorageName string    = take('${baseStorageName}${functionFlexStorageNameSuffix}', 24)

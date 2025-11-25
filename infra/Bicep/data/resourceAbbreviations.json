@@ -7,6 +7,7 @@
     "containerApp": "ca",
     "cosmosDatabase": "cosmos",
     "functionApp": "func",
+    "functionFlexApp": "flex",
     "identitySuffix": "id",
     "keyVaultAbbreviation": "vault",
     "logWorkspaceSuffix": "law",
