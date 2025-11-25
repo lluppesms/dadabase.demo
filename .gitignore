@@ -372,3 +372,4 @@ infra/azdKeys.json
 .env
 package-lock.json
 package-lock.json
+src/function/Function/Properties/launchSettings.json

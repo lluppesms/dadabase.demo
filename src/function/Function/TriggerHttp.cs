@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Logging;
-
 namespace DadABase.Function;
 
 public class TriggerHttp(ILoggerFactory loggerFactory, IJokeRepository jokeRepo)
@@ -18,7 +16,6 @@ public class TriggerHttp(ILoggerFactory loggerFactory, IJokeRepository jokeRepo)
         response.WriteAsJsonAsync(joke);
         return response;
     }
-
 
     [OpenApiOperation(operationId: "Joke", tags: new[] { "name" }, Summary = "Get Random Joke", Description = "Gets a Random Joke and returns plain text", Visibility = OpenApiVisibilityType.Important)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "text/plain", bodyType: typeof(string), Summary = "A Joke", Description = "This returns a joke in plain text")]
