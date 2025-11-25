@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace DadABase.Function;
 
 public class TriggerHttp(ILoggerFactory loggerFactory, IJokeRepository jokeRepo)
@@ -36,7 +38,7 @@ public class TriggerHttp(ILoggerFactory loggerFactory, IJokeRepository jokeRepo)
         var jokeText = jokeRepo.GetRandomJokeText();
         var response = req.CreateResponse(HttpStatusCode.OK);
         response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-        response.WriteString(jokeText);
+        response.WriteStringAsync(jokeText);
         return response;
     }
 

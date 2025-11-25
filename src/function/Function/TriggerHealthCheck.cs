@@ -15,7 +15,7 @@ public class TriggerHealthCheck(ILoggerFactory loggerFactory)
         var response = req.CreateResponse(HttpStatusCode.OK);
         response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
         var dotNetVersion = Assembly.GetEntryAssembly()?.GetCustomAttribute<TargetFrameworkAttribute>()?.FrameworkName;
-        response.WriteString($"{DateTime.Now:g} Hello {name} and welcome to {dotNetVersion}!");
+        response.WriteStringAsync($"{DateTime.Now:g} Hello {name} and welcome to {dotNetVersion}!");
 
         return response;
     }
@@ -28,7 +28,7 @@ public class TriggerHealthCheck(ILoggerFactory loggerFactory)
         _logger.LogInformation("C# HTTP trigger function processed a Health Check request.");
         var response = req.CreateResponse(HttpStatusCode.OK);
         response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-        response.WriteString("OK");
+        response.WriteStringAsync("OK");
         return response;
     }
 }
