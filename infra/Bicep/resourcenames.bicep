@@ -39,6 +39,7 @@ output functionAppServicePlanName string = '${functionAppName}-${resourceAbbrevi
 output functionInsightsName string       = '${functionAppName}-${resourceAbbreviations.appInsightsSuffix}'
 
 output functionFlexAppName string        = functionFlexAppName
+output functionFlexAppServicePlanName string = '${functionFlexAppName}-${resourceAbbreviations.appServicePlanSuffix}'
 output functionFlexInsightsName string   = '${functionFlexAppName}-${resourceAbbreviations.appInsightsSuffix}'
 
 output userAssignedIdentityName string   = toLower('${sanitizedAppName}-app-${resourceAbbreviations.managedIdentity}')
@@ -46,6 +47,5 @@ output userAssignedIdentityName string   = toLower('${sanitizedAppName}-app-${re
 // Key Vaults and Storage Accounts can only be 24 characters long
 output keyVaultName string               = take('${sanitizedAppName}${resourceAbbreviations.keyVaultAbbreviation}${sanitizedEnvironment}', 24)
 output storageAccountName string         = take('${sanitizedAppName}${resourceAbbreviations.storageAccountSuffix}${sanitizedEnvironment}', 24)
-output dataStorageName string            = take('${baseStorageName}${dataStorageNameSuffix}', 24)
 output functionStorageName string        = take('${baseStorageName}${functionStorageNameSuffix}', 24)
 output functionFlexStorageName string    = take('${baseStorageName}${functionFlexStorageNameSuffix}', 24)

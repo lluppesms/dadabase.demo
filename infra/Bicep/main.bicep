@@ -285,15 +285,13 @@ module functionFlexModule 'app/functionflex.bicep' = {
   dependsOn: [ appRoleAssignments ]
   params: {
     functionAppName: resourceNames.outputs.functionFlexAppName
-    functionAppServicePlanName: appServicePlanModule.outputs.name
+    functionAppServicePlanName: resourceNames.outputs.functionFlexAppServicePlanName
     functionInsightsName: resourceNames.outputs.functionFlexInsightsName
-    managedIdentityId: identity.outputs.managedIdentityId
-    keyVaultName: keyVaultModule.outputs.name
-    appInsightsLocation: location
+    functionStorageAccountName: functionFlexStorageModule.outputs.name
     location: location
     commonTags: commonTags
-    functionStorageAccountName: functionFlexStorageModule.outputs.name
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
+    adminPrincipalId: adminUserId
   }
 }
 

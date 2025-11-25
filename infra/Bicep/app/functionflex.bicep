@@ -9,298 +9,145 @@ param functionStorageAccountName string
 param functionKind string = 'functionapp,linux'
 param runtimeName string = 'dotnet-isolated'
 param runtimeVersion string = '10.0'
-param netFrameworkVersion string = 'v4.0'
+@minValue(10)
+@maxValue(1000)
+param maximumInstanceCount int = 50
+@allowed([512,2048,4096])
+param instanceMemoryMB int = 2048
 
 param location string = resourceGroup().location
-param appInsightsLocation string = resourceGroup().location
 param commonTags object = {}
-param managedIdentityId string
-
-param keyVaultName string = ''
-
 @description('The workspace to store audit logs.')
 param workspaceId string = ''
-
-param usePlaceholderDotNetIsolated string = '1'
-param use32BitProcess string = 'false'
-param functionsWorkerRuntime string = 'DOTNET-ISOLATED'
-param functionsExtensionVersion string = '~4'
-param nodeDefaultVersion string = '8.11.1'
+@description('Id of the user running this template, to be used for testing and debugging for access to Azure resources. This is not required in production. Leave empty if not needed.')
+param adminPrincipalId string = ''
 
 // --------------------------------------------------------------------------------
 var templateTag = { TemplateFile: '~functionapp.bicep' }
 var azdTag = { 'azd-service-name': 'function' }
 var tags = union(commonTags, templateTag)
 var functionTags = union(commonTags, templateTag, azdTag)
-var useKeyVaultConnection = false
+var resourceToken = toLower(uniqueString(subscription().id, resourceGroup().name, location))
+var deploymentStorageContainerName = 'app-package-${take(functionAppName, 32)}-${take(resourceToken, 7)}'
 
 // --------------------------------------------------------------------------------
-resource appServiceResource 'Microsoft.Web/serverfarms@2021-03-01' existing = {
-  name: functionAppServicePlanName
-}
-
-resource storageAccountResource 'Microsoft.Storage/storageAccounts@2019-06-01' existing = { name: functionStorageAccountName }
-var accountKey = storageAccountResource.listKeys().keys[0].value
-var functionStorageAccountConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${storageAccountResource.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${accountKey}'
-var functionStorageAccountKeyVaultReference = '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=azurefilesconnectionstring)'
-
-resource appInsightsResource 'Microsoft.Insights/components@2020-02-02-preview' = {
-  name: functionInsightsName
-  location: appInsightsLocation
-  kind: 'web'
-  tags: tags
-  properties: {
-    Application_Type: 'web'
-    Request_Source: 'rest'
-    publicNetworkAccessForIngestion: 'Enabled'
-    publicNetworkAccessForQuery: 'Enabled'
-    WorkspaceResourceId: workspaceId
+module applicationInsights 'br/public:avm/res/insights/component:0.6.0' = {
+  name: '${uniqueString(deployment().name, location)}-appinsights'
+  params: {
+    name: functionInsightsName
+    location: location
+    tags: tags
+    workspaceResourceId: workspaceId
+    disableLocalAuth: true
   }
 }
 
-// --------------------------------------------------------------------------------
-resource functionAppResource 'Microsoft.Web/sites@2024-11-01' = {
-  name: functionAppName
-  location: location
-  kind: functionKind
-  tags: functionTags
-  identity: {
-    //disable-next-line BCP036
-    type: 'SystemAssigned, UserAssigned'
-    //disable-next-line BCP036
-    userAssignedIdentities: { '${managedIdentityId}': {} }
+// Backing storage for Azure Functions
+module storageAccountResource 'br/public:avm/res/storage/storage-account:0.25.0' = {
+  name: 'storage'
+  params: {
+    name: functionStorageAccountName
+    allowBlobPublicAccess: false
+    allowSharedKeyAccess: false // Disable local authentication methods as per policy
+    dnsEndpointType: 'Standard'
+    publicNetworkAccess: 'Enabled'
+    networkAcls: {
+      defaultAction: 'Allow'
+      bypass: 'AzureServices'
+    }
+    blobServices: {
+      containers: [{name: deploymentStorageContainerName}]
+    }
+    tableServices:{}
+    queueServices: {}
+    minimumTlsVersion: 'TLS1_2'  // Enforcing TLS 1.2 for better security
+    location: location
+    tags: tags
   }
-  properties: {
-    enabled: true
-    hostNameSslStates: [
-      {
-        name: '${functionAppName}.azurewebsites.net'
-        sslState: 'Disabled'
-        hostType: 'Standard'
-      }
-      {
-        name: '${functionAppName}.scm.azurewebsites.net'
-        sslState: 'Disabled'
-        hostType: 'Repository'
-      }
-    ]
-    serverFarmId: appServiceResource.id
+}
+
+// Create an App Service Plan to group applications under the same payment plan and SKU
+module appServiceResource 'br/public:avm/res/web/serverfarm:0.1.1' = {
+  name: 'appserviceplan'
+  params: {
+    name: functionAppServicePlanName
+    sku: {
+      name: 'FC1'
+      tier: 'FlexConsumption'
+    }
     reserved: true
-    isXenon: false
-    hyperV: false
-    dnsConfiguration: {}
-    outboundVnetRouting: {
-      allTraffic: false
-      applicationTraffic: false
-      contentShareTraffic: false
-      imagePullTraffic: false
-      backupRestoreTraffic: false
+    location: location
+    tags: functionTags
+  }
+}
+
+// --------------------------------------------------------------------------------
+//resource functionAppResource 'Microsoft.Web/sites@2024-11-01' = {
+module functionAppResource 'br/public:avm/res/web/site:0.16.0' = {
+  params: {
+    name: functionAppName
+    location: location
+    kind: functionKind
+    tags: functionTags
+    managedIdentities: {
+      systemAssigned: true
     }
-    siteConfig: {
-      numberOfWorkers: 1
-      //acrUseManagedIdentityCreds: false
-      alwaysOn: false
-      http20Enabled: true
-      functionAppScaleLimit: 100
-      minimumElasticInstanceCount: 0
-      appSettings: [
-        {
-          name: 'AzureWebJobsStorage'
-          value: useKeyVaultConnection ? functionStorageAccountKeyVaultReference : functionStorageAccountConnectionString
-        }
-        {
-          name: 'AzureWebJobsDashboard'
-          value: useKeyVaultConnection ? functionStorageAccountKeyVaultReference : functionStorageAccountConnectionString
-        }
-        {
-          name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
-          value: useKeyVaultConnection ? functionStorageAccountKeyVaultReference : functionStorageAccountConnectionString
-        }
-        {
-          name: 'StorageAccountConnectionString'
-          value: useKeyVaultConnection ? functionStorageAccountKeyVaultReference : functionStorageAccountConnectionString
-        }
-        {
-          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: appInsightsResource.properties.InstrumentationKey
-        }
-        {
-          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: 'InstrumentationKey=${appInsightsResource.properties.InstrumentationKey}'
-        }
-        {
-          name: 'FUNCTIONS_WORKER_RUNTIME'
-          value: functionsWorkerRuntime
-        }
-        {
-          name: 'FUNCTIONS_EXTENSION_VERSION'
-          value: functionsExtensionVersion
-        }
-        {
-          name: 'WEBSITE_NODE_DEFAULT_VERSION'
-          value: nodeDefaultVersion
-        }
-        {
-          name: 'USE32BITWORKERPROCESS'
-          value: use32BitProcess
-        }
-        {
-          name: 'NET_FRAMEWORK_VERSION'
-          value: netFrameworkVersion
-        }
-        {
-          name: 'WEBSITE_USE_PLACEHOLDER_DOTNETISOLATED'
-          value: usePlaceholderDotNetIsolated
-        }
-      ]
-    }
+    serverFarmResourceId: appServiceResource.outputs.resourceId
     functionAppConfig: {
-      runtime: {
+      deployment: {
+        storage: {
+          type: 'blobContainer'
+          value: '${storageAccountResource.outputs.primaryBlobEndpoint}${deploymentStorageContainerName}'
+          authentication: {
+            type: 'SystemAssignedIdentity'
+          }
+        }
+      }
+      scaleAndConcurrency: {
+        maximumInstanceCount: maximumInstanceCount
+        instanceMemoryMB: instanceMemoryMB
+      }
+      runtime: { 
         name: runtimeName
         version: runtimeVersion
       }
-      scaleAndConcurrency: {
-        alwaysReady: []
-        maximumInstanceCount: 20
-        instanceMemoryMB: 2048
-      }
     }
-    scmSiteAlsoStopped: false
-    clientAffinityEnabled: false
-    clientAffinityProxyEnabled: false
-    clientCertEnabled: false
-    clientCertMode: 'Required'
-    hostNamesDisabled: false
-    ipMode: 'IPv4'
-    containerSize: 1536
-    dailyMemoryTimeQuota: 0
-    httpsOnly: false
-    endToEndEncryptionEnabled: false
-    redundancyMode: 'None'
-    publicNetworkAccess: 'Enabled'
-    storageAccountRequired: false
-  }
-}
-
-resource functionAppConfig 'Microsoft.Web/sites/config@2024-11-01' = {
-  parent: functionAppResource
-  name: 'web'
-  properties: {
-    numberOfWorkers: 1
-    netFrameworkVersion: netFrameworkVersion
-    requestTracingEnabled: false
-    remoteDebuggingEnabled: false
-    httpLoggingEnabled: false
-    //acrUseManagedIdentityCreds: false
-    logsDirectorySizeLimit: 35
-    detailedErrorLoggingEnabled: false
-    publishingUsername: 'REDACTED'
-    scmType: 'None'
-    use32BitWorkerProcess: false
-    webSocketsEnabled: false
-    alwaysOn: false
-    managedPipelineMode: 'Integrated'
-    loadBalancing: 'LeastRequests'
-    experiments: {
-      rampUpRules: []
+    siteConfig: {
+      alwaysOn: false
     }
-    autoHealEnabled: false
-    vnetRouteAllEnabled: false
-    vnetPrivatePortsCount: 0
-    cors: {
-      allowedOrigins: [
-        'https://ms.portal.azure.com'
-      ]
-      supportCredentials: true
+    configs: [{
+      name: 'appsettings'
+      properties:{
+        // Only include required credential settings unconditionally
+        AzureWebJobsStorage__credential: 'managedidentity'
+        AzureWebJobsStorage__blobServiceUri: 'https://${storageAccountResource.outputs.name}.blob.${environment().suffixes.storage}'
+        AzureWebJobsStorage__queueServiceUri: 'https://${storageAccountResource.outputs.name}.queue.${environment().suffixes.storage}'
+        AzureWebJobsStorage__tableServiceUri: 'https://${storageAccountResource.outputs.name}.table.${environment().suffixes.storage}'
+
+        // Application Insights settings are always included
+        APPLICATIONINSIGHTS_CONNECTION_STRING: applicationInsights.outputs.connectionString
+        APPLICATIONINSIGHTS_AUTHENTICATION_STRING: 'Authorization=AAD'
     }
-    localMySqlEnabled: false
-    ipSecurityRestrictions: [
-      {
-        ipAddress: 'Any'
-        action: 'Allow'
-        priority: 2147483647
-        name: 'Allow all'
-        description: 'Allow all access'
-      }
-    ]
-    scmIpSecurityRestrictions: [
-      {
-        ipAddress: 'Any'
-        action: 'Allow'
-        priority: 2147483647
-        name: 'Allow all'
-        description: 'Allow all access'
-      }
-    ]
-    scmIpSecurityRestrictionsUseMain: false
-    http20Enabled: true
-    minTlsVersion: '1.2'
-    scmMinTlsVersion: '1.2'
-    ftpsState: 'FtpsOnly'
-    preWarmedInstanceCount: 0
-    functionAppScaleLimit: 100
-    functionsRuntimeScaleMonitoringEnabled: false
-    minimumElasticInstanceCount: 0
-    azureStorageAccounts: {}
-    http20ProxyFlag: 0
+    }]
   }
 }
 
-resource functionAppBinding 'Microsoft.Web/sites/hostNameBindings@2024-11-01' = {
-  parent: functionAppResource
-  name: '${functionAppResource.name}.azurewebsites.net'
-  properties: {
-    siteName: functionAppResource.name
-    hostNameType: 'Verified'
-  }
-}
-
-
-resource functionAppMetricLogging 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: '${functionAppResource.name}-metrics'
-  scope: functionAppResource
-  properties: {
-    workspaceId: workspaceId
-    metrics: [
-      {
-        category: 'AllMetrics'
-        enabled: true
-      }
-    ]
-  }
-}
-// https://learn.microsoft.com/en-us/azure/app-service/troubleshoot-diagnostic-logs
-resource functionAppAuditLogging 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: '${functionAppResource.name}-logs'
-  scope: functionAppResource
-  properties: {
-    workspaceId: workspaceId
-    logs: [
-      {
-        category: 'FunctionAppLogs'
-        enabled: true
-      }
-    ]
-  }
-}
-resource appServiceMetricLogging 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: '${appServiceResource.name}-metrics'
-  scope: appServiceResource
-  properties: {
-    workspaceId: workspaceId
-    metrics: [
-      {
-        category: 'AllMetrics'
-        enabled: true
-      }
-    ]
+// Consolidated Role Assignments
+module rbacAssignments './functionflexrbac.bicep' = {
+  name: 'rbacAssignments'
+  params: {
+    storageAccountName: storageAccountResource.outputs.name
+    appInsightsName: applicationInsights.outputs.name
+    managedIdentityPrincipalId: functionAppResource.outputs.?systemAssignedMIPrincipalId ?? ''
+    userIdentityPrincipalId: adminPrincipalId
+    allowUserIdentityPrincipal: !empty(adminPrincipalId)
   }
 }
 
 // --------------------------------------------------------------------------------
-output id string = functionAppResource.id
-output hostname string = functionAppResource.properties.defaultHostName
+output id string = functionAppResource.outputs.resourceId
+output hostname string = functionAppResource.outputs.defaultHostname
 output name string = functionAppName
 output insightsName string = functionInsightsName
-output insightsKey string = appInsightsResource.properties.InstrumentationKey
+output insightsKey string = applicationInsights.outputs.instrumentationKey
 output storageAccountName string = functionStorageAccountName
