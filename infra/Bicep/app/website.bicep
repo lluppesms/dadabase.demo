@@ -7,7 +7,7 @@ param appInsightsLocation string = resourceGroup().location
 param environmentCode string = 'dev'
 param commonTags object = {}
 param managedIdentityId string
-param managedIdentityPrincipalId string 
+param managedIdentityPrincipalId string
 
 @description('The workspace to store audit logs.')
 param workspaceId string = ''
@@ -67,6 +67,7 @@ resource webSiteResource 'Microsoft.Web/sites@2023-01-01' = {
       linuxFxVersion: linuxFxVersion
       minTlsVersion: '1.2'
       ftpsState: 'FtpsOnly'
+      alwaysOn: true
       remoteDebuggingEnabled: false
       minimumElasticInstanceCount: 1
       appSettings: [
