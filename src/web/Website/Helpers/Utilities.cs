@@ -247,4 +247,23 @@ public class Utilities
         });
     }
 
+    /// <summary>
+    /// Return connection string without user credentials
+    /// </summary>
+    /// <param name="connection">Connection string</param>
+    /// <returns>Clean connection string</returns>
+    public static string SanitizeConnection(string connection)
+    {
+        var cleanConection = string.Empty;
+        if (!string.IsNullOrEmpty(connection))
+        {
+            cleanConection = connection;
+            var uid = cleanConection.IndexOf("User Id", StringComparison.InvariantCultureIgnoreCase);
+            if (uid > 0)
+            {
+                cleanConection = cleanConection[..(uid + 8)] + "...";
+            }
+        }
+        return cleanConection;
+    }
 }

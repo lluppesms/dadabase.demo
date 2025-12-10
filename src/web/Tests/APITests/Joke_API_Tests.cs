@@ -12,7 +12,7 @@ namespace DadABase.Tests;
 public class Joke_API_Tests : BaseTest
 {
     private readonly JokeRepository repo;
-    private readonly JokeController apiController;
+    private readonly ConfigController apiController;
 
     public Joke_API_Tests(ITestOutputHelper output)
     {

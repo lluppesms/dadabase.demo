@@ -43,7 +43,7 @@ public class ApiKeyAttribute : Attribute, IAsyncActionFilter
             // if no API Key found, then bounce
             if (string.IsNullOrEmpty(extractedApiKey) && string.IsNullOrEmpty(extractedQueryKey))
             {
-                context.Result = new ContentResult() { StatusCode = StatusCodes.Status400BadRequest, Content = "Bad Request" };
+                context.Result = new ContentResult() { StatusCode = StatusCodes.Status400BadRequest, Content = "Bad Request (API Key)" };
                 return;
             }
 

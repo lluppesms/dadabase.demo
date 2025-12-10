@@ -30,12 +30,12 @@ if (!string.IsNullOrEmpty(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_
 
 // Add Application Insights telemetry
 //builder.Services.AddApplicationInsightsTelemetry(builder.Configuration["ApplicationInsights:InstrumentationKey"]);
-//builder.Services.AddLogging(builder =>
-//{
-//    builder.ClearProviders();
-//    builder.AddConsole();
-//    //builder.AddApplicationInsights(builder.Configuration["ApplicationInsights:InstrumentationKey"] ?? string.Empty);
-//});
+builder.Services.AddLogging(builder =>
+{
+    builder.ClearProviders();
+    builder.AddConsole();
+    //builder.AddApplicationInsights(builder.Configuration["ApplicationInsights:InstrumentationKey"] ?? string.Empty);
+});
 
 builder.Services.AddSingleton(builder.Configuration);
 builder.Services.AddSingleton<AppSettings>(settings);
