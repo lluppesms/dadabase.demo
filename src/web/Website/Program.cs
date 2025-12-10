@@ -1,7 +1,4 @@
 using DadABase.Web.Repositories;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.OpenApi;
 
@@ -19,6 +16,14 @@ builder.Configuration
 var appSettings = builder.Configuration.GetSection("AppSettings");
 builder.Services.Configure<AppSettings>(appSettings);
 var settings = builder.Configuration.GetSection(nameof(AppSettings)).Get<AppSettings>();
+
+// Add Azure Key Vault if configured
+var keyVaultName = builder.Configuration["KeyVaultName"];
+if (!string.IsNullOrEmpty(keyVaultName))
+{
+    var keyVaultUri = new Uri($"https://{keyVaultName}.vault.azure.net/");
+    builder.Configuration.AddAzureKeyVault(keyVaultUri, Utilities.GetCredentials());
+}
 
 // set the application title from the app settings
 DadABase.Data.Constants.Initialize(settings);

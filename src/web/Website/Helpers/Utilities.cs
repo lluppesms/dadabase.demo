@@ -6,6 +6,8 @@
 // Utilities
 // </summary>
 //-----------------------------------------------------------------------
+using Azure.Identity;
+
 namespace DadABase.Helpers;
 
 /// <summary>
@@ -265,5 +267,26 @@ public class Utilities
             }
         }
         return cleanConection;
+    }
+
+    /// <summary>
+    /// Get Credentials if needed
+    /// </summary>
+    public static DefaultAzureCredential GetCredentials(string vsTenantId = "")
+    {
+        var credential = string.IsNullOrEmpty(vsTenantId) ?
+            new DefaultAzureCredential() :
+            new DefaultAzureCredential(new DefaultAzureCredentialOptions
+            {
+                // Exclude credential types that don't work in containers
+                ExcludeVisualStudioCredential = true,
+                ExcludeVisualStudioCodeCredential = true,
+                ExcludeInteractiveBrowserCredential = true,
+                ExcludeAzureCliCredential = false, // Keep CLI for local dev
+                ExcludeManagedIdentityCredential = false, // Keep for Azure deployment
+                ExcludeEnvironmentCredential = false, // Allow service principal via env vars
+                TenantId = vsTenantId, // if you get an error "Token tenant does not match resource tenant" during local development, force the tenant
+            });
+        return credential;
     }
 }

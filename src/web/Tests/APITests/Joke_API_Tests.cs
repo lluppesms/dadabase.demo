@@ -12,7 +12,7 @@ namespace DadABase.Tests;
 public class Joke_API_Tests : BaseTest
 {
     private readonly JokeRepository repo;
-    private readonly ConfigController apiController;
+    private readonly JokeController apiController;
 
     public Joke_API_Tests(ITestOutputHelper output)
     {
@@ -77,7 +77,7 @@ public class Joke_API_Tests : BaseTest
 
     // MS Test?
     // [Owner("Just for test.")]
-    
+
     // NUnit?
     // [Property("Owner", "Just for test.")]
 

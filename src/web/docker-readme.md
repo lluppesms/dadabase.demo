@@ -1,5 +1,32 @@
 # Docker Sample Commands
 
+NOTE: This app is still not working in a docker container with .NET 10.0.
+
+I'm getting errors like these:
+
+``` bash
+Failed to determine the https port for redirect.
+Error during description generation: DefaultAzureCredential failed to retrieve a token from the included credentials. See the troubleshooting guide for more information. https://aka.ms/azsdk/net/identity/defaultazurecredential/troubleshoot
+- EnvironmentCredential authentication unavailable. Environment variables are not fully configured. See the troubleshooting guide for more information. https://aka.ms/azsdk/net/identity/environmentcredential/troubleshoot
+- WorkloadIdentityCredential authentication unavailable. The workload options are not fully configured. See the troubleshooting guide for more information. https://aka.ms/azsdk/net/identity/workloadidentitycredential/troubleshoot
+- ManagedIdentityCredential authentication unavailable. No response received from the managed identity endpoint.
+- VisualStudioCredential authentication failed: Visual Studio Token provider can't be accessed at /home/app/.IdentityService/AzureServiceAuth/tokenprovider.json
+- VisualStudioCodeCredential authentication failed: InteractiveBrowserCredential authentication failed: Unable to load shared library 'msalruntime' or one of its dependencies. In order to help diagnose loading problems, consider using a tool like strace. If you're using glibc, consider setting the LD_DEBUG environment variable:
+/app/runtimes/linux-x64/native/msalruntime.so: cannot open shared object file: No such file or directory
+/usr/share/dotnet/shared/Microsoft.NETCore.App/10.0.1/msalruntime.so: cannot open shared object file: No such file or directory        
+/app/msalruntime.so: cannot open shared object file: No such file or directory
+libwebkit2gtk-4.0.so.37: cannot open shared object file: No such file or directory
+/usr/share/dotnet/shared/Microsoft.NETCore.App/10.0.1/libmsalruntime.so: cannot open shared object file: No such file or directory     
+/app/libmsalruntime.so: cannot open shared object file: No such file or directory
+/app/runtimes/linux-x64/native/msalruntime: cannot open shared object file: No such file or directory
+/usr/share/dotnet/shared/Microsoft.NETCore.App/10.0.1/msalruntime: cannot open shared object file: No such file or directory
+/app/msalruntime: cannot open shared object file: No such file or directory
+/app/runtimes/linux-x64/native/libmsalruntime: cannot open shared object file: No such file or directory
+/usr/share/dotnet/shared/Microsoft.NETCore.App/10.0.1/libmsalruntime: cannot open shared object file: No such file or directory        
+/app/libmsalruntime: cannot open shared object file: No such file or directory
+ See https://aka.ms/msal-net-wam#troubleshooting
+```
+
 ## Build the app
 
 ``` bash
@@ -15,6 +42,23 @@ The docker run command creates and runs the container as a single command. This 
 ``` bash
 docker run --rm -it -p 8000:8080 dbw 120901
 curl http://localhost:8000
+```
+
+## Run the app in WSL with user secrets
+
+``` bash
+docker run --rm -it -p 8000:8080 dbw 120901 \
+-v /mnt/c/Users/lyleluppes/AppData/Roaming/Microsoft/UserSecrets/47cd1b3b-01d3-49e9-a00a-b3a95f479429:/root/.microsoft/usersecrets/47cd1b3b-01d3-49e9-a00a-b3a95f479429:ro \
+-e DOTNET_ENVIRONMENT=Development AZURE_TENANT_ID="xxxxxxxx"
+```
+
+Run container with Azure CLI volume mount (to persist auth)
+
+``` bash
+docker run --rm -it -p 8001:8080 dbw 120907 
+  -v ~/.azure:/root/.azure 
+  -e DOTNET_ENVIRONMENT=Development AZURE_TENANT_ID="xxxxxxxx"
+  -v /mnt/c/Users/lyleluppes/AppData/Roaming/Microsoft/UserSecrets/47cd1b3b-01d3-49e9-a00a-b3a95f479429:/root/.microsoft/usersecrets/47cd1b3b-01d3-49e9-a00a-b3a95f479429:ro
 ```
 
 ## WSL Tips

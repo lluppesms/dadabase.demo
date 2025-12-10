@@ -6,6 +6,30 @@
 # Browse or curl to http://localhost:8000
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+USER root
+# 1. Added Azure CLI installation following Microsoft's official installation instructions for Debian-based containers
+# 2. Added required dependencies: ca-certificates, curl, apt-transport-https, lsb-release, gnupg
+# 3. Added libdbus-1-3 for the Azure Identity MSAL runtime
+# 4. Cleaned up apt cache with rm -rf /var/lib/apt/lists/* to keep the image size smaller
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    apt-transport-https \
+    lsb-release \
+    gnupg \
+    libdbus-1-3 \
+    libx11-6 \
+    libglib2.0-0 \
+    libgssapi-krb5-2 \
+    && mkdir -p /etc/apt/keyrings \
+    && curl -sLS https://packages.microsoft.com/keys/microsoft.asc | \
+       gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg \
+    && chmod go+r /etc/apt/keyrings/microsoft.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" | \
+       tee /etc/apt/sources.list.d/azure-cli.list \
+    && apt-get update \
+    && apt-get install -y azure-cli \
+    && rm -rf /var/lib/apt/lists/*
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080

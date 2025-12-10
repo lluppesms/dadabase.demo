@@ -34,7 +34,7 @@ public class AIHelper : IAIHelper
     private ImageClient imageGenerator = null;
 
     private readonly string vsTenantId = string.Empty;
-    private DefaultAzureCredential credential = null;
+    //private DefaultAzureCredential credential = null;
     //private readonly ILogger logger;
     #endregion
 
@@ -188,7 +188,7 @@ public class AIHelper : IAIHelper
         {
             if (string.IsNullOrEmpty(openaiApiKey))
             {
-                _chatClientHost = new AzureOpenAIClient(openaiEndpoint, GetCredentials());
+                _chatClientHost = new AzureOpenAIClient(openaiEndpoint, Utilities.GetCredentials(vsTenantId));
             }
             else
             {
@@ -249,7 +249,7 @@ public class AIHelper : IAIHelper
         {
             if (string.IsNullOrEmpty(openaiImageApiKey))
             {
-                _imageClientHost = new AzureOpenAIClient(openaiImageEndpoint, GetCredentials());
+                _imageClientHost = new AzureOpenAIClient(openaiImageEndpoint, Utilities.GetCredentials(vsTenantId));
             }
             else
             {
@@ -267,20 +267,25 @@ public class AIHelper : IAIHelper
         }
     }
 
-    /// <summary>
-    /// Get Credentials if needed
-    /// </summary>
-    private DefaultAzureCredential GetCredentials()
-    {
-        var credential = string.IsNullOrEmpty(vsTenantId) ?
-            new DefaultAzureCredential() :
-            new DefaultAzureCredential(new DefaultAzureCredentialOptions
-            {
-                ExcludeEnvironmentCredential = true,
-                ExcludeManagedIdentityCredential = true,
-                TenantId = vsTenantId // if you get an error "Token tenant does not match resource tenant" during local development, force the tenant
-            });
-        return credential;
-    }
+    ///// <summary>
+    ///// Get Credentials if needed
+    ///// </summary>
+    //private DefaultAzureCredential GetCredentials()
+    //{
+    //    var credential = string.IsNullOrEmpty(vsTenantId) ?
+    //        new DefaultAzureCredential() :
+    //        new DefaultAzureCredential(new DefaultAzureCredentialOptions
+    //        {
+    //            // Exclude credential types that don't work in containers
+    //            ExcludeVisualStudioCredential = true,
+    //            ExcludeVisualStudioCodeCredential = true,
+    //            ExcludeInteractiveBrowserCredential = true,
+    //            ExcludeAzureCliCredential = false, // Keep CLI for local dev
+    //            ExcludeManagedIdentityCredential = false, // Keep for Azure deployment
+    //            ExcludeEnvironmentCredential = false, // Allow service principal via env vars
+    //            TenantId = vsTenantId, // if you get an error "Token tenant does not match resource tenant" during local development, force the tenant
+    //        });
+    //    return credential;
+    //}
     #endregion
 }
