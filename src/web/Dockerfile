@@ -5,24 +5,24 @@
 #   docker run --rm -it -p 8000:8080 dbw yymmddXX
 # Browse or curl to http://localhost:8000
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
-WORKDIR /src
-COPY ["DadABase.Tests/", "DadABase.Tests/"]
-COPY ["DadABase.Web/", "DadABase.Web/"]
-WORKDIR /src/DadABase.Web
+WORKDIR /src/web
+COPY ["Tests/", "Tests/"]
+COPY ["Website/", "Website/"]
+WORKDIR /src/web/Website
 RUN dotnet restore "DadABase.Web.csproj"
 RUN dotnet build "DadABase.Web.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-WORKDIR /src/DadABase.Web
+WORKDIR /src/web/Website
 RUN dotnet publish "./DadABase.Web.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final

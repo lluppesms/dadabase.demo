@@ -3,9 +3,9 @@
 ## Build the app
 
 ``` bash
-cd src\Dadabase
-cd /mnt/c/Projects/Dadabase/dadabase.net8.web.demo/src/Dadabase
-docker build -t dbw -f Dockerfile . -t 020401
+cd src\web
+cd /mnt/c/Projects/Dadabase/Full/dadabase.demo/src/web
+docker build -t dbw -f Dockerfile . -t 120901
 ```
 
 ## Run the app
@@ -13,7 +13,7 @@ docker build -t dbw -f Dockerfile . -t 020401
 The docker run command creates and runs the container as a single command. This command eliminates the need to run docker create and then docker start. You can also set this command to automatically delete the container when the container stops by adding --rm
 
 ``` bash
-docker run --rm -it -p 8000:8080 dbw 020401
+docker run --rm -it -p 8000:8080 dbw 120901
 curl http://localhost:8000
 ```
 
