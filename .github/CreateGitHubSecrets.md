@@ -33,8 +33,8 @@ Secret Values:
 gh auth login
 
 gh variable set APP_NAME -b "full-dadabase"
-gh variable set RESOURCE_GROUP_LOCATION -b "centralus"
-gh variable set RESOURCE_GROUP_PREFIX -b "rg_dadabase-full" 
+gh variable set RESOURCEGROUP_LOCATION -b "centralus"
+gh variable set RESOURCEGROUP_PREFIX -b "rg_dadabase-full" 
 gh variable set API_KEY -b "somesecretstring"
 
 gh secret set LOGIN_CLIENTID -b "<yourADClientId>"

@@ -59,8 +59,8 @@ These should be set at the repository level and should be the same for all envir
 
 ```bash
 gh variable set APP_NAME -b <<YOUR-APP-NAME>>
-gh variable set RESOURCE_GROUP_PREFIX -b rg_dadabase_function
-gh variable set RESOURCE_GROUP_LOCATION -b eastus2
+gh variable set RESOURCEGROUP_PREFIX -b rg_dadabase_function
+gh variable set RESOURCEGROUP_LOCATION -b eastus2
 gh variable set API_KEY -b "somesecretstring"
 gh variable set APP_PROJECT_FOLDER_NAME -b "src\Dadabase\DadABase.Web"
 gh variable set APP_PROJECT_NAME -b "DadABase.Web"
