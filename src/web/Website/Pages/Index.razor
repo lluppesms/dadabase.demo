@@ -1,5 +1,6 @@
 ﻿@page "/"
 @namespace DadABase.Web.Pages
+@using MudBlazor
 
 <PageTitle>@Data.Constants.ApplicationTitle</PageTitle>
 
@@ -26,11 +27,20 @@
                     <button class="btn btn-primary" @onclick="CreatePicture">Paint me a picture!</button>
                 }
             </div>
+            <div class="ai-toggle">
+                <MudSwitch T="bool"
+                        @bind-Value="@aiFeaturesEnabled"
+                        Color="Color.Secondary"
+                        Label="AI features"
+                        Class="ai-switch" />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="@(async () => await GenerateAIDescription())" Disabled="@(!aiFeaturesEnabled || imageDescriptionGenerated || imageLoading)">Generate Description</MudButton>
+                <p class="ai-hint">Off by default to avoid AI calls until requested.</p>
+            </div>
             <div class="joke-image-section">
-                <p style="font-size: 1.2em; font-style: italic; color: #667eea;">@jokeImageMessage</p>
+                <p class="image-message">@jokeImageMessage</p>
                 @if (imageGenerating)
                 {
-                  <p style="font-size: 0.9em; color: #718096;">@jokeImageDescription</p>
+                    <p class="image-note">@jokeImageDescription</p>
                 }
                 @if (imageLoading)
                 {
@@ -43,7 +53,7 @@
                     }
                     else if (!string.IsNullOrEmpty(jokeImageDescription))
                     {
-                      <p style="font-size: 0.9em; color: #718096;">@jokeImageDescription</p>
+                        <p class="image-note">@jokeImageDescription</p>
                     }
                 }
             </div>

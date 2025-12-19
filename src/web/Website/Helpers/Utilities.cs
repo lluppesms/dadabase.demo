@@ -6,6 +6,7 @@
 // Utilities
 // </summary>
 //-----------------------------------------------------------------------
+using Azure.Core;
 using Azure.Identity;
 
 namespace DadABase.Helpers;
@@ -272,21 +273,46 @@ public class Utilities
     /// <summary>
     /// Get Credentials if needed
     /// </summary>
-    public static DefaultAzureCredential GetCredentials(string vsTenantId = "")
+    public static TokenCredential GetCredentials(string vsTenantId = "")
     {
-        var credential = string.IsNullOrEmpty(vsTenantId) ?
-            new DefaultAzureCredential() :
-            new DefaultAzureCredential(new DefaultAzureCredentialOptions
+
+        var clientSecret = Environment.GetEnvironmentVariable("AZURE_CLIENT_SECRET");
+        var clientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID");
+        var tenantId = Environment.GetEnvironmentVariable("AZURE_TENANT_ID");
+
+        try
+        {
+            // If service principal credentials are provided, use them explicitly
+            if (!string.IsNullOrEmpty(clientSecret) && !string.IsNullOrEmpty(clientId) && !string.IsNullOrEmpty(tenantId))
             {
-                // Exclude credential types that don't work in containers
-                ExcludeVisualStudioCredential = true,
-                ExcludeVisualStudioCodeCredential = true,
+                Console.WriteLine("Using ClientSecretCredential for Azure authentication!");
+                return new ClientSecretCredential(tenantId, clientId, clientSecret);
+            }
+
+            Console.WriteLine("Using DefaultAzureCredential for Azure authentication!");
+            // Disable desktop-oriented credentials that require msalruntime/GUI deps so containers stay lean
+            var options = new DefaultAzureCredentialOptions
+            {
+                ExcludeVisualStudioCredential = false,
+                ExcludeVisualStudioCodeCredential = false,
                 ExcludeInteractiveBrowserCredential = true,
                 ExcludeAzureCliCredential = false, // Keep CLI for local dev
                 ExcludeManagedIdentityCredential = false, // Keep for Azure deployment
                 ExcludeEnvironmentCredential = false, // Allow service principal via env vars
-                TenantId = vsTenantId, // if you get an error "Token tenant does not match resource tenant" during local development, force the tenant
-            });
-        return credential;
+            };
+
+            if (!string.IsNullOrEmpty(vsTenantId))
+            {
+                options.TenantId = vsTenantId; // Force tenant to avoid mismatch errors in local dev
+            }
+
+            return new DefaultAzureCredential(options);
+        }
+        catch (Exception ex)
+        {
+            var message = GetExceptionMessage(ex);
+            Console.WriteLine("GetCredentials Failed: " + message);
+            throw;
+        }
     }
 }

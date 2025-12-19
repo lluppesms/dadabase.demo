@@ -188,10 +188,12 @@ public class AIHelper : IAIHelper
         {
             if (string.IsNullOrEmpty(openaiApiKey))
             {
+                Console.WriteLine("Using Azure AD credentials for OpenAI Chat Client");
                 _chatClientHost = new AzureOpenAIClient(openaiEndpoint, Utilities.GetCredentials(vsTenantId));
             }
             else
             {
+                Console.WriteLine("Using API Key for OpenAI Chat Client");
                 _chatClientHost = new(openaiEndpoint, new ApiKeyCredential(openaiApiKey));
             }
 

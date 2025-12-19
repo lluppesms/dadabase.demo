@@ -374,3 +374,4 @@ package-lock.json
 package-lock.json
 src/function/Function/Properties/launchSettings.json
 src/function/deploy.zip
+src/web/docker-readme-dev.md

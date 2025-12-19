@@ -3,6 +3,60 @@
     max-width: 1200px;
     margin: 0 auto;
     animation: fadeInUp 0.6s ease-out;
+    color: var(--text-primary-light);
+}
+
+.ai-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.ai-switch {
+    min-width: 160px;
+}
+
+.ai-hint {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-muted-light);
+}
+
+body[data-bs-theme='dark'] .ai-hint,
+.theme-dark .ai-hint {
+    color: var(--text-muted-dark);
+}
+
+body[data-bs-theme='dark'] .page-container,
+.theme-dark .page-container {
+    color: var(--text-primary-dark);
+}
+
+.page-container p {
+    color: inherit;
+}
+
+.image-message {
+    font-size: 1.2em;
+    font-style: italic;
+    color: var(--text-secondary-light);
+}
+
+body[data-bs-theme='dark'] .image-message,
+.theme-dark .image-message {
+    color: var(--text-secondary-dark);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+.image-note {
+    font-size: 0.95em;
+    color: var(--text-muted-light);
+}
+
+body[data-bs-theme='dark'] .image-note,
+.theme-dark .image-note {
+    color: var(--text-muted-dark);
 }
 
 @keyframes fadeInUp {

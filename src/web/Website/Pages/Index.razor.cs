@@ -24,6 +24,7 @@ public partial class Index : ComponentBase
     private Joke myJoke = new();
     private readonly bool addDelay = false;
     private bool jokeLoading = false;
+    private bool aiFeaturesEnabled = false;
 
     // Store the last 10 jokes
     private List<Joke> jokeHistory = new();
@@ -78,6 +79,14 @@ public partial class Index : ComponentBase
         jokeImageMessage = string.Empty;
         jokeImageUrl = string.Empty;
         jokeImageDescription = string.Empty;
+        if (!aiFeaturesEnabled)
+        {
+            jokeImageMessage = "AI features are off. Enable the toggle to generate descriptions or images.";
+            imageLoading = false;
+            showButtons = false;
+            StateHasChanged();
+            return;
+        }
 
         jokeImageMessage = "🚀 Generating a mental image of this scenario...";
 
@@ -89,14 +98,26 @@ public partial class Index : ComponentBase
 
         var scene = $"{myJoke.JokeTxt} ({myJoke.JokeCategoryTxt})";
         (jokeImageDescription, var success, var errorMessage) = await GenAIAgent.GetJokeSceneDescription(scene);
-        jokeImageMessage = string.Empty;
+        jokeImageMessage = success ? string.Empty : errorMessage;
         imageDescriptionGenerated = success;
-        showButtons = true;
+        showButtons = success;
         imageLoading = false;
         StateHasChanged();
     }
     private async Task CreatePicture()
     {
+        if (!aiFeaturesEnabled)
+        {
+            Snackbar.Add("Enable AI features to generate images.", Severity.Info);
+            return;
+        }
+
+        if (!imageDescriptionGenerated)
+        {
+            Snackbar.Add("Generate a scene description first, then request an image.", Severity.Info);
+            return;
+        }
+
         showButtons = false;
         imageGenerating = true;
         jokeImageMessage = "🚀 OK - I've got an idea! Let me draw that for you! (gimme a sec...)";
@@ -113,6 +134,36 @@ public partial class Index : ComponentBase
     private void ToggleHistory()
     {
         isHistoryCollapsed = !isHistoryCollapsed;
+    }
+
+    private async Task GenerateAIDescription()
+    {
+        Console.WriteLine($"GenerateAIDescription called. aiFeaturesEnabled={aiFeaturesEnabled}");
+        
+        if (!aiFeaturesEnabled)
+        {
+            Snackbar.Add("Enable AI features first.", Severity.Info);
+            return;
+        }
+
+        if (myJoke == null || string.IsNullOrEmpty(myJoke.JokeTxt))
+        {
+            Snackbar.Add("No joke loaded yet.", Severity.Info);
+            return;
+        }
+
+        Snackbar.Add("Generating AI description...", Severity.Info);
+        jokeImageMessage = "🚀 Generating a mental image of this scenario...";
+        imageLoading = true;
+        StateHasChanged();
+
+        var scene = $"{myJoke.JokeTxt} ({myJoke.JokeCategoryTxt})";
+        (jokeImageDescription, var success, var errorMessage) = await GenAIAgent.GetJokeSceneDescription(scene);
+        jokeImageMessage = success ? string.Empty : errorMessage;
+        imageDescriptionGenerated = success;
+        showButtons = success;
+        imageLoading = false;
+        StateHasChanged();
     }
 
     private void ShowImageDescriptionPopup()

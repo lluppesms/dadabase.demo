@@ -1,0 +1,67 @@
+# ==============================================================
+# Dockerfile for Azure CLI enabled .NET Application
+# docker build -t cli-test --build-arg mode=cli  -f dockerfile-azcli . -t dbwaz01
+# docker run --rm -it -v ~/.azure:/root/.azure:rw cli-test dbwaz01
+# # docker run --rm -it -v ~/.azure:/home/appuser/.azure:rw cli-test
+# ==============================================================
+
+# mode can be 'prod' - default or 'cli'
+ARG mode=prod
+
+# Build stage
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src
+EXPOSE 8080
+EXPOSE 8081
+
+# # Copy project file and restore dependencies
+# COPY *.csproj ./
+# RUN dotnet restore
+
+# # Copy source code and build
+# COPY . ./
+# RUN dotnet publish -c Release -o /app/publish
+
+WORKDIR /src/web
+COPY ["Tests/", "Tests/"]
+COPY ["Website/", "Website/"]
+WORKDIR /src/web/Website
+RUN dotnet restore "DadABase.Web.csproj"
+RUN dotnet build "DadABase.Web.csproj" -c $BUILD_CONFIGURATION -o /app/build
+
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src/web/Website
+RUN dotnet publish "./DadABase.Web.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+
+# Runtime stage - using smaller runtime image
+FROM mcr.microsoft.com/dotnet/runtime:10.0 AS runtime-prod
+
+FROM runtime-prod AS runtime-cli
+RUN apt-get update -y; apt-get install -y curl; curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+LABEL hasazcli=true
+
+FROM runtime-${mode} AS runtime
+WORKDIR /app
+
+# Create non-root user with explicit home directory and UID 1000 to match typical host user
+RUN groupadd -r -g 1001 appgroup && useradd -r -g appgroup -u 1001 -m -d /home/appuser appuser
+# Set HOME environment variable for Azure credential discovery
+ENV HOME=/home/appuser
+
+# Copy published application
+COPY --from=publish /app/publish .
+
+# Change ownership to non-root user
+RUN chown -R appuser:appgroup /app
+
+# Switch to non-root user
+USER appuser
+
+FROM runtime AS final
+# # Set entry point
+# ENTRYPOINT ["dotnet", "azure-cli.dll"]
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "DadABase.Web.dll"]

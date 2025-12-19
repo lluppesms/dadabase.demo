@@ -3,6 +3,12 @@
     max-width: 1200px;
     margin: 0 auto;
     animation: fadeIn 0.6s ease-out;
+    color: var(--text-primary-light);
+}
+
+body[data-bs-theme='dark'] .search-container,
+.theme-dark .search-container {
+    color: var(--text-primary-dark);
 }
 
 @keyframes fadeIn {
@@ -21,12 +27,39 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     margin: 2rem 0;
     border: 1px solid rgba(102, 126, 234, 0.1);
+    color: inherit;
 }
 
 body[data-bs-theme='dark'] .search-form,
 .theme-dark .search-form {
-    background: #16213e;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--card-bg-dark);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+.search-form .mud-input-root,
+.search-form .mud-select,
+.search-form .mud-select .mud-input,
+.search-form .mud-input,
+.search-form .mud-input-control {
+    color: inherit;
+}
+
+.search-form .mud-input-label,
+.search-form .mud-input-input,
+.search-form .mud-select .mud-input-input,
+.search-form .mud-select .mud-input-adornment,
+.search-form .mud-select .mud-input { 
+    color: inherit;
+}
+
+.search-form .mud-input-input::placeholder {
+    color: var(--text-muted-light);
+}
+
+body[data-bs-theme='dark'] .search-form .mud-input-input::placeholder,
+.theme-dark .search-form .mud-input-input::placeholder {
+    color: var(--text-muted-dark);
 }
 
 .search-input {

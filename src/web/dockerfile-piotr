@@ -1,0 +1,77 @@
+# To build docker image, first get a personal access token from Azure DevOps with scope that allows you to access the NuGet feed - "Packaging (Read)"
+# Next copy .secrets file with a new name .secrets.local, update it with the personal access token value (remember not to commit this file to source control!)
+# To run the image/container on a local machine, change the base-prod image (Line 25) from "mcr.microsoft.com/dotnet/aspnet:8.0-jammy-chiseled-extra" to
+# "mcr.microsoft.com/dotnet/aspnet:8.0". The jammy-chiseled image (slim build) is missing components needed to run on a local machine.
+# Finally run the following command to build the docker image
+#    docker build -t modeltrigger --secret id=mssecrets,src=.secrets.local --build-arg mode=debugging .
+# To run the docker image in Terminal (it uses base-debugigng layer)):
+#    modeltrigger service uses azure identity to connect to azure app configuration
+#    PIM up to appropriate groups and execute following steps to log in and run:
+#    1. docker run -it --name modeltrigger-service --entrypoint az modeltrigger login
+#    2. docker commit modeltrigger-service modeltrigger-service:loggedin
+#    3. docker rm modeltrigger-service
+#    4. docker run --rm -it --name modeltrigger-service -p 8000:8080 --env ASPNETCORE_ENVIRONMENT=Development --entrypoint dotnet modeltrigger-service:loggedin Dow.Dfc.Waltz.ModelTrigger.dll
+#
+# To run without identity: docker run -it --rm -p 8000:8080 --env ASPNETCORE_ENVIRONMENT=Development --name modeltrigger-service  modeltrigger
+#
+# To run the docker image in Visual Studio (as of 3/24/2023) (it uses base-vs layer):
+#    Follow https://github.com/Azure/azure-sdk-for-net/issues/19167#issuecomment-1439472328
+#    Install  Visual Studio 2022 17.6 Preview 1
+#    Uncomment Azure.Identity beta reference in the .csproj file
+#    Debug in Visual Studio with "Start Debugging in Docker"
+# To use running docker image access http://localhost:8000/swagger
+#
+# Production image does not have Azure CLI and Zscaler cert installed
+
+# mode can be 'prod' - default or 'debugging'
+ARG mode=prod
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-jammy-chiseled-extra AS base-prod
+WORKDIR /app
+EXPOSE 443
+EXPOSE 8080
+
+# this layer should be used by visual studio fast-mode - it installs zscaler cert to allow SSL from running container
+FROM base-prod AS base-vs
+# google.com is behind Zscaler and presents Dow Chemical Production SHA2 Root CA
+# when running in VS container - some azure services are not on SSL allow list for Zscaler
+RUN openssl s_client -showcerts -connect google.com:443 </dev/null | sed -n -e '/-.BEGIN/,/-.END/ p' > /usr/local/share/ca-certificates/ZscalerRootCertificate-2048-SHA256.crt && \
+    update-ca-certificates
+
+# this layer is for debugging outside of Visual Studio - where authentication needs to happen with Azure CLI
+FROM base-vs AS base-debugging
+RUN apt-get update -y; apt-get install -y curl; curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+LABEL hasazcli=true
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-prod
+RUN apt-get update -y; apt-get install -y dos2unix;
+
+# build-debugging layer installs Zscaler cert to allow dotnet restore over SSL from custom source
+FROM build-prod AS build-debugging
+# google.com is behind Zscaler and presents Dow Chemical Production SHA2 Root CA
+RUN openssl s_client -showcerts -connect google.com:443 </dev/null | sed -n -e '/-.BEGIN/,/-.END/ p' > /usr/local/share/ca-certificates/ZscalerRootCertificate-2048-SHA256.crt && \
+        update-ca-certificates
+
+FROM build-${mode} AS build
+WORKDIR /src
+COPY ["Dow.Dfc.Waltz.ModelTrigger.csproj", "Dow.Dfc.Waltz.ModelTrigger/"]
+ENV USE_NET8_ARTIFACTS_CREDENTIAL_PROVIDER=1
+
+RUN --mount=type=secret,id=mssecrets,required=true dos2unix -n /run/secrets/mssecrets /run/secrets/mssecretsDOS && . /run/secrets/mssecretsDOS && \
+    dotnet nuget add source $VSS_ENDPOINT --name DOW --username docker --password $VSS_NUGET_ACCESSTOKEN --store-password-in-clear-text && \
+    curl -fsSLO https://aka.ms/install-artifacts-credprovider.sh && \
+    chmod +x install-artifacts-credprovider.sh && \
+    ./install-artifacts-credprovider.sh && \
+    dotnet restore "Dow.Dfc.Waltz.ModelTrigger/Dow.Dfc.Waltz.ModelTrigger.csproj"
+COPY . Dow.Dfc.Waltz.ModelTrigger
+WORKDIR "/src/Dow.Dfc.Waltz.ModelTrigger"
+RUN dotnet build "Dow.Dfc.Waltz.ModelTrigger.csproj" -c Release -o /app
+
+FROM build AS publish
+RUN dotnet publish -c Release -o /app
+
+# depending on mode - this is either "clean" prod layer without Azure CLI and zscaler cert, or debugging version with both of those thigs
+FROM base-${mode} AS final
+WORKDIR /app
+COPY --from=publish /app .
+ENTRYPOINT ["dotnet", "Dow.Dfc.Waltz.ModelTrigger.dll"]%   
