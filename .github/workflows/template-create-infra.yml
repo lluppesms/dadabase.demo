@@ -67,8 +67,8 @@ jobs:
     # ------------------------------------------------------------------------------------------------------------------------
     env:
       envCode: ${{ inputs.envCode }}
-      generatedAppEnvName: ${{ vars.APP_NAME }}-${{ inputs.envCode }}
-      generatedResourceGroupName: ${{ vars.RESOURCE_GROUP_NAME || format('{0}-{1}', vars.RESOURCE_GROUP_PREFIX, inputs.envCode) }}
+      generatedAppEnvName: ${{ inputs.envCode == 'prod' && vars.APP_NAME || format('{0}-{1}', vars.APP_NAME, inputs.envCode) }}
+      generatedResourceGroupName: ${{ vars.RESOURCE_GROUP_NAME || format('{0}-{1}', vars.RESOURCEGROUP_PREFIX, inputs.envCode) }}
       createResourceGroup: ${{ inputs.createResourceGroup }}
       requestorName: ${{ inputs.requestorName }}
 
@@ -100,9 +100,9 @@ jobs:
         echo "templateFilePath=${{ inputs.templatePath }}${{ inputs.templateFile }}"
         echo "parameterFilePath=${{ inputs.templatePath }}${{ inputs.parameterFile }}"
         echo "bicepDeploymentMode=${{ inputs.bicepDeploymentMode }}"
-        echo "vars.RESOURCE_GROUP_PREFIX=${{ vars.RESOURCE_GROUP_PREFIX }}"
-        echo "vars.RESOURCE_GROUP_LOCATION=${{ vars.RESOURCE_GROUP_LOCATION }}"
-        echo "location=${{ vars.RESOURCE_GROUP_LOCATION }}"
+        echo "vars.RESOURCEGROUP_PREFIX=${{ vars.RESOURCEGROUP_PREFIX }}"
+        echo "vars.RESOURCEGROUP_LOCATION=${{ vars.RESOURCEGROUP_LOCATION }}"
+        echo "location=${{ vars.RESOURCEGROUP_LOCATION }}"
         echo "envCode=${{ env.envCode }}"
         echo "templatePath=${{ inputs.templatePath }}"
         echo "templateFile=${{ inputs.templateFile }}"
@@ -144,14 +144,13 @@ jobs:
       if: ${{ inputs.runCreateInfra }}
       uses: ./.github/actions/login-action
       with:
-        client-id: ${{ secrets.CICD_CLIENT_ID }}
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        client-secret: ${{ secrets.CICD_CLIENT_SECRET }}
 
     - name: Create Resource Group
       if: ${{ inputs.runCreateInfra && inputs.deployInResourceGroup && inputs.createResourceGroup }}
-      run: az group create --name ${{ env.generatedResourceGroupName }} --location ${{ vars.RESOURCE_GROUP_LOCATION }} --tags Environment=${{ inputs.envCode }}
+      run: az group create --name ${{ env.generatedResourceGroupName }} --location ${{ vars.RESOURCEGROUP_LOCATION }} --tags Environment=${{ inputs.envCode }}
 
     - name: What-If Analysis (RG)
       if: ${{ inputs.runCreateInfra && inputs.deployInResourceGroup && inputs.bicepDeploymentMode == 'whatIf' }}
@@ -159,7 +158,7 @@ jobs:
       run: |
         echo "Running what-if analysis..."
         az deployment group what-if \
-          --name ${{ inputs.templateFile }}-whatif-rg-${{ vars.RESOURCE_GROUP_LOCATION }}-${{ steps.get-date.outputs.DATE_TIME_STAMP}} \
+          --name ${{ inputs.templateFile }}-whatif-rg-${{ vars.RESOURCEGROUP_LOCATION }}-${{ steps.get-date.outputs.DATE_TIME_STAMP}} \
           --resource-group "${{ env.generatedResourceGroupName }}" \
           --template-file "${{ inputs.templatePath }}${{ inputs.templateFile }}" \
           --parameters "${{ inputs.templatePath }}${{ inputs.parameterFile }}" \
@@ -174,7 +173,7 @@ jobs:
       id: deploy-bicep-rg
       with:
         scope: resourceGroup
-        name: ${{ inputs.templateFile }}-rg-${{ vars.RESOURCE_GROUP_LOCATION }}-${{ steps.get-date.outputs.DATE_TIME_STAMP}}
+        name: ${{ inputs.templateFile }}-rg-${{ vars.RESOURCEGROUP_LOCATION }}-${{ steps.get-date.outputs.DATE_TIME_STAMP}}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         resource-group-name: ${{ env.generatedResourceGroupName }}
         template-file: ${{ inputs.templatePath }}${{ inputs.templateFile }}
@@ -188,8 +187,8 @@ jobs:
       id: deploy-bicep-sub
       with:
         scope: subscription
-        location: ${{ vars.RESOURCE_GROUP_LOCATION }}
-        name: ${{ inputs.templateFile }}-sub-${{ vars.RESOURCE_GROUP_LOCATION }}-${{ steps.get-date.outputs.DATE_TIME_STAMP}}
+        location: ${{ vars.RESOURCEGROUP_LOCATION }}
+        name: ${{ inputs.templateFile }}-sub-${{ vars.RESOURCEGROUP_LOCATION }}-${{ steps.get-date.outputs.DATE_TIME_STAMP}}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         template-file: ${{ inputs.templatePath }}${{ inputs.templateFile }}
         parameters-file: ${{ inputs.templatePath }}${{ inputs.parameterFile }}

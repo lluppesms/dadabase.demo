@@ -45,7 +45,7 @@ jobs:
       name: ${{ inputs.envCode }}
     env:
       CONFIGURATION: Release
-      DOTNET_CORE_VERSION: 8.0.x
+      DOTNET_CORE_VERSION: 10.0.x
       artifactName: webapp
       AZURE_WEBAPP_PACKAGE_PATH: ./output
 
@@ -59,19 +59,35 @@ jobs:
       checks: write
       pull-requests: read
 
+    # ------------------------------------------------------------------------------------------------------------------------
     steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
     - name: Display Variables
       env:
         GITHUB_CONTEXT: ${{ toJson(github) }}
         JOB_CONTEXT: ${{ toJson(job) }}
       run: |-
         echo "inputs.rootDirectory=${{ inputs.rootDirectory }}"
+        echo "projectName=${{ inputs.projectName }}"
+        echo "testDirectory=${{ inputs.testDirectory }}"
+        echo "testProjectName=${{ inputs.testProjectName }}"
+        echo "listFilesAfterBuild=${{ inputs.listFilesAfterBuild }}"
+        echo "testApplication=${{ inputs.testApplication }}"
         echo "GITHUB_CONTEXT=$GITHUB_CONTEXT"
         echo "JOB_CONTEXT=$JOB_CONTEXT"
-      continue-on-error: true
 
-    - name: Checkout Code
-      uses: actions/checkout@v4
+        echo "---------------------------------"
+        echo "##[group]All Variables:"
+        echo '${{ toJSON(env) }}'
+        echo '${{ toJSON(vars) }}'
+        echo "##[endgroup]"
+        echo "---------------------------------"
+        echo "##[group]Directory of ${{ github.workspace  }}"
+        tree -R ${{ github.workspace  }}
+        echo "##[endgroup]"
+      continue-on-error: true
 
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v3
@@ -80,6 +96,28 @@ jobs:
 
     - name: Restore Dependencies
       run: dotnet restore "${{ inputs.rootDirectory }}"
+
+    - name: Create Runtime Variables
+      id: vars
+      shell: bash
+      run: |
+        readonly rundatetime=$(date +'%Y-%m-%dT%H:%M:%SZ')
+        echo "rundatetime=$rundatetime" >> $GITHUB_OUTPUT
+        readonly rundate=$(date +'%Y.%m.%d')
+        echo "rundate=$rundate" >> $GITHUB_OUTPUT
+        readonly commitbranch=$(echo ${GITHUB_REF#refs/heads/})
+        echo "commitbranch=$commitbranch" >> $GITHUB_OUTPUT
+        readonly commitsha=${GITHUB_SHA::6}
+        echo "commitsha=$commitsha" >> $GITHUB_OUTPUT
+      continue-on-error: true
+
+    - name: Put Build Details in buildinfo.json
+      shell: bash
+      continue-on-error: true
+      run: |
+        echo -e -n "{\"buildDate\":\"${{ steps.vars.outputs.rundatetime }}\",\"buildNumber\":\"${{ steps.vars.outputs.rundate }}.${{ github.run_number }}\",\"buildId\":\"${{ github.run_id }}.${{ github.run_attempt }}\",\"run_id\":\"${{ github.run_id }}\",\"run_attempt\":\"${{ github.run_attempt }}\",\"run_number\":\"${{ github.run_number }}\",\"branchName\":\"${{ steps.vars.outputs.commitbranch }}\",\"commitHash\":\"${{ steps.vars.outputs.commitsha }}\"}" > ${{ inputs.rootDirectory }}/wwwroot/buildinfo.json
+        echo "Contents of buildinfo.json:"
+        cat ${{ inputs.rootDirectory }}/wwwroot/buildinfo.json
 
     - name: Build Application
       run: dotnet build "${{ inputs.rootDirectory }}/${{ inputs.projectName }}.csproj" --configuration Release --no-restore
@@ -105,8 +143,11 @@ jobs:
       with:
         name: ${{ env.artifactName }}
         path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        include-hidden-files: true
 
-    - name: List All Files
+    - name: List All Files After (PowerShell)
       if: inputs.listFilesAfterBuild == true
-      run: 
-        tree ${{ github.action_path }}
+      shell: pwsh
+      run: |
+        Write-Host "Listing file details (recursive) under: src"
+        Get-ChildItem -Path src -Recurse -Force -File
