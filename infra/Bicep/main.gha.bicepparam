@@ -1,20 +1,19 @@
 // ----------------------------------------------------------------------------------------------------
 // GitHub Workflow - Bicep Parameter File
 // ----------------------------------------------------------------------------------------------------
-
-using 'main.bicep'
+using './main.bicep'
 
 param appName = '#{APP_NAME}#'
-param environmentCode = '#{envCode}#'
+param environmentCode = '#{ENVCODE}#'
+param location = '#{RESOURCEGROUP_LOCATION}#'
 
 param adInstance = '#{LOGIN_INSTANCEENDPOINT}#'
 param adDomain = '#{LOGIN_DOMAIN}#'
 param adTenantId = '#{LOGIN_TENANTID}#'
 param adClientId = '#{LOGIN_CLIENTID}#'
 param webApiKey = '#{WEB_API_KEY}#'
-param location = '#{RESOURCE_GROUP_LOCATION}#'
-param servicePlanName = '#{SERVICEPLAN_NAME}#'
-param servicePlanResourceGroupName = '#{SERVICEPLAN_RESOURCE_GROUP_NAME}#'
+param servicePlanName = '#{EXISTING_SERVICEPLAN_NAME}#'
+param servicePlanResourceGroupName = '#{EXISTING_SERVICEPLAN_RESOURCEGROUP_NAME}#'
 param webAppKind = 'linux' // 'linux' or 'windows'
 
 param adminUserId = '#{KEYVAULT_OWNER_USERID}#'

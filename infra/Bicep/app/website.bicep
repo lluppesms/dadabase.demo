@@ -42,22 +42,22 @@ resource appInsightsResource 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-resource appServiceResource 'Microsoft.Web/serverfarms@2023-01-01' existing = {
+resource appServiceResource 'Microsoft.Web/serverfarms@2024-11-01' existing = {
   name: appServicePlanName
   scope: resourceGroup(appServicePlanResourceGroupName)
 }
 
-resource webSiteResource 'Microsoft.Web/sites@2023-01-01' = {
+resource webSiteResource 'Microsoft.Web/sites@2024-11-01' = {
   name: webSiteName
   location: location
   kind: 'app'
   identity: {
-    // type: 'SystemAssigned'
     type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${managedIdentityId}': {}
-    }
+    userAssignedIdentities: { '${managedIdentityId}': {} }
   }
+  // identity: {
+  //   type: 'SystemAssigned'
+  // }
   tags: webSiteTags
   properties: {
     serverFarmId: appServiceResource.id
@@ -84,7 +84,7 @@ resource webSiteResource 'Microsoft.Web/sites@2023-01-01' = {
   }
 }
 
-resource webSiteAppSettings 'Microsoft.Web/sites/config@2023-01-01' = {
+resource webSiteAppSettings 'Microsoft.Web/sites/config@2024-11-01' = {
   parent: webSiteResource
   name: 'logs'
   properties: {
@@ -116,23 +116,23 @@ resource webSiteAppSettings 'Microsoft.Web/sites/config@2023-01-01' = {
 //   dependsOn: [ appInsightsResource] or [ appInsightsResource, webSiteAppSettings ]
 // }
 
-resource webSiteMetricsLogging 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: '${webSiteResource.name}-metrics'
-  scope: webSiteResource
-  properties: {
-    workspaceId: workspaceId
-    metrics: [
-      {
-        category: 'AllMetrics'
-        enabled: true
-        // retentionPolicy: {
-        //   days: 30
-        //   enabled: true 
-        // }
-      }
-    ]
-  }
-}
+// resource webSiteMetricsLogging 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+//   name: '${webSiteResource.name}-metrics'
+//   scope: webSiteResource
+//   properties: {
+//     workspaceId: workspaceId
+//     metrics: [
+//       {
+//         category: 'AllMetrics'
+//         enabled: true
+//         // retentionPolicy: {
+//         //   days: 30
+//         //   enabled: true 
+//         // }
+//       }
+//     ]
+//   }
+// }
 
 // https://learn.microsoft.com/en-us/azure/app-service/troubleshoot-diagnostic-logs
 resource webSiteAuditLogging 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
@@ -181,9 +181,10 @@ resource webSiteAuditLogging 'Microsoft.Insights/diagnosticSettings@2021-05-01-p
 //     // ]    
 //   }
 // }
-output principalId string = managedIdentityPrincipalId
+// output principalId string = webSiteResource.identity.principalId
 output name string = webSiteName
 output hostName string = webSiteResource.properties.defaultHostName
+output webappAppPrincipalId string = managedIdentityPrincipalId
 output appInsightsName string = appInsightsName
 output appInsightsKey string = appInsightsResource.properties.InstrumentationKey
 output appInsightsConnectionString string = appInsightsResource.properties.ConnectionString

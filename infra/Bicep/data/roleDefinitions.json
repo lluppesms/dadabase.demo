@@ -4,7 +4,8 @@
   },
 
   "cosmos": {
-    "dataContributorRoleId": "00000000-0000-0000-0000-000000000002"
+    "dataContributorRoleId": "00000000-0000-0000-0000-000000000002",
+    "operatorRoleId": "230815da-be43-4aae-9cb4-875f7bd000aa"
   },
   "storage": {
     "blobDataContributorRoleId": "ba92f5b4-2d11-453d-a403-e96b0029c9fe",
@@ -23,7 +24,8 @@
     "cognitiveServicesOpenAIContributorRoleId": "a001fd3d-188f-4b5d-821b-7da978bf7442",
     "cognitiveServicesOpenAIUserRoleId": "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd",
     "cognitiveServicesUserRoleId":"a97b65f3-24c7-4388-baec-2e87135dc908",
-    "cognitiveServicesContributorRoleId": "25fbc0a9-bd7c-42a3-aa1a-3b75d497ee68"
+    "cognitiveServicesContributorRoleId": "25fbc0a9-bd7c-42a3-aa1a-3b75d497ee68",
+    "cognitiveServicesAzureAIEngineerRoleId": "64702f94-c441-49e6-a78b-ef80e0188fee"
   },
   "ml": {
     "dataScientistRole": "f6c7c914-8db3-469d-8ca1-694a8f32e121"
@@ -38,5 +40,8 @@
     "secretsOfficer": "b86a8fe4-44ce-4948-aee5-eccb2c155cd7",
     "certificateUser": "db79e9a7-68ee-4b58-9aeb-b90e7c24fcba",
     "certificateOfficer": "a4417e6f-fecd-4de8-b567-7b0420556985"
+  },
+  "apim": {
+    "serviceReaderRoleId": "71522526-b88f-4d52-b57f-d31fc3546d0d"
   }
 }
