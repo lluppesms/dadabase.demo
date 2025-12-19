@@ -60,18 +60,30 @@ public class MessageBubble
     {
         get
         {
-            if (Max_tokens > 0)
+            if (Temperature >= 0)
             {
                 return $"Time: {Time:h:mm:ss}\n" +
                     $"Elapsed: {(decimal)ElapsedMS / 1000m} seconds\n" +
                     $"Request Temp: {Temperature}\n" +
-                    $"Request Tokens: {Max_tokens}\n" +
                     $"{QueryInfo}";
             }
             else
             {
                 return $"Time: {Time:h:mm:ss}\n{QueryInfo}";
             }
+
+            //if (Max_tokens > 0)
+            //{
+            //    return $"Time: {Time:h:mm:ss}\n" +
+            //        $"Elapsed: {(decimal)ElapsedMS / 1000m} seconds\n" +
+            //        $"Request Temp: {Temperature}\n" +
+            //        $"Request Tokens: {Max_tokens}\n" +
+            //        $"{QueryInfo}";
+            //}
+            //else
+            //{
+            //    return $"Time: {Time:h:mm:ss}\n{QueryInfo}";
+            //}
         }
     }
 
@@ -90,10 +102,10 @@ public class MessageBubble
     /// </summary>
     public decimal Temperature { get; set; }
 
-    /// <summary>
-    /// Maximum number of tokens
-    /// </summary>
-    public int Max_tokens { get; set; }
+    ///// <summary>
+    ///// Maximum number of tokens
+    ///// </summary>
+    //public int Max_tokens { get; set; }
 
     /// <summary>
     /// Prompt
@@ -144,7 +156,7 @@ public class MessageBubble
         Time = DateTime.Now;
         QueryInfo = queryInfo;
         Temperature = temperature;
-        Max_tokens = tokens;
+        //Max_tokens = tokens;
         Prompt = prompt;
         ElapsedMS = elapsed;
     }

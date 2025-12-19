@@ -20,8 +20,8 @@ public class ChatCompletionConfiguration
     /// <summary>
     /// Max Tokens
     /// </summary>
-    [ConfigurationKeyName("max_tokens")]
-    public int MaxTokens { get; set; }
+    [ConfigurationKeyName("max_completion_tokens")]
+    public int? MaxCompletionTokens { get; set; }
 
     /// <summary>
     /// Temperature

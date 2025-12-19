@@ -1,6 +1,6 @@
 ﻿using Azure.AI.OpenAI;
-using Azure.Identity;
-using DadABase.Web.Models.AIModels;
+using Microsoft.Agents.AI;
+using OpenAI;
 using OpenAI.Chat;
 using OpenAI.Images;
 using System.ClientModel;
@@ -8,7 +8,7 @@ using System.ClientModel;
 namespace DadABase.Web.Repositories;
 
 /// <summary>
-/// Chat Agent to manage conversations with Azure OpenAI Service
+/// AI Agent Helper using Microsoft Agent Framework to manage conversations with Azure OpenAI Service
 /// </summary>
 public class AIHelper : IAIHelper
 {
@@ -18,24 +18,15 @@ public class AIHelper : IAIHelper
     private readonly string openaiDeploymentName = "gpt-4o";
     private readonly string openaiApiKey = string.Empty;
 
-    private readonly int openaiMaxTokens = 100;
-    private readonly float openaiTemperature = 0.7f;
-    private readonly float openaiTopP = 0.95f;
-
     private readonly string openaiImageEndpointUrl = string.Empty;
     private readonly Uri openaiImageEndpoint = null;
     private readonly string openaiImageDeploymentName = "dall-e-3";
     private readonly string openaiImageApiKey = string.Empty;
 
-    private ChatClient chatClient = null;
-    private ChatCompletionConfiguration chatCompletionConfiguration = null;
-    private ChatCompletionOptions chatRequestOptions = null;
-
+    private AIAgent jokeDescriptionAgent = null;
     private ImageClient imageGenerator = null;
 
     private readonly string vsTenantId = string.Empty;
-    //private DefaultAzureCredential credential = null;
-    //private readonly ILogger logger;
     #endregion
 
     private const string JokeImageGeneratorPrompt =
@@ -57,25 +48,15 @@ public class AIHelper : IAIHelper
 
         try
         {
-            if (!InitializeChatAgent())
+            if (!InitializeJokeAgent())
             {
                 return (string.Empty, false, "AI Chat Keys not found!");
             }
 
-            var chatConversation = new List<ChatMessage>
-            {
-               ChatMessage.CreateSystemMessage(JokeImageGeneratorPrompt),
-               ChatMessage.CreateUserMessage(jokeText)
-            };
-            // Get latest system message from AI configuration
-            var chatMessages = new List<ChatMessage>(GetChatMessages(chatCompletionConfiguration));
-            chatMessages.AddRange(chatConversation);
+            // Use the Agent Framework to run the agent with the joke text
+            var response = await jokeDescriptionAgent.RunAsync(jokeText);
+            imageDescription = response.ToString();
 
-            // Get AI response and add it to chat conversation
-            var response = await chatClient.CompleteChatAsync(chatMessages, chatRequestOptions);
-
-            imageDescription = response.Value.Content[0].Text;
-            chatConversation.Add(ChatMessage.CreateAssistantMessage(imageDescription));
             Console.WriteLine($"Joke: {jokeText} \nImage description {imageDescription}");
             return (imageDescription, true, string.Empty);
         }
@@ -83,18 +64,17 @@ public class AIHelper : IAIHelper
         {
             var errorMessage = $"Error during description generation: {ex.Message}";
             Console.WriteLine(errorMessage);
-            // logger.LogError(errorMessage, "AIHelper");
             return (imageDescription, false, "Could not generate an image description - see log for details!");
         }
     }
 
     /// <summary>
-    /// Give this a description and get back an generated image URL
+    /// Give this a description and get back a generated image as a base64 data URL
     /// </summary>
     /// <returns></returns>
     public async Task<(string, bool, string)> GenerateAnImage(string imageDescription)
     {
-        var imageUrl = string.Empty;
+        var imageDataUrl = string.Empty;
         try
         {
             if (!InitializeImageGenerator())
@@ -102,23 +82,30 @@ public class AIHelper : IAIHelper
                 return (string.Empty, false, "AI Image Keys not found!");
             }
 
+            // gpt-image-1 parameters:
+            // - Size: 1024x1024, 1024x1536, or 1536x1024
+            // - Quality: Low, Medium (default), or High
+            // - Note: gpt-image-1 models only return base64, no URI option
             var imageResult = await imageGenerator.GenerateImageAsync(imageDescription, new()
             {
-                Quality = GeneratedImageQuality.Standard,
-                Size = GeneratedImageSize.W1024xH1024,
-                Style = GeneratedImageStyle.Vivid,
-                ResponseFormat = GeneratedImageFormat.Uri
+                Quality = GeneratedImageQuality.Medium,
+                Size = GeneratedImageSize.W1024xH1024
             });
+
             var image = imageResult.Value;
-            imageUrl = image.ImageUri.ToString();
-            Console.WriteLine($"Generated Image URL {imageUrl}");
-            return (imageUrl, true, string.Empty);
+
+            // gpt-image-1 models return base64 encoded image bytes
+            var imageBytes = image.ImageBytes.ToArray();
+            var base64Image = Convert.ToBase64String(imageBytes);
+            imageDataUrl = $"data:image/png;base64,{base64Image}";
+
+            Console.WriteLine($"Generated Image (base64 data URL, {imageBytes.Length} bytes)");
+            return (imageDataUrl, true, string.Empty);
         }
         catch (Exception ex)
         {
             var errorMessage = $"Error during image generation: {ex.Message} Prompt: {imageDescription}";
             Console.WriteLine(errorMessage);
-            // logger.LogError(errorMessage, "AIHelper");
 
             var sorryMessage = "Sorry - I can't even imagine drawing that picture...!  Try again with a different joke!";
             if (ex.Message.Contains("safety system", StringComparison.CurrentCultureIgnoreCase))
@@ -137,17 +124,12 @@ public class AIHelper : IAIHelper
     /// <summary>
     /// Initialization
     /// </summary>
-    public AIHelper(IConfiguration config) // , ILogger systemLogger)
+    public AIHelper(IConfiguration config)
     {
-        // logger = systemLogger;
-
         openaiEndpointUrl = config["AppSettings:AzureOpenAI:Chat:Endpoint"];
         openaiEndpoint = !string.IsNullOrEmpty(openaiEndpointUrl) ? new(config["AppSettings:AzureOpenAI:Chat:Endpoint"]) : null;
         openaiDeploymentName = config["AppSettings:AzureOpenAI:Chat:DeploymentName"];
         openaiApiKey = config["AppSettings:AzureOpenAI:Chat:ApiKey"];
-        openaiMaxTokens = int.TryParse(config["AppSettings:AzureOpenAI:Chat:MaxTokens"], out var parsedMaxTokens) ? parsedMaxTokens : 300;
-        openaiTemperature = float.TryParse(config["AppSettings:AzureOpenAI:Chat:Temperature"], out var parsedTemperature) ? parsedTemperature : 0.7f;
-        openaiTopP = float.TryParse(config["AppSettings:AzureOpenAI:Chat:TopP"], out var topP) ? topP : 0.95f;
 
         openaiImageEndpointUrl = config["AppSettings:AzureOpenAI:Image:Endpoint"];
         openaiImageEndpoint = !string.IsNullOrEmpty(openaiImageEndpointUrl) ? new(config["AppSettings:AzureOpenAI:Image:Endpoint"]) : null;
@@ -158,78 +140,48 @@ public class AIHelper : IAIHelper
     }
 
     /// <summary>
-    /// Helper method to convert configuration messages to ChatMessage objects
+    /// Initialize the Joke Description Agent using Microsoft Agent Framework
     /// </summary>
-    private static IEnumerable<ChatMessage> GetChatMessages(ChatCompletionConfiguration chatCompletionConfiguration)
+    private bool InitializeJokeAgent()
     {
-        return chatCompletionConfiguration.Messages.Select<ChatCompletionMessage, ChatMessage>(message => message.Role switch
-        {
-            "system" => ChatMessage.CreateSystemMessage(message.Content),
-            "user" => ChatMessage.CreateUserMessage(message.Content),
-            "assistant" => ChatMessage.CreateAssistantMessage(message.Content),
-            _ => throw new ArgumentException($"Unknown role: {message.Role}", nameof(message.Role))
-        });
-    }
-
-    /// <summary>
-    /// Initialize the chat agent
-    /// </summary>
-    private bool InitializeChatAgent()
-    {
-        if (chatClient != null) return true;
+        if (jokeDescriptionAgent != null) return true;
 
         if (string.IsNullOrEmpty(openaiEndpointUrl) || string.IsNullOrEmpty(openaiDeploymentName))
         {
             Console.WriteLine("No OpenAI API keys available");
             return false;
         }
-        AzureOpenAIClient _chatClientHost = null;
+
         try
         {
+            AzureOpenAIClient azureClient;
+
             if (string.IsNullOrEmpty(openaiApiKey))
             {
                 Console.WriteLine("Using Azure AD credentials for OpenAI Chat Client");
-                _chatClientHost = new AzureOpenAIClient(openaiEndpoint, Utilities.GetCredentials(vsTenantId));
+                azureClient = new AzureOpenAIClient(openaiEndpoint, Utilities.GetCredentials(vsTenantId));
             }
             else
             {
                 Console.WriteLine("Using API Key for OpenAI Chat Client");
-                _chatClientHost = new(openaiEndpoint, new ApiKeyCredential(openaiApiKey));
+                azureClient = new AzureOpenAIClient(openaiEndpoint, new ApiKeyCredential(openaiApiKey));
             }
 
-            chatClient = _chatClientHost.GetChatClient(openaiDeploymentName);
-            // alternate way of doing this...
-            //chatClient = new(
-            //    model: openaiDeploymentName,
-            //    credential: new ApiKeyCredential(openaiApiKey),
-            //    options: new OpenAIClientOptions(){ Endpoint = openaiEndpoint }
-            //);
+            // Get the chat client and create an AI Agent using the Agent Framework
+            var chatClient = azureClient.GetChatClient(openaiDeploymentName);
 
-            chatCompletionConfiguration = new ChatCompletionConfiguration
-            {
-                MaxTokens = openaiMaxTokens,
-                Temperature = openaiTemperature,
-                TopP = openaiTopP,
-                Messages = [
-                    new() {
-                    Role = "system",
-                    Content = JokeImageGeneratorPrompt
-                }
-                ]
-            };
-            chatRequestOptions = new ChatCompletionOptions()
-            {
-                MaxOutputTokenCount = openaiMaxTokens,
-                Temperature = openaiTemperature,
-                TopP = openaiTopP
-            };
+            // Create the AI Agent using the Agent Framework extension method
+            jokeDescriptionAgent = chatClient.CreateAIAgent(
+                name: "JokeImageDescriber",
+                instructions: JokeImageGeneratorPrompt
+            );
+
             return true;
         }
         catch (Exception ex)
         {
             var errorMessage = ex.Message;
-            // logger.LogError($"Error initializing Chat Agent: {errorMessage}", "AIHelper");
-            Console.WriteLine($"Error initializing Chat Agent: {errorMessage}");
+            Console.WriteLine($"Error initializing Joke Agent: {errorMessage}");
             return false;
         }
     }
@@ -246,48 +198,29 @@ public class AIHelper : IAIHelper
             Console.WriteLine("No OpenAI API image keys available");
             return false;
         }
-        AzureOpenAIClient _imageClientHost = null;
+
         try
         {
+            AzureOpenAIClient imageClientHost;
+
             if (string.IsNullOrEmpty(openaiImageApiKey))
             {
-                _imageClientHost = new AzureOpenAIClient(openaiImageEndpoint, Utilities.GetCredentials(vsTenantId));
+                imageClientHost = new AzureOpenAIClient(openaiImageEndpoint, Utilities.GetCredentials(vsTenantId));
             }
             else
             {
-                _imageClientHost = new AzureOpenAIClient(openaiImageEndpoint, new ApiKeyCredential(openaiImageApiKey));
+                imageClientHost = new AzureOpenAIClient(openaiImageEndpoint, new ApiKeyCredential(openaiImageApiKey));
             }
-            imageGenerator = _imageClientHost.GetImageClient(openaiImageDeploymentName);
+
+            imageGenerator = imageClientHost.GetImageClient(openaiImageDeploymentName);
             return true;
         }
         catch (Exception ex)
         {
             var errorMessage = ex.Message;
-            // logger.LogError($"Error initializing Image Agent: {errorMessage}", "AIHelper");
             Console.WriteLine($"Error initializing Image Agent: {errorMessage}");
             return false;
         }
     }
-
-    ///// <summary>
-    ///// Get Credentials if needed
-    ///// </summary>
-    //private DefaultAzureCredential GetCredentials()
-    //{
-    //    var credential = string.IsNullOrEmpty(vsTenantId) ?
-    //        new DefaultAzureCredential() :
-    //        new DefaultAzureCredential(new DefaultAzureCredentialOptions
-    //        {
-    //            // Exclude credential types that don't work in containers
-    //            ExcludeVisualStudioCredential = true,
-    //            ExcludeVisualStudioCodeCredential = true,
-    //            ExcludeInteractiveBrowserCredential = true,
-    //            ExcludeAzureCliCredential = false, // Keep CLI for local dev
-    //            ExcludeManagedIdentityCredential = false, // Keep for Azure deployment
-    //            ExcludeEnvironmentCredential = false, // Allow service principal via env vars
-    //            TenantId = vsTenantId, // if you get an error "Token tenant does not match resource tenant" during local development, force the tenant
-    //        });
-    //    return credential;
-    //}
     #endregion
 }
