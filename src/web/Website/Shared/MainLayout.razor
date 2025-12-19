@@ -1,4 +1,6 @@
+@using DadABase.Web.Models.Application
 @inherits LayoutComponentBase
+@inject IBuildInfoService BuildInfoService
 
 <PageTitle>@Data.Constants.ApplicationTitle</PageTitle>
 
@@ -28,10 +30,30 @@
     Copyright @thisYear, Luppes Consulting, Inc.
     <a href="http://www.luppes.com/Privacy" target="_blank">Privacy</a>
     <a href="http://www.luppes.com/License" target="_blank">License</a>
-    <div class="float-end">Version @assemblyVersionNumber</div>
+    @if (buildInfo is not null)
+    {
+        <span class="build-info">
+            <span class="build-number" title="@FormatBuildDate(buildInfo.BuildDate)">@buildInfo.BuildNumber</span>
+        </span>
+    }
 </div>
 
 @code {
     int thisYear = DateTime.Today.Year;
     string assemblyVersionNumber => Assembly.GetEntryAssembly().GetName().Version.ToString();
+    private BuildInfo buildInfo;
+
+    protected override async Task OnInitializedAsync()
+    {
+        buildInfo = await BuildInfoService.GetBuildInfoAsync();
+    }
+
+    private string FormatBuildDate(string buildDate)
+    {
+        if (DateTime.TryParse(buildDate, out var date))
+        {
+            return $"Compiled {date.ToString("yyyy-MM-dd HH:mm:ss")}";
+        }
+        return buildDate;
+    }
 }

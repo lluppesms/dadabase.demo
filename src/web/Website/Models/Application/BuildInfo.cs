@@ -43,4 +43,19 @@ public class BuildInfo
     /// </summary>
     [JsonProperty("commitHash")]
     public string CommitHash { get; set; }
+
+    /// <summary>
+    /// Gets or sets the unique identifier for the current run.
+    /// </summary>
+    public string RunId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the identifier for the current run attempt.
+    /// </summary>
+    public string RunAttempt { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the unique identifier for the current run.
+    /// </summary>
+    public string RunNumber { get; set; } = string.Empty;
 }

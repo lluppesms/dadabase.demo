@@ -1,5 +1,6 @@
-using DadABase.Web.Repositories;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
+using DadABase.Web.Models.Application;
+using DadABase.Web.Repositories;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -48,6 +49,7 @@ builder.Services.AddSingleton<AppSettings>(settings);
 // ----- Configure Data Source and Repositories -----------------------------------------------------------------
 builder.Services.AddSingleton<IJokeRepository, JokeRepository>();
 builder.Services.AddSingleton<IAIHelper, AIHelper>();
+builder.Services.AddScoped<IBuildInfoService, BuildInfoService>();
 
 // ----- Configure Authentication ---------------------------------------------------------------------
 var authSettings = builder.Configuration.GetSection("AzureAD");

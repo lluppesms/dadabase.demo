@@ -122,3 +122,26 @@ body[data-bs-theme='dark'] .theme-switcher .dropdown-item:focus,
         padding-right: 1.5rem !important;
     }
 }
+
+.build-info {
+    text-align: right;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    margin-left: 20px;
+}
+
+.build-number {
+    color: #f8f9fa;
+    font-weight: 300;
+    cursor: default;
+}
+
+body[data-bs-theme='dark'] .build-number,
+.theme-dark .build-number {
+    color: #252a2f;
+}
+
+.build-date {
+    color: #6c757d;
+    font-weight: 300;
+}
