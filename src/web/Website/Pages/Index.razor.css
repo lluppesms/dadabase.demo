@@ -6,28 +6,6 @@
     color: var(--text-primary-light);
 }
 
-.ai-toggle {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-}
-
-.ai-switch {
-    min-width: 160px;
-}
-
-.ai-hint {
-    margin: 0;
-    font-size: 0.9rem;
-    color: var(--text-muted-light);
-}
-
-body[data-bs-theme='dark'] .ai-hint,
-.theme-dark .ai-hint {
-    color: var(--text-muted-dark);
-}
-
 body[data-bs-theme='dark'] .page-container,
 .theme-dark .page-container {
     color: var(--text-primary-dark);
