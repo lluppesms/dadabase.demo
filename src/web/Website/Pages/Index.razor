@@ -20,31 +20,18 @@
             </div>
         }
             <div class="button-group">
-                <button class="btn btn-primary" @onclick="ExecuteRandom">Tell me another one!</button>
-
-                @if (imageDescriptionGenerated && showButtons)
-                {
-                    <button class="btn btn-primary" @onclick="CreatePicture">Paint me a picture!</button>
-                }
-            </div>
-            <div class="ai-toggle">
-                <MudSwitch T="bool"
-                        @bind-Value="@aiFeaturesEnabled"
-                        Color="Color.Secondary"
-                        Label="AI features"
-                        Class="ai-switch" />
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="@(async () => await GenerateAIDescription())" Disabled="@(!aiFeaturesEnabled || imageDescriptionGenerated || imageLoading)">Generate Description</MudButton>
-                <p class="ai-hint">Off by default to avoid AI calls until requested.</p>
+                <button class="btn btn-primary" @onclick="ExecuteRandom" disabled="@imageLoading">Tell me another one!</button>
+                <button class="btn btn-primary" @onclick="GenerateAIImage" disabled="@(imageLoading || imageGenerated)">AI Image Generator</button>
             </div>
             <div class="joke-image-section">
                 <p class="image-message">@jokeImageMessage</p>
-                @if (imageGenerating)
-                {
-                    <p class="image-note">@jokeImageDescription</p>
-                }
                 @if (imageLoading)
                 {
                     <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                    @if (!string.IsNullOrEmpty(jokeImageDescription))
+                    {
+                        <p class="image-note">@jokeImageDescription</p>
+                    }
                 }
                 else
                 {
