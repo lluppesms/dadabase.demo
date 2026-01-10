@@ -35,16 +35,37 @@ public class JokeRepository : BaseRepository, IJokeRepository
     /// <returns>Record</returns>
     public Joke GetRandomJoke(string requestingUserName = "ANON" )
     {
+        // Get the count and min/max JokeId for active jokes
         var activeJokes = _context.Jokes
             .Where(j => j.ActiveInd == "Y")
-            .ToList();
+            .Select(j => j.JokeId);
         
-        if (activeJokes.Count == 0)
+        if (!activeJokes.Any())
         {
             return new Joke("No jokes here!");
         }
         
-        var joke = activeJokes[Random.Shared.Next(0, activeJokes.Count)];
+        var minId = activeJokes.Min();
+        var maxId = activeJokes.Max();
+        
+        // Generate a random JokeId between min and max
+        var randomId = Random.Shared.Next(minId, maxId + 1);
+        
+        // Get the first joke with JokeId >= randomId
+        var joke = _context.Jokes
+            .Where(j => j.ActiveInd == "Y" && j.JokeId >= randomId)
+            .OrderBy(j => j.JokeId)
+            .FirstOrDefault();
+        
+        // If no joke found (possible if there are gaps in IDs), wrap around to the beginning
+        if (joke == null)
+        {
+            joke = _context.Jokes
+                .Where(j => j.ActiveInd == "Y")
+                .OrderBy(j => j.JokeId)
+                .FirstOrDefault();
+        }
+        
         return joke ?? new Joke("No jokes here!");
 	}
 
