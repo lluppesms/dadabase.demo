@@ -15,34 +15,17 @@ namespace DadABase.Data;
 public class JokeRepository : BaseRepository, IJokeRepository
 {
     /// <summary>
-    /// List of Jokes
+    /// Application Database Context
     /// </summary>
-    private static JokeList JokeData = new();
-
-    /// <summary>
-    /// List of Categories
-    /// </summary>
-    private static List<string> JokeCategories = new();
-
-    /// <summary>
-    /// Source of JSON Jokes
-    /// </summary>
-    private static readonly string sourceFileName = "Data/Jokes.json";
+    private readonly ApplicationDbContext _context;
 
     /// <summary>
     /// Joke Repository
     /// </summary>
-    public JokeRepository()
+    /// <param name="context">Database Context</param>
+    public JokeRepository(ApplicationDbContext context)
     {
-        // load up the jokes into memory
-        using (var r = new StreamReader(sourceFileName))
-        {
-            var json = r.ReadToEnd();
-            JokeData = JsonConvert.DeserializeObject<JokeList>(json);
-        }
-
-        // select distinct categories from JokeData
-        JokeCategories = JokeData.Jokes.Select(joke => joke.JokeCategoryTxt).Distinct().Order().ToList();
+        _context = context;
     }
 
     /// <summary>
@@ -52,10 +35,38 @@ public class JokeRepository : BaseRepository, IJokeRepository
     /// <returns>Record</returns>
     public Joke GetRandomJoke(string requestingUserName = "ANON" )
     {
-        var joke = JokeData.Jokes[Random.Shared.Next(0, JokeData.Jokes.Count)];
-        //return joke ?? new Joke("No jokes here!");
-        return (joke == null) ? new Joke("No jokes here!") : joke;
-		// return (joke == null) ? new Joke("No jokes here!") : new Joke(joke.JokeTxt, joke.JokeCategoryTxt, joke.Attribution);
+        // Get the count and min/max JokeId for active jokes
+        var activeJokes = _context.Jokes
+            .Where(j => j.ActiveInd == "Y")
+            .Select(j => j.JokeId);
+        
+        if (!activeJokes.Any())
+        {
+            return new Joke("No jokes here!");
+        }
+        
+        var minId = activeJokes.Min();
+        var maxId = activeJokes.Max();
+        
+        // Generate a random JokeId between min and max
+        var randomId = Random.Shared.Next(minId, maxId + 1);
+        
+        // Get the first joke with JokeId >= randomId
+        var joke = _context.Jokes
+            .Where(j => j.ActiveInd == "Y" && j.JokeId >= randomId)
+            .OrderBy(j => j.JokeId)
+            .FirstOrDefault();
+        
+        // If no joke found (possible if there are gaps in IDs), wrap around to the beginning
+        if (joke == null)
+        {
+            joke = _context.Jokes
+                .Where(j => j.ActiveInd == "Y")
+                .OrderBy(j => j.JokeId)
+                .FirstOrDefault();
+        }
+        
+        return joke ?? new Joke("No jokes here!");
 	}
 
 	/// <summary>
@@ -67,40 +78,30 @@ public class JokeRepository : BaseRepository, IJokeRepository
 	/// <returns>Records</returns>
 	public IQueryable<Joke> SearchJokes(string searchTxt = "", string jokeCategoryTxt = "", string requestingUserName = "ANON")
     {
-        List<string> jokeCategoryList = null;
         jokeCategoryTxt = jokeCategoryTxt.Equals("All", StringComparison.OrdinalIgnoreCase) ? string.Empty : jokeCategoryTxt;
 
-        if (!string.IsNullOrEmpty(jokeCategoryTxt))
-        {
-            // split the jokeCategoryTxt into a list of categories by comma
-            var jokeCategoryArray = jokeCategoryTxt.Split(',').ToList();
-            jokeCategoryList = JokeCategories.Where(category => jokeCategoryArray.Contains(category)).Select(c => c).ToList();
-        }
+        var query = _context.Jokes.Where(j => j.ActiveInd == "Y");
 
         // user supplied both category and search term
         if (!string.IsNullOrEmpty(jokeCategoryTxt) && !string.IsNullOrEmpty(searchTxt))
         {
-            var jokesByTermAndCategory = JokeData.Jokes
-                .Where(joke => jokeCategoryList.Any(category => category == joke.JokeCategoryTxt)
-                    && joke.JokeTxt.Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase))
-                .ToList();
-            return jokesByTermAndCategory.AsQueryable();
+            var categories = jokeCategoryTxt.Split(',').Select(c => c.Trim()).ToList();
+            return query
+                .Where(joke => categories.Contains(joke.JokeCategoryTxt)
+                    && EF.Functions.Like(joke.JokeTxt, $"%{searchTxt}%"));
         }
 
         // user supplied ONLY category and NOT search term
         if (!string.IsNullOrEmpty(jokeCategoryTxt) && string.IsNullOrEmpty(searchTxt))
         {
-            var jokesInCategory = JokeData.Jokes
-            .Where(joke => jokeCategoryList.Any(category => category == joke.JokeCategoryTxt))
-            .ToList();
-            return jokesInCategory.AsQueryable();
+            var categories = jokeCategoryTxt.Split(',').Select(c => c.Trim()).ToList();
+            return query.Where(joke => categories.Contains(joke.JokeCategoryTxt));
         }
 
         // user supplied NOT category and ONLY search term
         if (string.IsNullOrEmpty(jokeCategoryTxt) && !string.IsNullOrEmpty(searchTxt))
         {
-            var jokesByTerm = JokeData.Jokes.Where(joke => joke.JokeTxt.Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase)).ToList();
-            return jokesByTerm.AsQueryable();
+            return query.Where(joke => EF.Functions.Like(joke.JokeTxt, $"%{searchTxt}%"));
         }
 
         // user supplied NEITHER category NOR search term - get a random joke
@@ -114,8 +115,7 @@ public class JokeRepository : BaseRepository, IJokeRepository
     /// <returns>List of Category Names</returns>
     public IQueryable<Joke> ListAll(string activeInd = "Y", string requestingUserName = "ANON")
     {
-        var jokesByTerm = JokeData.Jokes.ToList();
-        return jokesByTerm.AsQueryable();
+        return _context.Jokes.Where(j => j.ActiveInd == activeInd);
     }
 
     /// <summary>
@@ -124,19 +124,23 @@ public class JokeRepository : BaseRepository, IJokeRepository
     /// <returns>List of Category Names</returns>
     public IQueryable<string> GetJokeCategories(string activeInd, string requestingUserName)
     {
-        return JokeCategories.AsQueryable();
+        return _context.Jokes
+            .Where(j => j.ActiveInd == activeInd)
+            .Select(j => j.JokeCategoryTxt)
+            .Distinct()
+            .OrderBy(c => c);
     }
 
     /// <summary>
-    /// Get One Record - not working in JSON!!!
+    /// Get One Record
     /// </summary>
     /// <param name="id"></param>
     /// <param name="requestingUserName"></param>
     /// <returns></returns>
-    /// <exception cref="NotImplementedException"></exception>
     public Joke GetOne(int id, string requestingUserName = "ANON")
     {
-        throw new NotImplementedException();
+        var joke = _context.Jokes.FirstOrDefault(j => j.JokeId == id);
+        return joke ?? new Joke("Joke not found!");
     }
 
     //// --------------------------------------------------------------------------------------------------------------
@@ -207,9 +211,8 @@ public class JokeRepository : BaseRepository, IJokeRepository
     /// <summary>
     /// Dispose
     /// </summary>
-    /// <exception cref="NotImplementedException"></exception>
     public void Dispose()
     {
-        throw new NotImplementedException();
+        _context?.Dispose();
     }
 }

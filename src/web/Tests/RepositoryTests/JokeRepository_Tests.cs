@@ -12,12 +12,28 @@ namespace DadABase.Tests;
 public class Joke_Repository_Tests : BaseTest
 {
     private readonly JokeRepository repo;
+    private readonly ApplicationDbContext context;
 
     public Joke_Repository_Tests(ITestOutputHelper output)
     {
         Task.Run(() => SetupInitialize(output)).Wait();
 
-        repo = new JokeRepository();
+        // Create in-memory database for testing
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        
+        context = new ApplicationDbContext(options);
+        
+        // Seed some test data
+        context.Jokes.AddRange(
+            new Joke { JokeId = 1, JokeTxt = "Test joke 1", JokeCategoryTxt = "Test", ActiveInd = "Y" },
+            new Joke { JokeId = 2, JokeTxt = "Test joke 2", JokeCategoryTxt = "Test", ActiveInd = "Y" },
+            new Joke { JokeId = 3, JokeTxt = "Test joke 3", JokeCategoryTxt = "Other", ActiveInd = "Y" }
+        );
+        context.SaveChanges();
+
+        repo = new JokeRepository(context);
     }
 
     [Fact]
