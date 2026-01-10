@@ -46,8 +46,13 @@ builder.Services.AddLogging(builder =>
 builder.Services.AddSingleton(builder.Configuration);
 builder.Services.AddSingleton<AppSettings>(settings);
 
-// ----- Configure Data Source and Repositories -----------------------------------------------------------------
-builder.Services.AddSingleton<IJokeRepository, JokeRepository>();
+// ----- Configure Database Context and Repositories -----------------------------------------------------------------
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+    ?? "Server=(localdb)\\mssqllocaldb;Database=DadABase;Trusted_Connection=True;MultipleActiveResultSets=true";
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
+builder.Services.AddScoped<IJokeRepository, JokeRepository>();
 builder.Services.AddSingleton<IAIHelper, AIHelper>();
 builder.Services.AddScoped<IBuildInfoService, BuildInfoService>();
 
