@@ -67,7 +67,7 @@ public class JokeRepository : BaseRepository, IJokeRepository
             var categories = jokeCategoryTxt.Split(',').Select(c => c.Trim()).ToList();
             return query
                 .Where(joke => categories.Contains(joke.JokeCategoryTxt)
-                    && joke.JokeTxt.Contains(searchTxt));
+                    && EF.Functions.Like(joke.JokeTxt, $"%{searchTxt}%"));
         }
 
         // user supplied ONLY category and NOT search term
@@ -80,7 +80,7 @@ public class JokeRepository : BaseRepository, IJokeRepository
         // user supplied NOT category and ONLY search term
         if (string.IsNullOrEmpty(jokeCategoryTxt) && !string.IsNullOrEmpty(searchTxt))
         {
-            return query.Where(joke => joke.JokeTxt.Contains(searchTxt));
+            return query.Where(joke => EF.Functions.Like(joke.JokeTxt, $"%{searchTxt}%"));
         }
 
         // user supplied NEITHER category NOR search term - get a random joke
