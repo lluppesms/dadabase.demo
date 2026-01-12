@@ -14,7 +14,16 @@ namespace DadABase.Web.Pages;
 public partial class About : ComponentBase
 {
     [Inject] IJSRuntime JsInterop { get; set; }
+    [Inject] IConfiguration Config { get; set; }
 
+    public string DatabaseType { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        var connectionString = Config.GetConnectionString("DefaultConnection");
+        DatabaseType = !string.IsNullOrEmpty(connectionString) ? "SQL Dad-A-Base" : "JSON Dad-A-Base";
+    }
     /// <summary>
     /// Initialization
     /// </summary>
