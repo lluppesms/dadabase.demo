@@ -1,0 +1,103 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Pipeline to run one sql file against a database
+# See readme file for info about variable group "SQLDeployDemo"
+# ------------------------------------------------------------------------------------------------------------------------
+name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r)
+pool:
+  vmImage: windows-latest # dacpac restore only runs on Windows...
+
+# ----------------------------------------------------------------------------------------------------
+trigger:
+  # since this repo has both AzDO and GHA pipelines, nothing is run automatically...
+  - none
+  # batch: true
+  # branches:
+  #   include:
+  #     - main
+  # paths:
+  #   include:
+  #     - 'src\sql.database/*'
+  #   exclude: 
+  #     - '**/*.yml'
+  #     - '**/*.yaml'
+  #     - '**/*.bicep'
+  #     - '**/*.md'
+
+# ----------------------------------------------------------------------------------------------------
+parameters:
+  - name: environments
+    displayName: Environment
+    type: string
+    default: 'DEV'
+    values:
+      - DEV
+      - DEV-QA
+      - DEV-QA-PROD
+  - name: loginAccountType
+    displayName: Login Type
+    default: 'SVC_PRINCIPAL'
+    values:
+      - SVC_PRINCIPAL
+      - LOCAL_SQL
+    type: string
+  - name: scriptName
+    displayName: Action
+    type: string
+    default: 'Patch-20240101.sql'
+    values:
+      - DBCOPY
+      - Patch-20240101.sql
+      - Patch-20240102.sql
+      - Patch-20240103.sql
+  - name: databaseName
+    displayName: Starting Database
+    type: string
+    default: 'DADABASE'
+  - name: databaseCopyName
+    displayName: Action DBCopy - Copy Database To
+    type: string
+    default: 'DADABASEV093001'
+  - name: resourceGroupName
+    displayName: Action DBCopy - Resource Group Name
+    type: string
+    default: 'rg_sqldeploy_demo'
+
+# ----------------------------------------------------------------------------------------------------
+variables:
+  - group: SQLDeployDemo
+  - template: vars/var-common.yml
+
+# ----------------------------------------------------------------------------------------------------
+stages:
+- ${{ if eq(parameters.environments, 'DEV') }}:
+  - template: pipes/run-sql-pipe.yml
+    parameters:
+      environments: ['DEV']
+      sqlFolderName: 'src\sql.database\sql.database\Patch\'
+      sqlFileName: ${{ parameters.scriptName }}
+      runInDatabase: ${{ parameters.databaseName }}
+      loginAccountType: ${{ parameters.loginAccountType }}
+      resourceGroupName: ${{ parameters.resourceGroupName }}
+      databaseCopyName: ${{ parameters.databaseCopyName }}
+
+- ${{ if eq(parameters.environments, 'DEV-QA') }}:
+  - template: pipes/run-sql-pipe.yml
+    parameters:
+      environments: ['DEV','QA']
+      sqlFolderName: 'src\sql.database\sql.database\Patch\'
+      sqlFileName: ${{ parameters.scriptName }}
+      runInDatabase: ${{ parameters.databaseName }}
+      loginAccountType: ${{ parameters.loginAccountType }}
+      resourceGroupName: ${{ parameters.resourceGroupName }}
+      databaseCopyName: ${{ parameters.databaseCopyName }}
+
+- ${{ if eq(parameters.environments, 'DEV-QA-PROD') }}:
+  - template: pipes/run-sql-pipe.yml
+    parameters:
+      environments: ['DEV','QA','PROD']
+      sqlFolderName: 'src\sql.database\sql.database\Patch\'
+      sqlFileName: ${{ parameters.scriptName }}
+      runInDatabase: ${{ parameters.databaseName }}
+      loginAccountType: ${{ parameters.loginAccountType }}
+      resourceGroupName: ${{ parameters.resourceGroupName }}
+      databaseCopyName: ${{ parameters.databaseCopyName }}

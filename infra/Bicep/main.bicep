@@ -24,6 +24,18 @@ param functionAppSkuFamily string = 'B' // 'Y'
 param functionAppSkuTier string = 'Dynamic'
 param environmentSpecificFunctionName string = ''
 
+param sqlDatabaseName string = 'dadabase'
+@allowed(['Basic','Standard','Premium','BusinessCritical','GeneralPurpose'])
+param sqlSkuTier string = 'GeneralPurpose'
+param sqlSkuFamily string = 'Gen5'
+param sqlSkuName string = 'GP_S_Gen5'
+param adminLoginUserId string = ''
+param adminLoginUserSid string = ''
+param adminLoginTenantId string = ''
+param sqlAdminUser string = ''
+@secure()
+param sqlAdminPassword string = ''
+
 param adInstance string = environment().authentication.loginEndpoint // 'https://login.microsoftonline.com/'
 param adDomain string = ''
 param adTenantId string = ''
@@ -72,7 +84,7 @@ module resourceNames 'resourcenames.bicep' = {
   }
 }
 // --------------------------------------------------------------------------------
-module logAnalyticsWorkspaceModule 'app/loganalyticsworkspace.bicep' = {
+module logAnalyticsWorkspaceModule './modules/monitor/loganalyticsworkspace.bicep' = {
   name: 'logAnalytics${deploymentSuffix}'
   params: {
     logAnalyticsWorkspaceName: resourceNames.outputs.logAnalyticsWorkspaceName
@@ -82,7 +94,7 @@ module logAnalyticsWorkspaceModule 'app/loganalyticsworkspace.bicep' = {
 }
 
 // --------------------------------------------------------------------------------
-module storageModule 'app/storageaccount.bicep' = {
+module storageModule './modules/storage/storageaccount.bicep' = {
   name: 'storage${deploymentSuffix}'
   params: {
     storageSku: webStorageSku
@@ -92,7 +104,7 @@ module storageModule 'app/storageaccount.bicep' = {
   }
 }
 
-module functionStorageModule 'app/storageaccount.bicep' = {
+module functionStorageModule './modules/storage/storageaccount.bicep' = {
   name: 'functionstorage${deploymentSuffix}'
   params: {
     storageSku: functionStorageSku
@@ -106,14 +118,37 @@ module functionStorageModule 'app/storageaccount.bicep' = {
 }
 
 // --------------------------------------------------------------------------------
-module identity './security/identity.bicep' = {
+module sqlDbModule './modules/database/sqlserver.bicep' = {
+  name: 'sql-server${deploymentSuffix}'
+  params: {
+    sqlServerName: resourceNames.outputs.sqlServerName
+    sqlDBName: sqlDatabaseName
+    sqlSkuTier: sqlSkuTier
+    sqlSkuName: sqlSkuName
+    sqlSkuFamily: sqlSkuFamily
+    mincores: 1
+    autopause: 60
+    location: location
+    commonTags: commonTags
+    adAdminUserId: adminLoginUserId
+    adAdminUserSid: adminLoginUserSid
+    adAdminTenantId: adminLoginTenantId
+    sqlAdminUser:sqlAdminUser
+    sqlAdminPassword: sqlAdminPassword
+    workspaceId: logAnalyticsWorkspaceModule.outputs.id
+  }
+}
+
+
+// --------------------------------------------------------------------------------
+module identity './modules/iam/identity.bicep' = {
   name: 'appIdentity${deploymentSuffix}'
   params: {
     identityName: resourceNames.outputs.userAssignedIdentityName
     location: location
   }
 }
-module appRoleAssignments './security/roleassignments.bicep' = if (addRoleAssignments) {
+module appRoleAssignments './modules/iam/roleassignments.bicep' = if (addRoleAssignments) {
   name: 'appRoleAssignments${deploymentSuffix}'
   params: {
     identityPrincipalId: identity.outputs.managedIdentityPrincipalId
@@ -134,14 +169,15 @@ module appRoleAssignments './security/roleassignments.bicep' = if (addRoleAssign
 
 
 // --------------------------------------------------------------------------------
-module keyVaultModule './security/keyvault.bicep' = {
+module keyVaultModule './modules/security/keyvault.bicep' = {
   name: 'keyVault${deploymentSuffix}'
   params: {
     keyVaultName: resourceNames.outputs.keyVaultName
     location: location
     commonTags: commonTags
-    adminUserObjectIds: [ adminUserId ]
-    applicationUserObjectIds: [ identity.outputs.managedIdentityPrincipalId ]
+    keyVaultOwnerUserId: adminUserId
+    adminUserObjectIds: [ identity.outputs.managedIdentityPrincipalId ]
+    applicationUserObjectIds: [ webSiteModule.outputs.webappAppPrincipalId ]
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
     publicNetworkAccess: 'Enabled'
     allowNetworkAccess: 'Allow'
@@ -149,7 +185,7 @@ module keyVaultModule './security/keyvault.bicep' = {
   }
 }
 
-module keyVaultStorageSecret './security/keyvaultsecretstorageconnection.bicep' = {
+module keyVaultStorageSecret './modules/security/keyvaultsecretstorageconnection.bicep' = {
   name: 'keyVaultStorageSecret${deploymentSuffix}'
   params: {
     keyVaultName: keyVaultModule.outputs.name
@@ -159,7 +195,7 @@ module keyVaultStorageSecret './security/keyvaultsecretstorageconnection.bicep' 
 }
 
 // --------------------------------------------------------------------------------
-module appServicePlanModule 'app/websiteserviceplan.bicep' = {
+module appServicePlanModule './modules/webapp/websiteserviceplan.bicep' = {
   name: 'appService${deploymentSuffix}'
   params: {
     location: location
@@ -173,7 +209,7 @@ module appServicePlanModule 'app/websiteserviceplan.bicep' = {
   }
 }
 
-module webSiteModule 'app/website.bicep' = {
+module webSiteModule './modules/webapp/website.bicep' = {
   name: 'webSite${deploymentSuffix}'
   params: {
     webSiteName: resourceNames.outputs.webSiteName
@@ -194,7 +230,7 @@ module webSiteModule 'app/website.bicep' = {
 // configured in App Service as AppSettings__MyKey for the key name. 
 // In other words, any : should be replaced by __ (double underscore).
 // NOTE: See https://learn.microsoft.com/en-us/azure/app-service/configure-common?tabs=portal  
-module webSiteAppSettingsModule 'app/websiteappsettings.bicep' = {
+module webSiteAppSettingsModule './modules/webapp/websiteappsettings.bicep' = {
   name: 'webSiteAppSettings${deploymentSuffix}'
   params: {
     webAppName: webSiteModule.outputs.name
@@ -225,7 +261,7 @@ module webSiteAppSettingsModule 'app/websiteappsettings.bicep' = {
 }
 
 //--------------------------------------------------------------------------------
-module functionModule 'app/functionapp.bicep' = {
+module functionModule './modules/function/functionapp.bicep' = {
   name: 'function${deploymentSuffix}'
   dependsOn: [ appRoleAssignments ]
   params: {
@@ -248,7 +284,7 @@ module functionModule 'app/functionapp.bicep' = {
   }
 }
 
-module functionAppSettingsModule 'app/functionappsettings.bicep' = {
+module functionAppSettingsModule './modules/function/functionappsettings.bicep' = {
   name: 'functionAppSettings${deploymentSuffix}'
   params: {
     functionAppName: functionModule.outputs.name
@@ -265,7 +301,7 @@ module functionAppSettingsModule 'app/functionappsettings.bicep' = {
 }
 
 //--------------------------------------------------------------------------------
-module functionFlexModule 'app/functionflex.bicep' = {
+module functionFlexModule './modules/function/functionflex.bicep' = {
   name: 'functionFlex${deploymentSuffix}'
   dependsOn: [ appRoleAssignments ]
   params: {

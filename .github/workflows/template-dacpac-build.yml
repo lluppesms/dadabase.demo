@@ -1,0 +1,79 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# GHA Reusable Called Workflow to build a SQL DACPAC file
+# ------------------------------------------------------------------------------------------------------------------------
+# You need to set up secrets in the GitHub Secrets Repository before running these workflows.
+#   See readme.md for details
+# ------------------------------------------------------------------------------------------------------------------------
+name: z_template_dacpac_build
+run-name: Build DACPAC
+on:
+  workflow_call:
+    inputs:
+      envCode:
+        required: true
+        type: string
+      appFolderName:
+        required: true
+        type: string
+      appSolutionName:
+        required: true
+        type: string
+      appProjectName:
+        required: true
+        type: string
+      listFilesAfterBuild:
+        required: false
+        type: boolean
+        default: false
+    outputs:
+      artifactName:
+        description: 'The name of the uploaded artifact'
+        value: ${{ jobs.build.outputs.artifactName }}
+
+# ------------------------------------------------------------------------------------------------------------------------
+jobs:
+  build:
+    name: Build DACPAC
+    runs-on: windows-latest
+    environment:
+      name: ${{ inputs.envCode }}
+    env:
+      CONFIGURATION: Release
+      PLATFORM: 'Any CPU'
+      artifactName: dacpac
+
+    outputs:
+      artifactName: ${{ env.artifactName }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+
+      - name: Restore NuGet Packages
+        run: nuget restore ${{ inputs.appFolderName }}/${{ inputs.appSolutionName }}.sln
+
+      - name: Build DACPAC
+        run: |
+          msbuild ${{ inputs.appFolderName }}/${{ inputs.appSolutionName }}.sln `
+            /p:Configuration=${{ env.CONFIGURATION }} `
+            /p:Platform="${{ env.PLATFORM }}" `
+            /p:DropObjectsNotInSource=False
+
+      - name: Display Files After Build
+        if: inputs.listFilesAfterBuild == true
+        run: |
+          Write-Host "Listing files in ${{ inputs.appFolderName }}/${{ inputs.appProjectName }}/bin/${{ env.CONFIGURATION }}:"
+          Get-ChildItem -Path "${{ inputs.appFolderName }}/${{ inputs.appProjectName }}/bin/${{ env.CONFIGURATION }}" -Recurse
+
+      - name: Upload DACPAC Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.artifactName }}
+          path: ${{ inputs.appFolderName }}/${{ inputs.appProjectName }}/bin/${{ env.CONFIGURATION }}/${{ inputs.appProjectName }}.dacpac
+          if-no-files-found: error

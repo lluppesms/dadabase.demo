@@ -17,7 +17,7 @@ param identityPrincipalId string
 param principalType string = 'ServicePrincipal'
 
 // ----------------------------------------------------------------------------------------------------
-var roleDefinitions = loadJsonContent('../data/roleDefinitions.json')
+var roleDefinitions = loadJsonContent('../../data/roleDefinitions.json')
 var addRegistryRoles = !empty(registryName)
 var addStorageRoles = !empty(storageAccountName)
 var addSearchRoles = !empty(aiSearchName)

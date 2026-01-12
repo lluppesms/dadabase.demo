@@ -1,0 +1,75 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Pipeline Template to build and deploy Azure Resources and Database
+# ------------------------------------------------------------------------------------------------------------------------
+parameters:
+- name: environments
+  type: object
+  default: ['DEV']
+- name: singleEnvironment
+  default: 'false'
+- name: appFolderName
+  default: ''
+- name: appSolutionName
+  default: ''
+- name: appProjectFolderName
+  default: ''
+- name: appProjectName
+  default: ''
+- name: appProjectExtension
+  default: 'csproj' # or 'sqlproj' (!)
+- name: runGHASScan
+  default: 'false'
+- name: runMSDevSecOpsScan
+  default: 'false'
+- name: loginAccountType
+  default: 'SVC_PRINCIPAL'
+
+# ----------------------------------------------------------------------------------------------------
+stages:
+- ${{ if or(eq(lower(parameters.runMSDevSecOpsScan), 'true'), eq(lower(parameters.runGHASScan), 'true')) }}:
+  - stage: ScanApplication
+    displayName: Scan Application
+    jobs:
+    - template: templates/scan-code-template.yml
+      parameters:
+        environmentName: 'DEV'
+        runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
+        runGHASScan: ${{ parameters.runGHASScan }}
+        appFolderName: ${{ parameters.appFolderName }}
+        appSolutionName: ${{ parameters.appSolutionName }}
+        appProjectFolderName: ${{ parameters.appProjectFolderName }}
+        appProjectExtension: ${{ parameters.appProjectExtension }}
+
+- stage: BuildDacPac
+  displayName: Build DACPAC
+  jobs:
+  - template: templates/dacpac-build-template.yml
+    parameters:
+      environmentName: 'DEV'
+      appFolderName: ${{ parameters.appFolderName }}
+      appSolutionName: ${{ parameters.appSolutionName }}
+      appProjectName: ${{ parameters.appProjectName }}
+      artifactName: 'dacpac'
+
+# ----------------------------------------------------------------------------------------------------
+- ${{ each environmentName in parameters.environments }} :
+  - stage: CreateInfra${{ environmentName }}
+    displayName: Create ${{ environmentName }} Resources
+    # Condition is build complete and a single environment is being deployed, 
+    # or the environment is 'dev', or if qa/prod, the previous stage (dev->qa or qa->prod) succeeded
+    condition: or(eq(${{ parameters.singleEnvironment }}, 'true'), and(eq(upper('${{ environmentName }}'), 'DEV'), succeeded('BuildDacPac')), and(eq(upper('${{ environmentName }}'), 'QA'), succeeded('DeployDEVSchema')), and(eq(upper('${{ environmentName }}'), 'PROD'), succeeded('DeployQASchema')))
+    jobs:
+    - template: templates/create-infra-template.yml
+      parameters:
+        environmentName: ${{ environmentName }}
+
+  - stage: Deploy${{ environmentName }}Schema
+    displayName: Deploy ${{ environmentName }} Schema
+    condition: or(eq(${{ parameters.singleEnvironment }}, 'true'), and(eq(upper('${{ environmentName }}'), 'DEV'), succeeded('CreateInfraDEV')), and(eq(upper('${{ environmentName }}'), 'QA'), succeeded('CreateInfraQA')), and(eq(upper('${{ environmentName }}'), 'PROD'), succeeded('CreateInfraPROD')))
+    jobs:
+    - template: templates/dacpac-deploy-template.yml
+      parameters:
+        environmentName: ${{ environmentName }}
+        artifactName: 'dacpac'
+        appProjectName: ${{ parameters.appProjectName }}
+        loginAccountType: ${{ parameters.loginAccountType }}

@@ -1,0 +1,45 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Pipeline Template to build Database Objects Only to existing resources
+# ------------------------------------------------------------------------------------------------------------------------
+parameters:
+- name: environments
+  type: object
+  default: ['DEV']
+- name: singleEnvironment
+  default: 'false'
+- name: appFolderName
+  default: ''
+- name: appSolutionName
+  default: ''
+- name: appProjectName
+  default: ''
+- name: loginAccountType
+  default: 'SVC_PRINCIPAL'
+
+# ----------------------------------------------------------------------------------------------------
+stages:
+- stage: BuildDacPac
+  displayName: Build DACPAC
+  jobs:
+  - template: templates/dacpac-build-template.yml
+    parameters:
+      environmentName: 'DEV'
+      appFolderName: ${{ parameters.appFolderName }}
+      appSolutionName: ${{ parameters.appSolutionName }}
+      appProjectName: ${{ parameters.appProjectName }}
+      artifactName: 'dacpac'
+
+# ----------------------------------------------------------------------------------------------------
+- ${{ each environmentName in parameters.environments }} :
+  - stage: Deploy${{ environmentName }}Schema
+    displayName: Deploy ${{ environmentName }} Schema
+    # Condition is build complete and a single environment is being deployed, 
+    # or the environment is 'dev', or if qa/prod, the previous stage (dev->qa or qa->prod) succeeded
+    condition: or(eq(${{ parameters.singleEnvironment }}, 'true'), and(eq(upper('${{ environmentName }}'), 'QA'), succeeded('DeployDEVSchema')), and(eq(upper('${{ environmentName }}'), 'PROD'), succeeded('DeployQASchema')))
+    jobs:
+    - template: templates/dacpac-deploy-template.yml
+      parameters:
+        environmentName: ${{ environmentName }}
+        artifactName: 'dacpac'
+        appProjectName: ${{ parameters.appProjectName }}
+        loginAccountType: ${{ parameters.loginAccountType }}

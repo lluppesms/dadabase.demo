@@ -1,0 +1,175 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# GHA Reusable Called Workflow to run a SQL script against an Azure SQL Database
+# ------------------------------------------------------------------------------------------------------------------------
+# You need to set up secrets in the GitHub Secrets Repository before running these workflows.
+#   See readme.md for details
+# ------------------------------------------------------------------------------------------------------------------------
+# Prerequisites:
+# Unless you are using a local user/password, you must find the service principal name that is running
+# your workflow and execute these commands in the Azure SQL Database to grant access:
+#   CREATE USER yourSP FROM EXTERNAL PROVIDER
+#   ALTER ROLE db_owner ADD MEMBER yourSP
+# See also https://learn.microsoft.com/en-us/azure/azure-sql/database/authentication-aad-configure
+# ------------------------------------------------------------------------------------------------------------------------
+name: z_template_run_sql
+run-name: Run SQL Script
+on:
+  workflow_call:
+    inputs:
+      envCode:
+        required: true
+        type: string
+      sqlFolderName:
+        required: true
+        type: string
+      sqlFileName:
+        required: true
+        type: string
+      runInDatabase:
+        required: true
+        type: string
+      sqlServerName:
+        required: true
+        type: string
+      loginAccountType:
+        required: false
+        type: string
+        default: 'SVC_PRINCIPAL'
+      resourceGroupName:
+        required: false
+        type: string
+        default: ''
+      databaseCopyName:
+        required: false
+        type: string
+        default: ''
+    secrets:
+      AZURE_CREDENTIALS:
+        required: true
+      SQL_ADMIN_USER:
+        required: false
+      SQL_ADMIN_PASSWORD:
+        required: false
+
+# ------------------------------------------------------------------------------------------------------------------------
+jobs:
+  run-sql:
+    name: Run SQL Script
+    runs-on: windows-latest
+    environment:
+      name: ${{ inputs.envCode }}
+    env:
+      fqdnServerName: ${{ inputs.sqlServerName }}.database.windows.net
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Create Variables
+        id: vars
+        shell: pwsh
+        run: |
+          $runDateTime = Get-Date -Format "yyyyMMddHHmm"
+          echo "runDateTime=$runDateTime" >> $env:GITHUB_OUTPUT
+          echo "Run DateTime: $runDateTime"
+
+      - name: Display Variables
+        shell: pwsh
+        run: |
+          Write-Host "Environment: ${{ inputs.envCode }}"
+          Write-Host "SQL Server Name: ${{ inputs.sqlServerName }}"
+          Write-Host "FQDN Server Name: ${{ env.fqdnServerName }}"
+          Write-Host "Database: ${{ inputs.runInDatabase }}"
+          Write-Host "SQL Folder: ${{ inputs.sqlFolderName }}"
+          Write-Host "SQL File: ${{ inputs.sqlFileName }}"
+          Write-Host "Login Type: ${{ inputs.loginAccountType }}"
+          Write-Host "Resource Group: ${{ inputs.resourceGroupName }}"
+          Write-Host "Database Copy Name: ${{ inputs.databaseCopyName }}"
+
+      - name: List Input Files
+        shell: pwsh
+        run: |
+          Write-Host "SQL File: ${{ inputs.sqlFolderName }}/${{ inputs.sqlFileName }}"
+          Write-Host "Directory of ${{ inputs.sqlFolderName }}:"
+          Get-ChildItem -Path "${{ inputs.sqlFolderName }}" -Recurse -ErrorAction SilentlyContinue
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # ------------------------------------------------------------------------------------------------------------------------
+      # Run SQL Script with Local SQL User/Password
+      # ------------------------------------------------------------------------------------------------------------------------
+      - name: Run SQL Script - Local SQL User
+        if: inputs.loginAccountType == 'LOCAL_SQL' && inputs.sqlFileName != 'DBCOPY'
+        shell: pwsh
+        run: |
+          $sqlFile = "${{ inputs.sqlFolderName }}/${{ inputs.sqlFileName }}"
+          Write-Host "Running SQL script: $sqlFile on ${{ env.fqdnServerName }} / ${{ inputs.runInDatabase }}"
+          
+          # Install SqlServer module if not present
+          if (-not (Get-Module -ListAvailable -Name SqlServer)) {
+            Install-Module -Name SqlServer -Force -AllowClobber -Scope CurrentUser
+          }
+          Import-Module SqlServer
+          
+          Invoke-Sqlcmd -ServerInstance "${{ env.fqdnServerName }}" `
+            -Database "${{ inputs.runInDatabase }}" `
+            -Username "${{ secrets.SQL_ADMIN_USER }}" `
+            -Password "${{ secrets.SQL_ADMIN_PASSWORD }}" `
+            -InputFile "$sqlFile" `
+            -Verbose
+
+      # ------------------------------------------------------------------------------------------------------------------------
+      # Run SQL Script with Service Principal Access Token
+      # ------------------------------------------------------------------------------------------------------------------------
+      - name: Run SQL Script - Service Principal
+        if: inputs.loginAccountType == 'SVC_PRINCIPAL' && inputs.sqlFileName != 'DBCOPY'
+        shell: pwsh
+        run: |
+          $sqlFile = "${{ inputs.sqlFolderName }}/${{ inputs.sqlFileName }}"
+          Write-Host "Running SQL script: $sqlFile on ${{ env.fqdnServerName }} / ${{ inputs.runInDatabase }}"
+          
+          # Get access token for Azure SQL
+          $accessToken = az account get-access-token --resource=https://database.windows.net/ --query accessToken -o tsv
+          
+          # Install SqlServer module if not present
+          if (-not (Get-Module -ListAvailable -Name SqlServer)) {
+            Install-Module -Name SqlServer -Force -AllowClobber -Scope CurrentUser
+          }
+          Import-Module SqlServer
+          
+          Invoke-Sqlcmd -ServerInstance "${{ env.fqdnServerName }}" `
+            -Database "${{ inputs.runInDatabase }}" `
+            -AccessToken $accessToken `
+            -InputFile "$sqlFile" `
+            -Verbose
+
+      # ------------------------------------------------------------------------------------------------------------------------
+      # Run Database Copy with Service Principal
+      # ------------------------------------------------------------------------------------------------------------------------
+      - name: Run Database Copy - Service Principal
+        if: inputs.loginAccountType == 'SVC_PRINCIPAL' && inputs.sqlFileName == 'DBCOPY'
+        shell: pwsh
+        run: |
+          Write-Host "Copying database ${{ inputs.runInDatabase }} to ${{ inputs.databaseCopyName }}"
+          Write-Host "Server: ${{ inputs.sqlServerName }}, Resource Group: ${{ inputs.resourceGroupName }}"
+          
+          # Install Az.Sql module if not present
+          if (-not (Get-Module -ListAvailable -Name Az.Sql)) {
+            Install-Module -Name Az.Sql -Force -AllowClobber -Scope CurrentUser
+          }
+          Import-Module Az.Sql
+          
+          New-AzSqlDatabaseCopy `
+            -ResourceGroupName "${{ inputs.resourceGroupName }}" `
+            -ServerName "${{ inputs.sqlServerName }}" `
+            -DatabaseName "${{ inputs.runInDatabase }}" `
+            -CopyResourceGroupName "${{ inputs.resourceGroupName }}" `
+            -CopyServerName "${{ inputs.sqlServerName }}" `
+            -CopyDatabaseName "${{ inputs.databaseCopyName }}"
+
+      - name: Azure Logout
+        if: always()
+        run: az logout

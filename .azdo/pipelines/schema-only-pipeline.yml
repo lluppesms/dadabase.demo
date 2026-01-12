@@ -1,0 +1,64 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Pipeline to build and deploy Database Objects Only to existing resources
+# See readme file for info about variable group "SQLDeployDemo"
+# ------------------------------------------------------------------------------------------------------------------------
+name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r)
+pool:
+  vmImage: windows-latest # dacpac restore only runs on Windows...
+
+# ----------------------------------------------------------------------------------------------------
+trigger:
+  # this repo is set so that nothing is run automatically...
+  - none
+  # batch: true
+  # branches:
+  #   include:
+  #     - main
+  # paths:
+  #   include:
+  #     - 'src\sql.database/*'
+  #   exclude: 
+  #     - '**/*.yml'
+  #     - '**/*.yaml'
+  #     - '**/*.bicep'
+  #     - '**/*.md'
+
+# ----------------------------------------------------------------------------------------------------
+parameters:
+  - name: deployMultiStage
+    displayName: Multi-Stage Deploy
+    type: boolean
+    default: false
+  - name: loginAccountType
+    displayName: Login Account Type
+    default: 'SVC_PRINCIPAL'
+    values:
+      - LOCAL_SQL
+      - SVC_PRINCIPAL
+    type: string
+
+# ----------------------------------------------------------------------------------------------------
+variables:
+  - group: SQLDeployDemo
+  - template: vars/var-common.yml
+
+# ----------------------------------------------------------------------------------------------------
+stages:
+- ${{ if eq(lower(parameters.deployMultiStage), 'false') }}:
+  - template: pipes/schema-only-pipe.yml
+    parameters:
+      environments: ['DEV']
+      singleEnvironment: 'true'
+      appFolderName: $(appFolderName)
+      appSolutionName: $(appSolutionName)
+      appProjectName: $(appProjectName)
+      loginAccountType: ${{ parameters.loginAccountType }}
+
+- ${{ if eq(lower(parameters.deployMultiStage), 'true') }}:
+  - template: pipes/schema-only-pipe.yml
+    parameters:
+      environments: ['DEV','QA','PROD']
+      appFolderName: $(appFolderName)
+      appSolutionName: $(appSolutionName)
+      appProjectName: $(appProjectName)
+      loginAccountType: ${{ parameters.loginAccountType }}

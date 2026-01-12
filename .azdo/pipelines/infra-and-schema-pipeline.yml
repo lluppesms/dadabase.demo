@@ -1,0 +1,77 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Pipeline to build and deploy Azure Resources and Database
+# See readme file for info about variable group "SQLDeployDemo"
+# ------------------------------------------------------------------------------------------------------------------------
+name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r)
+pool:
+  vmImage: windows-latest # dacpac restore only runs on Windows...
+
+# ------------------------------------------------------------------------------------------------------------------------
+trigger:
+  # since this repo has both AzDO and GHA pipelines, nothing is run automatically...
+  - none
+  # batch: true
+  # branches:
+  #   include:
+  #     - main
+  #   exclude:
+  #     - '**/*.md'
+  # paths:
+  #   include:
+  #     - 'src\sql.database/*'
+
+# ----------------------------------------------------------------------------------------------------
+parameters:
+  - name: deployMultiStage
+    displayName: Multi-Stage Deploy
+    type: boolean
+    default: false
+  - name: runGHASScan
+    displayName: Run GHAS Scan
+    type: boolean
+    default: false
+  - name: runMSDevSecOpsScan
+    displayName: Run MS DevSecOps Scan
+    type: boolean
+    default: false
+  - name: loginAccountType
+    displayName: Login Account Type
+    default: 'SVC_PRINCIPAL'
+    values:
+      - LOCAL_SQL
+      - SVC_PRINCIPAL
+    type: string
+
+# ----------------------------------------------------------------------------------------------------
+variables:
+  - group: SQLDeployDemo
+  - template: vars/var-common.yml
+
+# ----------------------------------------------------------------------------------------------------
+stages:
+- ${{ if eq(lower(parameters.deployMultiStage), 'false') }}:
+  - template: pipes/infra-and-schema-pipe.yml
+    parameters:
+      environments: ['DEV']
+      singleEnvironment: 'true'
+      appFolderName: $(appFolderName)
+      appSolutionName: $(appSolutionName)
+      appProjectFolderName: $(appProjectFolderName)
+      appProjectName: $(appProjectName)
+      appProjectExtension: $(appProjectExtension)
+      runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
+      runGHASScan: ${{ parameters.runGHASScan }}
+      loginAccountType: ${{ parameters.loginAccountType }}
+
+- ${{ if eq(lower(parameters.deployMultiStage), 'true') }}:
+  - template: pipes/infra-and-schema-pipe.yml
+    parameters:
+      environments: ['DEV','QA','PROD']
+      appFolderName: $(appFolderName)
+      appSolutionName: $(appSolutionName)
+      appProjectFolderName: $(appProjectFolderName)
+      appProjectName: $(appProjectName)
+      appProjectExtension: $(appProjectExtension)
+      runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
+      runGHASScan: ${{ parameters.runGHASScan }}
+      loginAccountType: ${{ parameters.loginAccountType }}
