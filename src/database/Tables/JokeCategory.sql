@@ -6,7 +6,7 @@ CREATE TABLE [dbo].[JokeCategory](
 	[JokeCategoryId] [int] IDENTITY(1,1) NOT NULL,
 	[JokeCategoryTxt] [nvarchar](500) NULL,
 	[SortOrderNbr] [int] NOT NULL,
-	[ActiveInd] [nvarchar](1) NOT NULL,
+	[ActiveInd] [nchar](1) NOT NULL,
 	[CreateDateTime] [datetime] NOT NULL,
 	[CreateUserName] [nvarchar](255) NOT NULL,
 	[ChangeDateTime] [datetime] NOT NULL,
@@ -27,4 +27,8 @@ GO
 ALTER TABLE [dbo].[JokeCategory] ADD CONSTRAINT [DF_JokeCategory_ChangeDateTime] DEFAULT (getdate()) FOR [ChangeDateTime]
 GO
 ALTER TABLE [dbo].[JokeCategory] ADD CONSTRAINT [DF_JokeCategory_ChangeUserName] DEFAULT (N'UNKNOWN') FOR [ChangeUserName]
+GO
+
+-- Check constraints
+ALTER TABLE [dbo].[JokeCategory] ADD CONSTRAINT [CK_JokeCategory_ActiveInd] CHECK ([ActiveInd] IN ('Y', 'N'))
 GO

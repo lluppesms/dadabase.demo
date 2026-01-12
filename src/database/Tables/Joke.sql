@@ -35,6 +35,10 @@ GO
 ALTER TABLE [dbo].[Joke] ADD CONSTRAINT [DF_Joke_ChangeUserName] DEFAULT (N'UNKNOWN') FOR [ChangeUserName]
 GO
 
+-- Check constraints
+ALTER TABLE [dbo].[Joke] ADD CONSTRAINT [CK_Joke_ActiveInd] CHECK ([ActiveInd] IN ('Y', 'N'))
+GO
+
 -- Foreign key constraint to JokeCategory
 ALTER TABLE [dbo].[Joke] WITH CHECK ADD CONSTRAINT [FK_Joke_JokeCategory] FOREIGN KEY([JokeCategoryId])
 REFERENCES [dbo].[JokeCategory] ([JokeCategoryId])

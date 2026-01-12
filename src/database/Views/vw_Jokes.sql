@@ -3,7 +3,7 @@
 -- Description: Simplified view of jokes with key information
 -- =============================================
 CREATE VIEW [dbo].[vw_Jokes] AS
-SELECT TOP (100) PERCENT 
+SELECT 
     j.JokeId, 
     j.JokeCategoryId, 
     j.JokeCategoryTxt, 
@@ -12,5 +12,4 @@ SELECT TOP (100) PERCENT
     j.Rating
 FROM [dbo].[Joke] j 
 WHERE j.ActiveInd = 'Y'
-ORDER BY j.JokeCategoryTxt, j.JokeTxt
 GO

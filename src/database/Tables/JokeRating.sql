@@ -18,6 +18,10 @@ GO
 ALTER TABLE [dbo].[JokeRating] ADD CONSTRAINT [DF_JokeRating_CreateUserName] DEFAULT (N'UNKNOWN') FOR [CreateUserName]
 GO
 
+-- Check constraints
+ALTER TABLE [dbo].[JokeRating] ADD CONSTRAINT [CK_JokeRating_UserRating] CHECK ([UserRating] >= 1 AND [UserRating] <= 5)
+GO
+
 -- Foreign key constraint to Joke
 ALTER TABLE [dbo].[JokeRating] WITH CHECK ADD CONSTRAINT [FK_JokeRating_Joke] FOREIGN KEY([JokeId])
 REFERENCES [dbo].[Joke] ([JokeId])
