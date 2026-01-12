@@ -4,6 +4,31 @@
 
 The DadABase web application has been refactored to use a SQL Server database instead of JSON files for storing jokes.
 
+## Database Project
+
+The database schema is now maintained as a separate, reusable SQL Server Database Project located at:
+
+**`/src/database/`**
+
+This project can be used by any application in the repository (web app, functions, console, MCP services).
+
+### Database Project Structure
+
+```
+src/database/
+├── Tables/
+│   ├── Joke.sql              # Main jokes table
+│   ├── JokeCategory.sql      # Joke categories
+│   └── JokeRating.sql        # User ratings
+├── Views/
+│   └── vw_Jokes.sql          # Simplified view of active jokes
+├── Scripts/
+│   └── PostDeployment/       # Post-deployment scripts
+└── DadABase.Database.sqlproj # SQL Server Database Project
+```
+
+For detailed information about the database project, see: [`/src/database/README.md`](../../src/database/README.md)
+
 ## Database Schema
 
 The database consists of three main tables:
@@ -17,9 +42,19 @@ Additionally, there is a view:
 
 ## Setup Instructions
 
-### 1. Create the Database
+### Option 1: Using the Database Project (Recommended)
 
-Run the SQL scripts in the following order:
+1. Open the solution in Visual Studio with SQL Server Data Tools (SSDT)
+2. Right-click on `src/database/DadABase.Database.sqlproj`
+3. Select "Publish"
+4. Configure your target database connection
+5. Click "Publish"
+
+See [`/src/database/README.md`](../../src/database/README.md) for more deployment options.
+
+### Option 2: Using SQL Scripts Directly
+
+Run the SQL scripts in this folder in the following order:
 
 1. `CreateDatabase.sql` - Creates the tables and their relationships
 2. `CreateJokeView.sql` - Creates the vw_Jokes view
@@ -82,6 +117,17 @@ If you have existing jokes in JSON format that you want to migrate to SQL:
 1. Create the database using the scripts provided
 2. The `InsertDefaultData.sql` script already contains all jokes from the original JSON file
 3. Simply run the script to populate your database
+
+## Reusability
+
+The database project in `/src/database/` is designed to be reused across different applications:
+
+- **Web Application**: Main web app (`src/web`)
+- **Function App**: Azure Functions (`src/function`)
+- **Console App**: Console applications (`src/console`)
+- **MCP Services**: Model Context Protocol services (`src/mcp`)
+
+All applications can reference the same database schema definition.
 
 ## Troubleshooting
 
