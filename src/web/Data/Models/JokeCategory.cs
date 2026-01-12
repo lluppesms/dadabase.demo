@@ -41,7 +41,7 @@ public class JokeCategory
     [Display(Name = "Joke Category Text", Description = "This is the Joke Category Text field.", Prompt = "Enter Joke TCategory ext")]
     [StringLength(500)]
     [Required(ErrorMessage = "Joke Category Text is required")]
-    public string JokeCategoryTxt { get; set; }
+    public string? JokeCategoryTxt { get; set; }
 
     /// <summary>
     /// Active
@@ -49,7 +49,7 @@ public class JokeCategory
     [JsonIgnore]
     [Display(Name = "Active", Description = "This is the Active field.", Prompt = "Enter Active")]
     [StringLength(1)]
-    public string ActiveInd { get; set; }
+    public string? ActiveInd { get; set; }
 
     /// <summary>
     /// Sort Order
@@ -72,7 +72,7 @@ public class JokeCategory
     [JsonIgnore]
     [Display(Name = "Create User Name", Description = "This is the Create User Name field.", Prompt = "Enter Create User Name")]
     [StringLength(255)]
-    public string CreateUserName { get; set; }
+    public string? CreateUserName { get; set; }
 
     /// <summary>
     /// Change Date Time
@@ -88,7 +88,7 @@ public class JokeCategory
     [JsonIgnore]
     [Display(Name = "Change User Name", Description = "This is the Change User Name field.", Prompt = "Enter Change User Name")]
     [StringLength(255)]
-    public string ChangeUserName { get; set; }
+    public string? ChangeUserName { get; set; }
 
     /// <summary>
     /// New Instance of JokeCategory

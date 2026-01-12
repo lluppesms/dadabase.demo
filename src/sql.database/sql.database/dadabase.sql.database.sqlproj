@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <Name>sql.database</Name>
+    <Name>dadabase.sql.database</Name>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectVersion>4.1</ProjectVersion>
     <ProjectGuid>{8b3e4f01-6a8c-4d2e-9f3a-1c5d7e8f9a0b}</ProjectGuid>
@@ -16,7 +16,7 @@
     <ModelCollation>1033,CI</ModelCollation>
     <DefaultFileStructure>BySchemaAndSchemaType</DefaultFileStructure>
     <DeployToDatabase>True</DeployToDatabase>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8.1</TargetFrameworkVersion>
     <TargetLanguage>CS</TargetLanguage>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <SqlServerVerification>False</SqlServerVerification>
@@ -24,6 +24,7 @@
     <TargetDatabaseSet>True</TargetDatabaseSet>
     <DefaultCollation>SQL_Latin1_General_CP1_CI_AS</DefaultCollation>
     <DefaultFilegroup>PRIMARY</DefaultFilegroup>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <OutputPath>bin\Release\</OutputPath>
@@ -62,12 +63,17 @@
     <Folder Include="dbo\Tables\" />
     <Folder Include="dbo\Views\" />
     <Folder Include="Patch" />
+    <Folder Include="dbo\Stored Procedures" />
+    <Folder Include="SampleData" />
   </ItemGroup>
   <ItemGroup>
     <Build Include="dbo\Tables\JokeCategory.sql" />
     <Build Include="dbo\Tables\JokeRating.sql" />
     <Build Include="dbo\Tables\Joke.sql" />
     <Build Include="dbo\Views\vw_Jokes.sql" />
+    <Build Include="dbo\Stored Procedures\usp_Joke_Query.sql" />
+    <Build Include="dbo\Stored Procedures\usp_Random_Joke_Query.sql" />
+    <Build Include="SampleData\InsertSampleData.sql" />
   </ItemGroup>
   <ItemGroup>
     <PostDeploy Include="dbo\Post.Deployment.sql" />

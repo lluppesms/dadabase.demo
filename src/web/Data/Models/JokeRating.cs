@@ -57,7 +57,7 @@ public class JokeRating
     /// </summary>
     [Display(Name = "Create User Name", Description = "This is the Create User Name field.", Prompt = "Enter Create User Name")]
     [StringLength(255)]
-    public string CreateUserName { get; set; }
+    public string? CreateUserName { get; set; }
 
     /// <summary>
     /// New Instance of JokeRating
