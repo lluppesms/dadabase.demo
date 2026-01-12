@@ -6,8 +6,8 @@
 #   SQL_ADMIN_USER - (Optional) SQL admin username for local SQL authentication
 #   SQL_ADMIN_PASSWORD - (Optional) SQL admin password for local SQL authentication
 # ------------------------------------------------------------------------------------------------------------------------
-name: 8 - Build Deploy DACPAC
-run-name: Build and Deploy DACPAC
+name: 4.build.deploy.dacpac
+run-name: '4. Build and Deploy DACPAC'
 on:
   workflow_dispatch:
     inputs:

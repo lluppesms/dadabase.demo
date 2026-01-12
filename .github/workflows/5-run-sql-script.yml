@@ -6,8 +6,8 @@
 #   SQL_ADMIN_USER - (Optional) SQL admin username for local SQL authentication
 #   SQL_ADMIN_PASSWORD - (Optional) SQL admin password for local SQL authentication
 # ------------------------------------------------------------------------------------------------------------------------
-name: 9 - Run SQL Script
-run-name: Run SQL Script
+name: 5.run.sql.script
+run-name: '5. Run SQL Script'
 on:
   workflow_dispatch:
     inputs:
