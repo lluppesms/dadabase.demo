@@ -6,7 +6,9 @@
 // Joke Interface
 // </summary>
 //-----------------------------------------------------------------------
-namespace DadABase.Repositories;
+using DadABase.Data.Models;
+
+namespace DadABase.Data.Repositories;
 
 /// <summary>
 /// Joke Interface

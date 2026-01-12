@@ -8,23 +8,27 @@
 //-----------------------------------------------------------------------
 namespace DadABase.Tests;
 
+using DadABase.Data;
+using DadABase.Data.Models;
+using DadABase.Data.Repositories;
+
 [ExcludeFromCodeCoverage]
 public class Joke_API_Tests : BaseTest
 {
     private readonly JokeRepository repo;
     private readonly JokeController apiController;
-    private readonly ApplicationDbContext context;
+    private readonly DadABaseDbContext context;
 
     public Joke_API_Tests(ITestOutputHelper output)
     {
         Task.Run(() => SetupInitialize(output)).Wait();
 
         // Create in-memory database for testing
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+        var options = new DbContextOptionsBuilder<DadABaseDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
         
-        context = new ApplicationDbContext(options);
+        context = new DadABaseDbContext(options);
         
         // Seed some test data
         context.Jokes.AddRange(
@@ -141,10 +145,10 @@ public class Joke_API_Tests : BaseTest
     public void Api_Joke_Initialize_Works()
     {
         // Arrange
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+        var options = new DbContextOptionsBuilder<DadABaseDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
-        var testContext = new ApplicationDbContext(options);
+        var testContext = new DadABaseDbContext(options);
         _ = new JokeController(appSettings, GetMockHttpContext(testData.UserName), new JokeRepository(testContext));
         // Act
         // Assert

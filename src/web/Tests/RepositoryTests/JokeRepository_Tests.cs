@@ -8,22 +8,26 @@
 //-----------------------------------------------------------------------
 namespace DadABase.Tests;
 
+using DadABase.Data;
+using DadABase.Data.Models;
+using DadABase.Data.Repositories;
+
 [ExcludeFromCodeCoverage]
 public class Joke_Repository_Tests : BaseTest
 {
     private readonly JokeRepository repo;
-    private readonly ApplicationDbContext context;
+    private readonly DadABaseDbContext context;
 
     public Joke_Repository_Tests(ITestOutputHelper output)
     {
         Task.Run(() => SetupInitialize(output)).Wait();
 
         // Create in-memory database for testing
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+        var options = new DbContextOptionsBuilder<DadABaseDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
         
-        context = new ApplicationDbContext(options);
+        context = new DadABaseDbContext(options);
         
         // Seed some test data
         context.Jokes.AddRange(

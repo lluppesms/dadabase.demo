@@ -8,7 +8,7 @@
 //-----------------------------------------------------------------------
 using DataType = System.ComponentModel.DataAnnotations.DataType;
 
-namespace DadABase.Data;
+namespace DadABase.Data.Models;
 
 /// <summary>
 /// JokeRating Table

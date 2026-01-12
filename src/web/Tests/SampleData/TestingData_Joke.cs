@@ -6,6 +6,7 @@
 // Test Joke Data
 // </summary>
 //-----------------------------------------------------------------------
+using DadABase.Data.Models;
 namespace DadABase.SampleData;
 
 /// <summary>

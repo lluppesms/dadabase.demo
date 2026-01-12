@@ -6,24 +6,26 @@
 // Joke Repository
 // </summary>
 //-----------------------------------------------------------------------
-namespace DadABase.Data;
+using DadABase.Data.Models;
+
+namespace DadABase.Data.Repositories;
 
 /// <summary>
 /// Joke Repository
 /// </summary>
 [ExcludeFromCodeCoverage]
-public class JokeRepository : BaseRepository, IJokeRepository
+public class JokeRepository : IJokeRepository
 {
     /// <summary>
-    /// Application Database Context
+    /// DadABase Database Context
     /// </summary>
-    private readonly ApplicationDbContext _context;
+    private readonly DadABaseDbContext _context;
 
     /// <summary>
     /// Joke Repository
     /// </summary>
     /// <param name="context">Database Context</param>
-    public JokeRepository(ApplicationDbContext context)
+    public JokeRepository(DadABaseDbContext context)
     {
         _context = context;
     }

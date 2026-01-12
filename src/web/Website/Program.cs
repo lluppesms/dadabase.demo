@@ -1,5 +1,8 @@
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using DadABase.Web.Models.Application;
+using DadABase.Data;
+using DadABase.Data.Models;
+using DadABase.Data.Repositories;
 using DadABase.Web.Repositories;
 using Microsoft.OpenApi;
 
@@ -49,6 +52,12 @@ builder.Services.AddSingleton<AppSettings>(settings);
 // ----- Configure Database Context and Repositories -----------------------------------------------------------------
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
     ?? "Server=(localdb)\\mssqllocaldb;Database=DadABase;Trusted_Connection=True;MultipleActiveResultSets=true";
+
+// Add DadABase Data DbContext (for joke data)
+builder.Services.AddDbContext<DadABaseDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
+// Add Identity DbContext (for authentication)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
