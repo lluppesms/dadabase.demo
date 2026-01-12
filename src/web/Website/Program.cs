@@ -50,18 +50,31 @@ builder.Services.AddSingleton(builder.Configuration);
 builder.Services.AddSingleton<AppSettings>(settings);
 
 // ----- Configure Database Context and Repositories -----------------------------------------------------------------
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? "Server=(localdb)\\mssqllocaldb;Database=DadABase;Trusted_Connection=True;MultipleActiveResultSets=true";
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var useDatabase = !string.IsNullOrEmpty(connectionString);
 
-// Add DadABase Data DbContext (for joke data)
-builder.Services.AddDbContext<DadABaseDbContext>(options =>
-    options.UseSqlServer(connectionString));
+if (useDatabase)
+{
+    // Use SQL Server database for joke storage
+    builder.Services.AddDbContext<DadABaseDbContext>(options =>
+        options.UseSqlServer(connectionString));
+    
+    builder.Services.AddScoped<IJokeRepository, JokeRepository>();
+}
+else
+{
+    // Fallback to JSON file-based joke storage
+    var jsonFilePath = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Data/Jokes.json");
+    builder.Services.AddSingleton<IJokeRepository>(sp => new JokeJsonRepository(jsonFilePath));
+}
 
-// Add Identity DbContext (for authentication)
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+// Add Identity DbContext (for authentication) - always uses database if connection string exists
+if (useDatabase)
+{
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseSqlServer(connectionString));
+}
 
-builder.Services.AddScoped<IJokeRepository, JokeRepository>();
 builder.Services.AddSingleton<IAIHelper, AIHelper>();
 builder.Services.AddScoped<IBuildInfoService, BuildInfoService>();
 

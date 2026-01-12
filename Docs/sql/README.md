@@ -2,7 +2,16 @@
 
 ## Overview
 
-The DadABase web application has been refactored to use a SQL Server database instead of JSON files for storing jokes.
+The DadABase web application has been refactored to use a SQL Server database instead of JSON files for storing jokes. The application supports both SQL Server database mode and a JSON file fallback mode for scenarios where a database is not available.
+
+## Configuration Modes
+
+The application automatically determines which data source to use based on the presence of a connection string:
+
+- **SQL Server Mode** (Primary): When a connection string is configured, jokes are stored in a SQL Server database
+- **JSON File Mode** (Fallback): When no connection string is configured, jokes are read from a JSON file
+
+For details on how to configure and switch between modes, see: [Database Fallback Configuration](../DATABASE-FALLBACK.md)
 
 ## Database Project
 
