@@ -6,28 +6,53 @@ The DadABase web application has been refactored to use a SQL Server database in
 
 ## Database Project
 
-The database schema is now maintained as a separate, reusable SQL Server Database Project located at:
+The database schema is now maintained as a separate, reusable SQL Server Database Project following industry best practices and the pattern from the reference repository.
 
-**`/src/database/`**
+**Location**: `/src/sql.database/`
 
 This project can be used by any application in the repository (web app, functions, console, MCP services).
 
 ### Database Project Structure
 
 ```
-src/database/
-├── Tables/
-│   ├── Joke.sql              # Main jokes table
-│   ├── JokeCategory.sql      # Joke categories
-│   └── JokeRating.sql        # User ratings
-├── Views/
-│   └── vw_Jokes.sql          # Simplified view of active jokes
-├── Scripts/
-│   └── PostDeployment/       # Post-deployment scripts
-└── DadABase.Database.sqlproj # SQL Server Database Project
+src/sql.database/
+├── sql.database/
+│   ├── dbo/
+│   │   ├── Tables/
+│   │   │   ├── Joke.sql              # Main jokes table
+│   │   │   ├── JokeCategory.sql      # Joke categories
+│   │   │   └── JokeRating.sql        # User ratings
+│   │   ├── Views/
+│   │   │   └── vw_Jokes.sql          # Simplified view of active jokes
+│   │   └── Post.Deployment.sql       # Post-deployment script
+│   ├── Patch/                         # Patch scripts for updates
+│   ├── sql.database.sqlproj          # SQL Server Database Project
+│   └── README.md                      # Detailed project documentation
+├── sql.database.sln                   # Visual Studio solution
+└── .gitignore                         # Version control exclusions
 ```
 
-For detailed information about the database project, see: [`/src/database/README.md`](../../src/database/README.md)
+For detailed information about the database project, see: [`/src/sql.database/sql.database/README.md`](../../src/sql.database/sql.database/README.md)
+
+## Bicep Infrastructure
+
+SQL Server infrastructure is defined in Bicep modules at `/infra/Bicep/modules/database/`:
+
+- **sqlserver.bicep** - Azure SQL Server and Database configuration with:
+  - Serverless compute tier for cost optimization
+  - Azure AD authentication support
+  - Diagnostic logging integration
+  - Firewall rules for Azure services
+  - Auto-pause configuration
+
+Deploy infrastructure before deploying schema:
+
+```bash
+az deployment group create \
+  --resource-group rg-dadabase-dev \
+  --template-file infra/Bicep/main.bicep \
+  --parameters sqlDatabaseName=DadABase
+```
 
 ## Database Schema
 
@@ -38,19 +63,39 @@ The database consists of three main tables:
 3. **JokeRating** - Stores individual user ratings for jokes
 
 Additionally, there is a view:
-- **vw_Jokes** - Provides a simplified view of jokes ordered by category and text
+- **vw_Jokes** - Provides a simplified view of active jokes
 
 ## Setup Instructions
 
 ### Option 1: Using the Database Project (Recommended)
 
-1. Open the solution in Visual Studio with SQL Server Data Tools (SSDT)
-2. Right-click on `src/database/DadABase.Database.sqlproj`
-3. Select "Publish"
-4. Configure your target database connection
-5. Click "Publish"
+#### Build DACPAC
 
-See [`/src/database/README.md`](../../src/database/README.md) for more deployment options.
+```bash
+# Using Visual Studio
+# Open sql.database.sln and build the project
+
+# OR using MSBuild
+cd src/sql.database/sql.database
+msbuild sql.database.sqlproj /p:Configuration=Release
+```
+
+#### Deploy DACPAC
+
+```bash
+SqlPackage.exe /Action:Publish \
+  /SourceFile:bin/Release/sql.database.dacpac \
+  /TargetServerName:yourserver.database.windows.net \
+  /TargetDatabaseName:DadABase \
+  /TargetUser:yourusername \
+  /TargetPassword:yourpassword
+```
+
+For Visual Studio deployment:
+1. Right-click on `sql.database.sqlproj` in Solution Explorer
+2. Select "Publish"
+3. Configure your target database connection
+4. Click "Publish"
 
 ### Option 2: Using SQL Scripts Directly
 
@@ -80,9 +125,24 @@ For production environments, you can also set the connection string via:
 ### 3. Database Providers Supported
 
 The application uses Entity Framework Core and supports:
-- SQL Server (default)
-- Azure SQL Database
+- Azure SQL Database (recommended for production)
+- SQL Server (on-premises or VM)
 - LocalDB (for development)
+
+## Deployment Patterns
+
+The project follows the SQL DACPAC deployment pattern from the reference repository:
+
+1. **Build Phase**: Compile the SQL project into a DACPAC file
+2. **Infrastructure Phase**: Deploy Azure SQL Server using Bicep templates
+3. **Schema Phase**: Deploy DACPAC to the database
+4. **Data Phase**: Run post-deployment scripts to populate data
+
+This pattern supports:
+- Multiple environments (DEV, QA, PROD)
+- Automated CI/CD pipelines
+- Schema version control
+- Rollback capabilities
 
 ## Code Changes
 
@@ -114,20 +174,20 @@ The application uses Entity Framework Core and supports:
 
 If you have existing jokes in JSON format that you want to migrate to SQL:
 
-1. Create the database using the scripts provided
+1. Create the database using the scripts provided or deploy the DACPAC
 2. The `InsertDefaultData.sql` script already contains all jokes from the original JSON file
 3. Simply run the script to populate your database
 
 ## Reusability
 
-The database project in `/src/database/` is designed to be reused across different applications:
+The database project in `/src/sql.database/` is designed to be reused across different applications:
 
 - **Web Application**: Main web app (`src/web`)
 - **Function App**: Azure Functions (`src/function`)
 - **Console App**: Console applications (`src/console`)
 - **MCP Services**: Model Context Protocol services (`src/mcp`)
 
-All applications can reference the same database schema definition.
+All applications can reference the same database schema definition and DACPAC for deployment.
 
 ## Troubleshooting
 
@@ -138,25 +198,37 @@ If you encounter connection issues:
 - Check the connection string format
 - Ensure LocalDB is installed (for development)
 - Verify network connectivity (for remote databases)
+- Check firewall rules on Azure SQL Server
 
 ### Missing Data
 
 If no jokes appear:
 - Verify the database was created successfully
-- Check that `InsertDefaultData.sql` was executed
+- Check that `InsertDefaultData.sql` was executed or run the post-deployment data population
 - Verify the ActiveInd field is set to 'Y' for active jokes
+
+### DACPAC Deployment Issues
+
+If DACPAC deployment fails:
+- Verify SqlPackage.exe is installed
+- Check target database permissions
+- Review deployment logs for specific errors
+- Ensure target server allows connections from your IP
 
 ## Performance Considerations
 
 - The application uses Entity Framework Core for database access
 - Queries are optimized using IQueryable for deferred execution
+- Azure SQL Database serverless tier provides cost-effective scaling
 - Consider adding indexes on frequently queried columns (JokeCategoryTxt, ActiveInd)
-- For production, consider using a connection pooling strategy
+- For production, configure appropriate DTU/vCore sizing based on load
 
 ## Future Enhancements
 
 Potential areas for future development:
 - Implement Add/Update/Delete operations for jokes (currently commented out)
-- Add database migrations for schema versioning
+- Add database migrations for schema versioning using EF Core migrations
 - Implement caching layer for frequently accessed jokes
 - Add full-text search capabilities
+- Implement stored procedures for complex queries
+- Add database-level audit logging

@@ -20,3 +20,6 @@ obj/
 # Publish profiles (may contain sensitive connection strings)
 *.publish.xml
 *.publish.sql
+
+# Visual Studio cache/options
+.vs/
