@@ -1,0 +1,171 @@
+# ----------------------------------------------------------------------------------------------------
+# Template to deploy a SQL Dacpac File to a SQL Database
+# ----------------------------------------------------------------------------------------------------
+# Unless you are using a local user/password, you must find the service principal name that is running
+# your pipeline and execute these commands in the Azure SQL Database to grant access:
+#   CREATE USER yourSP FROM EXTERNAL PROVIDER
+#   ALTER ROLE db_owner ADD MEMBER yourSP
+# See also https://learn.microsoft.com/en-us/azure/azure-sql/database/authentication-aad-configure?view=azuresql&tabs=azure-cli#provision-microsoft-entra-admin-sql-database
+# ----------------------------------------------------------------------------------------------------
+# If you don't you might see this error:
+#   ##[error]Unable to connect to target server 'xxxdacpacdemo.database.windows.net'. Please verify the connection information such as the server name, login credentials, and firewall rules for the target server.
+#   ##[error]Login failed for user '<token-identified principal>'.
+#   ##[error]The Azure SQL DACPAC task failed. SqlPackage.exe exited with code 1.Check out how to troubleshoot failures at https://aka.ms/sqlazuredeployreadme#troubleshooting-
+# ----------------------------------------------------------------------------------------------------
+# Script to display role members:
+#   SELECT DP1.name AS DatabaseRoleName, isnull (DP2.name, 'No members') AS DatabaseUserName   
+#   FROM sys.database_role_members AS DRM  
+#   RIGHT OUTER JOIN sys.database_principals AS DP1 ON DRM.role_principal_id = DP1.principal_id  
+#   LEFT OUTER JOIN sys.database_principals AS DP2 ON DRM.member_principal_id = DP2.principal_id  
+#   WHERE DP1.type = 'R' and DP1.name = 'db_owner'
+#   ORDER BY DP1.name
+# ----------------------------------------------------------------------------------------------------
+parameters: 
+- name: environmentName
+  default:  'DEV'
+- name: artifactName
+  default: 'dacpac'
+- name: appProjectName
+  default: ''
+- name: loginAccountType
+  default: 'SVC_PRINCIPAL'
+
+# ------------------------------------------------------------------------------------------------------------------------
+jobs:
+- deployment: Deploy${{ parameters.environmentName }}Schema
+  displayName: Initialize ${{ parameters.environmentName }} Deploy Schema
+  environment: ${{ parameters.environmentName }}
+
+- job: DeployDB${{ parameters.environmentName }}Schema
+  displayName: Deploy ${{ parameters.environmentName }} Schema
+  variables:
+    - name: environmentNameUpper
+      value: ${{ upper(parameters.environmentName) }}
+    - name: environmentNameLower
+      value: ${{ lower(parameters.environmentName) }}
+    - name: sqlServerName
+      value: $(sqlServerNamePrefix)${{ lower(parameters.environmentName) }}
+    - name: fqdnServerName
+      value: $(sqlServerName).database.windows.net
+
+  steps:
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download Build Artifacts'
+    inputs:
+      buildType: 'current'
+      downloadType: 'single'
+      artifactName: '${{ parameters.artifactName }}'
+      downloadPath: '$(System.ArtifactsDirectory)'
+
+  # - task: AzureKeyVault@2
+  #   displayName: 'Download secrets from Azure Key Vault'
+  #   inputs:
+  #     azureSubscription: $(serviceConnectionName)
+  #     KeyVaultName: $(keyVaultName)
+  #     SecretsFilter: 'sql*'
+  #     RunAsPreJob: false
+
+  - task: CmdLine@2
+    displayName: 'Display Variables and Files'
+    inputs:
+      script: |
+        echo "serviceConnectionName=$(serviceConnectionName)"
+        echo "environmentNameUpper=$(environmentNameUpper)"
+        echo "environmentNameLower=$(environmentNameLower)"
+        echo "artifactName=${{ parameters.artifactName }}"
+        echo "sqlServerNamePrefix=$(sqlServerNamePrefix)"
+        echo "sqlServerName=$(sqlServerName)"
+        echo "fqdnServerName=$(fqdnServerName)"
+        echo "sqlDatabaseName=$(sqlDatabaseName)"
+        echo "sqlAdminUser=$(sqlAdminUser)"
+        echo "sqlAdminPassword=$(sqlAdminPassword)"
+        echo "DacpacFileLocation=$$(System.ArtifactsDirectory)\${{ parameters.artifactName }}\*.dacpac"
+        echo "Directory of Artifacts Directory: $(System.ArtifactsDirectory)"
+        dir $(System.ArtifactsDirectory) /s
+    continueOnError: true
+  
+  # # -- this looks like it should work, but I have not been able to verify that it actually worked...   
+  # # See: https://stackoverflow.com/questions/53422395/how-to-get-the-ip-address-for-azure-devops-hosted-agents-to-add-to-the-white-lis
+  # # - task: AzurePowerShell@5
+  # #   displayName: 'Add buildserver public ip'
+  # #   inputs:
+  # #     azureSubscription: $(serviceConnectionName)
+  # #     ScriptType: InlineScript
+  # #     azurePowerShellVersion: LatestVersion
+  # #     script: |
+  # #       $ip = (Invoke-WebRequest -uri "http://ifconfig.me/ip").Content
+  # #       Write-Output "Adding FW Rule for Agent IP: $ip"
+  # #       Write-Output "EXECUTING New-AzSqlServerFirewallRule -ResourceGroupName $resourceGroupName -ServerName $sqlServerName -FirewallRuleName "azuredevopsagent" -StartIpAddress $ip -EndIpAddress $ip"
+  # #       New-AzSqlServerFirewallRule -ResourceGroupName $resourceGroupName -ServerName $sqlServerName -FirewallRuleName "azuredevopsagent" -StartIpAddress $ip -EndIpAddress $ip
+
+  # # # this "servicePrincipal" login type logs in using some identity magic
+  - ${{ if eq(lower(parameters.loginAccountType), 'svc_principal') }}:
+    - task: SqlAzureDacpacDeployment@1
+      displayName: Deploy DACPAC - SvcPrin
+      inputs:
+        azureSubscription: $(serviceConnectionName)
+        ServerName: $(fqdnServerName)
+        DatabaseName: $(sqlDatabaseName)
+        DacpacFile: '$(System.ArtifactsDirectory)\${{ parameters.artifactName }}\${{ parameters.appProjectName }}.dacpac'
+        AuthenticationType: 'servicePrincipal' # 'server' | 'aadAuthenticationPassword' | 'aadAuthenticationIntegrated' | 'connectionString' | 'servicePrincipal'.  Default: server
+        DeleteFirewallRule: false
+      continueOnError: true
+
+  # this "server" login type logs in as a local sql user with a name and password
+  - ${{ if eq(lower(parameters.loginAccountType), 'local_sql') }}:
+    - task: SqlAzureDacpacDeployment@1
+      displayName: Deploy DACPAC - Local User
+      inputs:
+        azureSubscription: $(serviceConnectionName)
+        ServerName: $(fqdnServerName)
+        DatabaseName: $(sqlDatabaseName)
+        DacpacFile: '$(System.ArtifactsDirectory)\${{ parameters.artifactName }}\${{ parameters.appProjectName }}.dacpac'
+        AuthenticationType: 'server' # 'server' | 'aadAuthenticationPassword' | 'aadAuthenticationIntegrated' | 'connectionString' | 'servicePrincipal'.  Default: server
+        SqlUsername: '$(sqlAdminUser)'
+        SqlPassword: '$(sqlAdminPassword)'
+        DeleteFirewallRule: false
+      continueOnError: true
+
+  # # this "connectionstring" login type uses the service principal that is running the pipeline to go get an access token, then logs into the database with that
+  # - task: AzurePowerShell@5
+  #   displayName: Get SQL Access token
+  #   inputs:
+  #     azureSubscription: $(serviceConnectionName)
+  #     ScriptType: 'InlineScript'
+  #     azurePowerShellVersion: LatestVersion
+  #     Inline: |
+  #       $context = [Microsoft.Azure.Commands.Common.Authentication.Abstractions.AzureRmProfileProvider]::Instance.Profile.DefaultContext
+  #       $sqlToken = [Microsoft.Azure.Commands.Common.Authentication.AzureSession]::Instance.AuthenticationFactory.Authenticate($context.Account, $context.Environment, $context.Tenant.Id.ToString(), $null, [Microsoft.Azure.Commands.Common.Authentication.ShowDialog]::Never, $null, "https://database.windows.net").AccessToken
+  #       Write-Host ("##vso[task.setvariable variable=SQLTOKEN;]$sqlToken")      
+  
+  # - task: SqlAzureDacpacDeployment@1
+  #   displayName: Deploy DACPAC - CS
+  #   inputs:
+  #     azureSubscription: $(serviceConnectionName)
+  #     AuthenticationType: 'connectionString'
+  #     ConnectionString: 'Data Source=$(fqdnServerName);Initial Catalog=$(sqlDatabaseName);Encrypt=true;Connect Timeout=60'
+  #     DacpacFile: '$(System.ArtifactsDirectory)\${{ parameters.artifactName }}\${{ parameters.appProjectName }}.dacpac'
+  #     AdditionalArguments: '/AccessToken:$(sqlToken)'
+  #     DeleteFirewallRule: false
+
+  # ------------------------------------------------------------------------------------------------------------------------
+  # Additional References:
+  # ------------------------------------------------------------------------------------------------------------------------
+  # Logins: (try this to get a token for the service principal)
+  #  https://erikej.github.io/sqlserver/2021/02/01/azure-sql-advanced-deployment-part4.html
+  #
+  # There are other possible actions that could be triggered:
+  #   DeploymentAction: 'Publish' # 'Publish' | 'Extract' | 'Export' | 'Import' | 'Script' | 'DriftReport' | 'DeployReport'. Required when TaskNameSelector = DacpacTask. Action. Default: Publish.
+  #   See: https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/sql-azure-dacpac-deployment-v1?view=azure-pipelines
+  #        https://learn.microsoft.com/en-us/sql/tools/sqlpackage/sqlpackage?view=sql-server-ver15
+  #
+  # If you want to drop tables not in the source you need to specify the parameter DropObjectsNotInSource=true
+  # See:
+  #   https://learn.microsoft.com/en-us/archive/blogs/ssdt/new-advanced-publish-options-to-specify-object-types-to-exclude-or-not-drop
+  #   https://learn.microsoft.com/en-us/answers/questions/811899/sqlpackage-does-not-delete-the-tables-from-target
+  #   https://dev.to/dealeron/dropping-objects-with-ssdt-33g2
+  # NOTE: I can't get this to work right...!   (only valid with certain DeploymentActions...?)
+  #   AdditionalArguments: DropObjectsNotInSource=true
+  #   AdditionalArguments: # string. Optional. Use when TaskNameSelector/DeployType = DacpacTask || DeploymentAction = Extract || DeploymentAction = Export || DeploymentAction = Import || DeploymentAction = Script || DeploymentAction = DeployReport || DeploymentAction = DriftReport. Additional SqlPackage.exe Arguments. 
+  #   DeployType: 'DacpacTask' # 'DacpacTask' | 'SqlTask' | 'InlineSqlTask'. Alias: TaskNameSelector. Required. Deploy type. Default: DacpacTask.
+

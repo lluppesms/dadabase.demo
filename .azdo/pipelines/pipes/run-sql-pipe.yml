@@ -1,0 +1,35 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Pipe to run a sql command against an existing database
+# ------------------------------------------------------------------------------------------------------------------------
+parameters:
+- name: environments
+  type: object
+  default: ['DEV']
+- name: sqlFolderName
+  default: ''
+- name: sqlFileName
+  default: ''
+- name: runInDatabase
+  default: ''
+- name: loginAccountType
+  default: 'SVC_PRINCIPAL'
+- name: resourceGroupName
+  default: ''
+- name: databaseCopyName
+  default: ''
+
+# ----------------------------------------------------------------------------------------------------
+stages:
+- ${{ each environmentName in parameters.environments }} :
+  - stage: Run${{ environmentName }}SQL
+    displayName: Run ${{ environmentName }} SQL
+    jobs:
+    - template: templates/run-sql-template.yml
+      parameters:
+        environmentName: ${{ environmentName }}
+        sqlFolderName: ${{ parameters.sqlFolderName }}
+        sqlFileName: ${{ parameters.sqlFileName }}
+        runInDatabase: ${{ parameters.runInDatabase }}
+        loginAccountType: ${{ parameters.loginAccountType }}
+        resourceGroupName: ${{ parameters.resourceGroupName }}
+        databaseCopyName: ${{ parameters.databaseCopyName }}
