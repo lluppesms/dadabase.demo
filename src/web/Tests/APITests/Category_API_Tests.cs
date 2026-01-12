@@ -60,7 +60,7 @@
 // 		throw new NotImplementedException();
 // 	}
 
-// 	public IQueryable<string> GetJokeCategories(string activeInd = "Y", string requestingUserName = "ANON")
+// 	public IQueryable<string> GetJokeCategories(string requestingUserName = "ANON")
 // 	{
 // 		return new List<string> { "Category1", "Category2", "Category3" }.AsQueryable();
 // 	}

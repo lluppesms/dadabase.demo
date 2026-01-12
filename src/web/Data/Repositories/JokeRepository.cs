@@ -87,12 +87,10 @@ public class JokeRepository(DadABaseDbContext context) : IJokeRepository
     /// Get Joke Categories
     /// </summary>
     /// <returns>List of Category Names</returns>
-    public IQueryable<string> GetJokeCategories(string activeInd, string requestingUserName)
+    public IQueryable<string> GetJokeCategories(string requestingUserName)
     {
-        return _context.Jokes
-            .Where(j => j.ActiveInd == activeInd)
-            .Select(j => j.JokeCategoryTxt)
-            .Distinct()
+        return _context.JokeCategories
+            .Select(c => c.JokeCategoryTxt)
             .OrderBy(c => c);
     }
 

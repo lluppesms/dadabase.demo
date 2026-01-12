@@ -42,7 +42,7 @@ public interface IJokeRepository
     /// Get Joke Categories
     /// </summary>
     /// <returns>List of Category Names</returns>
-    IQueryable<string> GetJokeCategories(string activeInd = "Y", string requestingUserName = "ANON");
+    IQueryable<string> GetJokeCategories(string requestingUserName = "ANON");
 
     /// <summary>
     /// Find Records by Search Text and/or Category
