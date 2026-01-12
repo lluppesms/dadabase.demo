@@ -7,108 +7,71 @@
 // </summary>
 //-----------------------------------------------------------------------
 using DadABase.Data.Models;
+using System.Threading;
 
 namespace DadABase.Data.Repositories;
 
 /// <summary>
 /// Joke Repository
 /// </summary>
+/// <remarks>
+/// Joke Repository
+/// </remarks>
+/// <param name="context">Database Context</param>
 [ExcludeFromCodeCoverage]
-public class JokeRepository : IJokeRepository
+public class JokeRepository(DadABaseDbContext context) : IJokeRepository
 {
     /// <summary>
     /// DadABase Database Context
     /// </summary>
-    private readonly DadABaseDbContext _context;
-
-    /// <summary>
-    /// Joke Repository
-    /// </summary>
-    /// <param name="context">Database Context</param>
-    public JokeRepository(DadABaseDbContext context)
-    {
-        _context = context;
-    }
+    private readonly DadABaseDbContext _context = context;
 
     /// <summary>
     /// Get a random joke
     /// </summary>
     /// <param name="requestingUserName">Requesting UserName</param>
     /// <returns>Record</returns>
-    public Joke GetRandomJoke(string requestingUserName = "ANON" )
+    public Joke GetRandomJoke(string requestingUserName = "ANON")
     {
-        // Get the count and min/max JokeId for active jokes
-        var activeJokes = _context.Jokes
-            .Where(j => j.ActiveInd == "Y")
-            .Select(j => j.JokeId);
-        
-        if (!activeJokes.Any())
-        {
-            return new Joke("No jokes here!");
-        }
-        
-        var minId = activeJokes.Min();
-        var maxId = activeJokes.Max();
-        
-        // Generate a random JokeId between min and max
-        var randomId = Random.Shared.Next(minId, maxId + 1);
-        
-        // Get the first joke with JokeId >= randomId
         var joke = _context.Jokes
-            .Where(j => j.ActiveInd == "Y" && j.JokeId >= randomId)
-            .OrderBy(j => j.JokeId)
+            .FromSqlRaw("EXEC [dbo].[usp_Get_Random_Joke]")
+            .AsEnumerable()
             .FirstOrDefault();
-        
-        // If no joke found (possible if there are gaps in IDs), wrap around to the beginning
-        if (joke == null)
-        {
-            joke = _context.Jokes
-                .Where(j => j.ActiveInd == "Y")
-                .OrderBy(j => j.JokeId)
-                .FirstOrDefault();
-        }
-        
-        return joke ?? new Joke("No jokes here!");
-	}
 
-	/// <summary>
-	/// Find Matching Jokes by Search Text and Category
-	/// </summary>
-	/// <param name="searchTxt">Search Text</param>
-	/// <param name="jokeCategoryTxt">Category</param>
-	/// <param name="requestingUserName">Requesting UserName</param>
-	/// <returns>Records</returns>
-	public IQueryable<Joke> SearchJokes(string searchTxt = "", string jokeCategoryTxt = "", string requestingUserName = "ANON")
+        return joke ?? new Joke("No jokes here!");
+    }
+
+    /// <summary>
+    /// Find Matching Jokes by Search Text and Category
+    /// </summary>
+    /// <param name="searchTxt">Search Text</param>
+    /// <param name="jokeCategoryTxt">Category</param>
+    /// <param name="requestingUserName">Requesting UserName</param>
+    /// <returns>Records</returns>
+    public IQueryable<Joke> SearchJokes(string searchTxt = "", string jokeCategoryTxt = "", string requestingUserName = "ANON")
     {
         jokeCategoryTxt = jokeCategoryTxt.Equals("All", StringComparison.OrdinalIgnoreCase) ? string.Empty : jokeCategoryTxt;
 
-        var query = _context.Jokes.Where(j => j.ActiveInd == "Y");
-
-        // user supplied both category and search term
-        if (!string.IsNullOrEmpty(jokeCategoryTxt) && !string.IsNullOrEmpty(searchTxt))
+        // If user supplied NEITHER category NOR search term - get a random joke
+        if (string.IsNullOrEmpty(jokeCategoryTxt) && string.IsNullOrEmpty(searchTxt))
         {
-            var categories = jokeCategoryTxt.Split(',').Select(c => c.Trim()).ToList();
-            return query
-                .Where(joke => categories.Contains(joke.JokeCategoryTxt)
-                    && EF.Functions.Like(joke.JokeTxt, $"%{searchTxt}%"));
+            var randomJoke = GetRandomJoke();
+            return new List<Joke> { randomJoke }.AsQueryable();
         }
 
-        // user supplied ONLY category and NOT search term
-        if (!string.IsNullOrEmpty(jokeCategoryTxt) && string.IsNullOrEmpty(searchTxt))
-        {
-            var categories = jokeCategoryTxt.Split(',').Select(c => c.Trim()).ToList();
-            return query.Where(joke => categories.Contains(joke.JokeCategoryTxt));
-        }
+        // Use stored procedure for search with optional category and search text parameters
+        // See: https://learn.microsoft.com/en-us/ef/core/querying/sql-queries?tabs=sqlserver
+        //   While this syntax may look like regular C# string interpolation, the supplied value is wrapped in a
+        //   DbParameter and the generated parameter name inserted where the {0} placeholder was specified.
+        //   This makes FromSql safe from SQL injection attacks, and sends the value efficiently and correctly to the database.
+        var categoryParam = string.IsNullOrEmpty(jokeCategoryTxt) ? null : jokeCategoryTxt;
+        var searchParam = string.IsNullOrEmpty(searchTxt) ? null : searchTxt;
+        var jokes = _context.Jokes
+            .FromSqlInterpolated($"EXEC [dbo].[usp_Joke_Search] @category = {categoryParam}, @searchTxt = {searchParam}")
+            .AsEnumerable()
+            .AsQueryable();
 
-        // user supplied NOT category and ONLY search term
-        if (string.IsNullOrEmpty(jokeCategoryTxt) && !string.IsNullOrEmpty(searchTxt))
-        {
-            return query.Where(joke => EF.Functions.Like(joke.JokeTxt, $"%{searchTxt}%"));
-        }
-
-        // user supplied NEITHER category NOR search term - get a random joke
-        var randomJoke = GetRandomJoke();
-        return new List<Joke> { randomJoke }.AsQueryable();
+        return jokes;
     }
 
     /// <summary>

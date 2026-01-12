@@ -47,10 +47,10 @@ public class DadABaseDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        
-        // Configure table names explicitly if needed
-        // modelBuilder.Entity<Joke>().ToTable("Joke");
-        // modelBuilder.Entity<JokeCategory>().ToTable("JokeCategory");
-        // modelBuilder.Entity<JokeRating>().ToTable("JokeRating");
+
+        // Configure decimal precision for Rating property to match SQL column decimal(3,1)
+        modelBuilder.Entity<Joke>()
+            .Property(j => j.Rating)
+            .HasPrecision(3, 1);
     }
 }
