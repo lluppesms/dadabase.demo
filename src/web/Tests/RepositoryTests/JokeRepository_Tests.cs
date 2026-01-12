@@ -15,7 +15,7 @@ using DadABase.Data.Repositories;
 [ExcludeFromCodeCoverage]
 public class Joke_Repository_Tests : BaseTest
 {
-    private readonly JokeRepository repo;
+    private readonly JokeSQLRepository repo;
     private readonly DadABaseDbContext context;
 
     public Joke_Repository_Tests(ITestOutputHelper output)
@@ -37,7 +37,7 @@ public class Joke_Repository_Tests : BaseTest
         );
         context.SaveChanges();
 
-        repo = new JokeRepository(context);
+        repo = new JokeSQLRepository(context);
     }
 
     [Fact]

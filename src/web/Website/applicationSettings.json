@@ -1,12 +1,13 @@
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=.;Database=DadABase;Authentication=Active Directory Interactive;",
+    "NOTSET-USE-JSON-DefaultConnection": "",
+    "ConnectionString-Azure": "Server=tcp:MYSQLDBNAME.database.windows.net,1433;Initial Catalog=DadABase;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication='Active Directory Default';",
+    "ConnectionString-local": "Server=localhost;Database=DadABase;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
   },
   "AppSettings": {
     "SuperUserLastName": "",
     "SuperUserFirstName": "",
     "ApiKey": "",
-    "DefaultConnection": "Server=.;Database=DadABase;Authentication=Active Directory Interactive;",
     "AzureOpenAI": {
       "Chat": {
         "Endpoint": "https://your-project-resource.cognitiveservices.azure.com/",

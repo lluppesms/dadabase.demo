@@ -32,18 +32,15 @@ if (!string.IsNullOrEmpty(keyVaultName))
 // set the application title from the app settings
 DadABase.Data.Constants.Initialize(settings);
 
+// Add telemetry
 if (!string.IsNullOrEmpty(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]))
 {
     builder.Services.AddOpenTelemetry().UseAzureMonitor();
 }
-
-// Add Application Insights telemetry
-//builder.Services.AddApplicationInsightsTelemetry(builder.Configuration["ApplicationInsights:InstrumentationKey"]);
 builder.Services.AddLogging(builder =>
 {
     builder.ClearProviders();
     builder.AddConsole();
-    //builder.AddApplicationInsights(builder.Configuration["ApplicationInsights:InstrumentationKey"] ?? string.Empty);
 });
 
 builder.Services.AddSingleton(builder.Configuration);
@@ -52,27 +49,22 @@ builder.Services.AddSingleton<AppSettings>(settings);
 // ----- Configure Database Context and Repositories -----------------------------------------------------------------
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 var useDatabase = !string.IsNullOrEmpty(connectionString);
-
 if (useDatabase)
 {
+    Console.WriteLine("Using SQL Database for Joke Source...");
     // Use SQL Server database for joke storage
-    builder.Services.AddDbContext<DadABaseDbContext>(options =>
-        options.UseSqlServer(connectionString));
-    
-    builder.Services.AddScoped<IJokeRepository, JokeRepository>();
+    builder.Services.AddDbContext<DadABaseDbContext>(options => options.UseSqlServer(connectionString));
+    builder.Services.AddScoped<IJokeRepository, JokeSQLRepository>();
+
+    // Add Identity DbContext (for authentication) - always uses database if connection string exists
+    builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
 }
 else
 {
+    Console.WriteLine("Using JSON File for Joke Source...");
     // Fallback to JSON file-based joke storage
     var jsonFilePath = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Data/Jokes.json");
     builder.Services.AddSingleton<IJokeRepository>(sp => new JokeJsonRepository(jsonFilePath));
-}
-
-// Add Identity DbContext (for authentication) - always uses database if connection string exists
-if (useDatabase)
-{
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseSqlServer(connectionString));
 }
 
 builder.Services.AddSingleton<IAIHelper, AIHelper>();
@@ -81,7 +73,6 @@ builder.Services.AddScoped<IBuildInfoService, BuildInfoService>();
 // ----- Configure Authentication ---------------------------------------------------------------------
 var authSettings = builder.Configuration.GetSection("AzureAD");
 var enableAuth = !string.IsNullOrEmpty(authSettings["TenantId"]);
-
 
 // for now - just make it all open - no auth...
 enableAuth = false;

@@ -15,7 +15,7 @@ using DadABase.Data.Repositories;
 [ExcludeFromCodeCoverage]
 public class Joke_API_Tests : BaseTest
 {
-    private readonly JokeRepository repo;
+    private readonly JokeSQLRepository repo;
     private readonly JokeController apiController;
     private readonly DadABaseDbContext context;
 
@@ -39,7 +39,7 @@ public class Joke_API_Tests : BaseTest
         context.SaveChanges();
 
         var mockContext = GetMockHttpContext(testData.UserName);
-        repo = new JokeRepository(context);
+        repo = new JokeSQLRepository(context);
         apiController = new JokeController(appSettings, mockContext, repo);
     }
 
@@ -149,7 +149,7 @@ public class Joke_API_Tests : BaseTest
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
         var testContext = new DadABaseDbContext(options);
-        _ = new JokeController(appSettings, GetMockHttpContext(testData.UserName), new JokeRepository(testContext));
+        _ = new JokeController(appSettings, GetMockHttpContext(testData.UserName), new JokeSQLRepository(testContext));
         // Act
         // Assert
     }

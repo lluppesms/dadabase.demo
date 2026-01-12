@@ -19,7 +19,7 @@ namespace DadABase.Data.Repositories;
 /// </remarks>
 /// <param name="context">Database Context</param>
 [ExcludeFromCodeCoverage]
-public class JokeRepository(DadABaseDbContext context) : IJokeRepository
+public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
 {
     /// <summary>
     /// DadABase Database Context
