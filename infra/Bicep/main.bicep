@@ -24,6 +24,18 @@ param functionAppSkuFamily string = 'B' // 'Y'
 param functionAppSkuTier string = 'Dynamic'
 param environmentSpecificFunctionName string = ''
 
+param sqlDatabaseName string = 'dadabase'
+@allowed(['Basic','Standard','Premium','BusinessCritical','GeneralPurpose'])
+param sqlSkuTier string = 'GeneralPurpose'
+param sqlSkuFamily string = 'Gen5'
+param sqlSkuName string = 'GP_S_Gen5'
+param adminLoginUserId string = ''
+param adminLoginUserSid string = ''
+param adminLoginTenantId string = ''
+param sqlAdminUser string = ''
+@secure()
+param sqlAdminPassword string = ''
+
 param adInstance string = environment().authentication.loginEndpoint // 'https://login.microsoftonline.com/'
 param adDomain string = ''
 param adTenantId string = ''
@@ -104,6 +116,29 @@ module functionStorageModule './modules/storage/storageaccount.bicep' = {
     addSecurityControlIgnoreTag: true
   }
 }
+
+// --------------------------------------------------------------------------------
+module sqlDbModule './modules/database/sqlserver.bicep' = {
+  name: 'sql-server${deploymentSuffix}'
+  params: {
+    sqlServerName: resourceNames.outputs.sqlServerName
+    sqlDBName: sqlDatabaseName
+    sqlSkuTier: sqlSkuTier
+    sqlSkuName: sqlSkuName
+    sqlSkuFamily: sqlSkuFamily
+    mincores: 1
+    autopause: 60
+    location: location
+    commonTags: commonTags
+    adAdminUserId: adminLoginUserId
+    adAdminUserSid: adminLoginUserSid
+    adAdminTenantId: adminLoginTenantId
+    sqlAdminUser:sqlAdminUser
+    sqlAdminPassword: sqlAdminPassword
+    workspaceId: logAnalyticsWorkspaceModule.outputs.id
+  }
+}
+
 
 // --------------------------------------------------------------------------------
 module identity './modules/iam/identity.bicep' = {
