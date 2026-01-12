@@ -1,0 +1,65 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# GHA Workflow to build and deploy SQL Database Objects (DACPAC)
+# ------------------------------------------------------------------------------------------------------------------------
+# You need to set up secrets in the GitHub Secrets Repository before running these workflows.
+#   AZURE_CREDENTIALS - Service principal credentials for Azure login
+#   SQL_ADMIN_USER - (Optional) SQL admin username for local SQL authentication
+#   SQL_ADMIN_PASSWORD - (Optional) SQL admin password for local SQL authentication
+# ------------------------------------------------------------------------------------------------------------------------
+name: 8 - Build Deploy DACPAC
+run-name: Build and Deploy DACPAC
+on:
+  workflow_dispatch:
+    inputs:
+      deployEnvironment:
+        description: Environment
+        default: 'dev' 
+        type: environment
+      loginAccountType:
+        description: 'Login Account Type'
+        required: true
+        default: 'SVC_PRINCIPAL'
+        type: choice
+        options:
+          - 'SVC_PRINCIPAL'
+          - 'LOCAL_SQL'
+
+# env:
+#   appFolderName: '${{ vars.SQL_APP_PROJECT_FOLDER_NAME }}' # 'src/sql.database'
+#   appSolutionName: '${{ vars.SQL_APP_SOLUTION_NAME }}' # 'dadabase.sql.database'
+#   appProjectName: '${{ vars.SQL_APP_PROJECT_NAME }}' # 'sql.database'
+#   sqlServerNamePrefix: '${{ vars.SQL_SERVER_NAME_PREFIX }}'
+#   sqlServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}-${{inputs.deployEnvironment}}'
+#   sqlDatabaseName: '${{ vars.SQL_DATABASE_NAME }}'
+
+# ------------------------------------------------------------------------------------------------------------------------
+jobs:
+  # ----------------------------------------------------------------------------------------------------
+  # Build DACPAC
+  # ----------------------------------------------------------------------------------------------------
+  build:
+    name: Build
+    uses: ./.github/workflows/template-dacpac-build.yml
+    with:
+      envCode: ${{ inputs.deployEnvironment }}
+      appFolderName: '${{ vars.SQL_APP_PROJECT_FOLDER_NAME }}'
+      appSolutionName: '${{ vars.SQL_APP_SOLUTION_NAME }}'
+      appProjectName: '${{ vars.SQL_APP_PROJECT_NAME }}'
+      listFilesAfterBuild: true
+    secrets: inherit
+
+  # ----------------------------------------------------------------------------------------------------
+  # Deploy to DEV
+  # ----------------------------------------------------------------------------------------------------
+  deploy:
+    name: Deploy Database
+    needs: build
+    uses: ./.github/workflows/template-dacpac-deploy.yml
+    with:
+      envCode: ${{ inputs.deployEnvironment }}
+      artifactName: 'dacpac'
+      appProjectName: '${{ vars.SQL_APP_PROJECT_NAME }}'
+      sqlServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}-${{inputs.deployEnvironment}}'
+      sqlDatabaseName: '${{ vars.SQL_DATABASE_NAME }}'
+      loginAccountType: ${{ inputs.loginAccountType }}
+    secrets: inherit
