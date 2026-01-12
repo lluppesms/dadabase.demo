@@ -140,8 +140,9 @@ module keyVaultModule './security/keyvault.bicep' = {
     keyVaultName: resourceNames.outputs.keyVaultName
     location: location
     commonTags: commonTags
-    adminUserObjectIds: [ adminUserId ]
-    applicationUserObjectIds: [ identity.outputs.managedIdentityPrincipalId ]
+    keyVaultOwnerUserId: adminUserId
+    adminUserObjectIds: [ identity.outputs.managedIdentityPrincipalId ]
+    applicationUserObjectIds: [ webSiteModule.outputs.webappAppPrincipalId ]
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
     publicNetworkAccess: 'Enabled'
     allowNetworkAccess: 'Allow'
