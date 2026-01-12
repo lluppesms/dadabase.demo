@@ -1,7 +1,8 @@
 ﻿global using DadABase.Data;
+global using DadABase.Data.Models;
+global using DadABase.Data.Repositories;
 global using DadABase.SampleData;
 global using DadABase.API;
-global using DadABase.Repositories;
 global using Microsoft.AspNetCore.Hosting;
 global using Microsoft.AspNetCore.Http;
 global using Microsoft.AspNetCore.Mvc.ApplicationParts;

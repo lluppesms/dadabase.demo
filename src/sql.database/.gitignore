@@ -1,0 +1,25 @@
+# SQL Server Database Project files
+*.dbmdl
+*.jfm
+*.dbproj.user
+*.suo
+*.user
+bin/
+obj/
+*.refactorlog
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+
+# DACPAC files (keep the built files out of source control)
+*.dacpac
+
+# Publish profiles (may contain sensitive connection strings)
+*.publish.xml
+*.publish.sql
+
+# Visual Studio cache/options
+.vs/

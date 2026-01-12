@@ -52,7 +52,7 @@ public class CategoryController : BaseAPIController
     public List<string> List()
     {
         var userName = GetUserName();
-        var categories = JokeRepo.GetJokeCategories(userName);
-        return categories.ToList();
+        var categories = JokeRepo.GetJokeCategories(userName).ToList();
+        return categories;
     }
 }

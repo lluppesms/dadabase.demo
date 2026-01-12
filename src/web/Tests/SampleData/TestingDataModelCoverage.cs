@@ -8,6 +8,7 @@
 //-----------------------------------------------------------------------
 using DadABase.Data;
 
+using DadABase.Data.Models;
 namespace DadABase.SampleData;
 
 /// <summary>

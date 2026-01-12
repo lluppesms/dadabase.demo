@@ -8,7 +8,7 @@
 //-----------------------------------------------------------------------
 using DataType = System.ComponentModel.DataAnnotations.DataType;
 
-namespace DadABase.Data;
+namespace DadABase.Data.Models;
 
 /// <summary>
 /// Joke Table
@@ -44,7 +44,7 @@ public class Joke
     [Display(Name = "Joke Text", Description = "This is the Joke Text field.", Prompt = "Enter Joke Text")]
     [DataType(DataType.MultilineText)]
     [Required(ErrorMessage = "Joke Text is required")]
-    public string JokeTxt { get; set; }
+    public string? JokeTxt { get; set; }
 
     /// <summary>
     /// Category
@@ -57,14 +57,14 @@ public class Joke
     /// </summary>
     [Display(Name = "Joke Category Text", Description = "This is the Joke Category Text field.", Prompt = "Enter Joke TCategory ext")]
     [StringLength(500)]
-    public string JokeCategoryTxt { get; set; }
+    public string? JokeCategoryTxt { get; set; }
 
     /// <summary>
     /// Attribution
     /// </summary>
     [Display(Name = "Attribution", Description = "This is the Attribution field.", Prompt = "Enter Attribution")]
     [StringLength(500)]
-    public string Attribution { get; set; }
+    public string? Attribution { get; set; }
 
     /// <summary>
     /// Active
@@ -72,7 +72,7 @@ public class Joke
     [JsonIgnore]
     [Display(Name = "Active", Description = "This is the Active field.", Prompt = "Enter Active")]
     [StringLength(1)]
-    public string ActiveInd { get; set; }
+    public string? ActiveInd { get; set; }
 
     /// <summary>
     /// Sort Order
@@ -109,7 +109,7 @@ public class Joke
     [JsonIgnore]
     [Display(Name = "Create User Name", Description = "This is the Create User Name field.", Prompt = "Enter Create User Name")]
     [StringLength(255)]
-    public string CreateUserName { get; set; }
+    public string? CreateUserName { get; set; }
 
     /// <summary>
     /// Change Date Time
@@ -125,7 +125,7 @@ public class Joke
     [JsonIgnore]
     [Display(Name = "Change User Name", Description = "This is the Change User Name field.", Prompt = "Enter Change User Name")]
     [StringLength(255)]
-    public string ChangeUserName { get; set; }
+    public string? ChangeUserName { get; set; }
 
     /// <summary>
     /// New Instance of Joke

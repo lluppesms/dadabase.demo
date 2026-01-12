@@ -6,6 +6,7 @@
 // Test Category Data
 // </summary>
 //-----------------------------------------------------------------------
+using DadABase.Data.Models;
 namespace DadABase.SampleData;
 
 /// <summary>

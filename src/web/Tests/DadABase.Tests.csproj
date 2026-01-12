@@ -45,6 +45,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Website\DadABase.Web.csproj" />
+    <ProjectReference Include="..\Data\DadABase.Data.csproj" />
   </ItemGroup>
 
 </Project>

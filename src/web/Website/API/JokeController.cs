@@ -8,7 +8,8 @@
 //-----------------------------------------------------------------------
 namespace DadABase.API;
 
-using DadABase.Repositories;
+using DadABase.Data.Models;
+using DadABase.Data.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
 

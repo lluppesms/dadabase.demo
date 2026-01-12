@@ -8,18 +8,38 @@
 //-----------------------------------------------------------------------
 namespace DadABase.Tests;
 
+using DadABase.Data;
+using DadABase.Data.Models;
+using DadABase.Data.Repositories;
+
 [ExcludeFromCodeCoverage]
 public class Joke_API_Tests : BaseTest
 {
-    private readonly JokeRepository repo;
+    private readonly JokeSQLRepository repo;
     private readonly JokeController apiController;
+    private readonly DadABaseDbContext context;
 
     public Joke_API_Tests(ITestOutputHelper output)
     {
         Task.Run(() => SetupInitialize(output)).Wait();
 
+        // Create in-memory database for testing
+        var options = new DbContextOptionsBuilder<DadABaseDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        
+        context = new DadABaseDbContext(options);
+        
+        // Seed some test data
+        context.Jokes.AddRange(
+            new Joke { JokeId = 1, JokeTxt = "Test joke 1", JokeCategoryTxt = "Engineers", ActiveInd = "Y" },
+            new Joke { JokeId = 2, JokeTxt = "Test joke 2 with it", JokeCategoryTxt = "Test", ActiveInd = "Y" },
+            new Joke { JokeId = 3, JokeTxt = "Test joke 3 it works", JokeCategoryTxt = "Other", ActiveInd = "Y" }
+        );
+        context.SaveChanges();
+
         var mockContext = GetMockHttpContext(testData.UserName);
-        repo = new JokeRepository();
+        repo = new JokeSQLRepository(context);
         apiController = new JokeController(appSettings, mockContext, repo);
     }
 
@@ -125,7 +145,11 @@ public class Joke_API_Tests : BaseTest
     public void Api_Joke_Initialize_Works()
     {
         // Arrange
-        _ = new JokeController(appSettings, GetMockHttpContext(testData.UserName), new JokeRepository());
+        var options = new DbContextOptionsBuilder<DadABaseDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        var testContext = new DadABaseDbContext(options);
+        _ = new JokeController(appSettings, GetMockHttpContext(testData.UserName), new JokeSQLRepository(testContext));
         // Act
         // Assert
     }
