@@ -32,28 +32,46 @@ Secret Values:
 ``` bash
 gh auth login
 
-gh variable set APP_NAME -b "full-dadabase"
-gh variable set RESOURCEGROUP_LOCATION -b "centralus"
-gh variable set RESOURCEGROUP_PREFIX -b "rg_dadabase-full" 
-gh variable set API_KEY -b "somesecretstring"
+gh variable set APP_NAME -b 'full-dadabase'
+gh variable set RESOURCE_GROUP_LOCATION -b 'centralus'
+gh variable set RESOURCE_GROUP_PREFIX -b 'rg-dadabase' 
+gh variable set INSTANCE_NUMBER -b 1
+gh variable set API_KEY -b 'somesecretstring'
 
-gh secret set LOGIN_CLIENTID -b "<yourADClientId>"
-gh secret set LOGIN_DOMAIN -b "<yourdomain>.onmicrosoft.com"
-gh secret set LOGIN_INSTANCEENDPOINT -b "https://login.microsoftonline.com/"
-gh secret set LOGIN_TENANTID -b "<yourTenantId>"
+gh secret set LOGIN_CLIENTID -b '<yourADClientId>'
+gh secret set LOGIN_DOMAIN -b '<yourdomain>.onmicrosoft.com'
+gh secret set LOGIN_INSTANCEENDPOINT -b 'https://login.microsoftonline.com/'
+gh secret set LOGIN_TENANTID -b '<yourTenantId>'
 
-gh variable set WEB_APP_PROJECT_FOLDER_NAME -b "src/web/Website"
-gh variable set WEB_APP_PROJECT_NAME -b "DadABase.Web"
-gh variable set WEB_APP_TEST_FOLDER_NAME -b "src/web/Tests"
-gh variable set WEB_APP_TEST_PROJECT_NAME -b "DadABase.Tests"
+gh variable set WEB_APP_PROJECT_FOLDER_NAME -b 'src/web/Website'
+gh variable set WEB_APP_PROJECT_NAME -b 'DadABase.Web'
+gh variable set WEB_APP_TEST_FOLDER_NAME -b 'src/web/Tests'
+gh variable set WEB_APP_TEST_PROJECT_NAME -b 'DadABase.Tests'
 
-gh variable set FUNCTION_APP_PROJECT_FOLDER_NAME -b "src/function/Function"
-gh variable set FUNCTION_APP_PROJECT_NAME -b "DadABase.Function"
-gh variable set FUNCTION_APP_TEST_FOLDER_NAME -b "src/function/Tests"
-gh variable set FUNCTION_APP_TEST_PROJECT_NAME -b "DadABase.Function.Tests"
+gh variable set FUNCTION_APP_PROJECT_FOLDER_NAME -b 'src/function/Function'
+gh variable set FUNCTION_APP_PROJECT_NAME -b 'DadABase.Function'
+gh variable set FUNCTION_APP_TEST_FOLDER_NAME -b 'src/function/Tests'
+gh variable set FUNCTION_APP_TEST_PROJECT_NAME -b 'DadABase.Function.Tests'
 
-gh variable set CONSOLE_APP_PROJECT_FOLDER_NAME -b "src/console/dadabase.net10.console"
-gh variable set CONSOLE_APP_PROJECT_NAME -b "dadabase.net10.console"
+gh variable set SQL_APP_PROJECT_FOLDER_NAME -b 'src/sql.database'
+gh variable set SQL_APP_SOLUTION_NAME -b 'sql.database'
+gh variable set SQL_APP_PROJECT_NAME -b 'sql.database'
+
+gh variable set CONSOLE_APP_PROJECT_FOLDER_NAME -b 'src/console'
+gh variable set CONSOLE_APP_PROJECT_NAME -b 'dadabase.net10.console'
+
+gh variable set OPENAI_CHAT_DEPLOYMENTNAME -b 'gpt-5-mini'
+gh variable set OPENAI_CHAT_MAXTOKENS -b '300'
+gh variable set OPENAI_CHAT_TEMPERATURE -b '0.7'
+gh variable set OPENAI_CHAT_TOPP -b '0.95'
+gh variable set OPENAI_IMAGE_DEPLOYMENTNAME -b 'gpt-image-1.5'
+
+gh variable set SQL_SERVER_NAME_PREFIX -b 'your-dadabase-server'
+gh variable set SQL_DATABASE_NAME -b 'DadABase'
+
+gh variable set SQLADMIN_LOGIN_USERID -b 'youruser@yourdomain.com'
+gh variable set SQLADMIN_LOGIN_USERSID -b 'yoursid'
+gh variable set SQLADMIN_LOGIN_TENANTID -b 'yourtennant'
 ```
 
 ---

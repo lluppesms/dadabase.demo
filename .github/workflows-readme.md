@@ -55,18 +55,7 @@ gh secret set ADMIN_PRINCIPAL_ID <yourGuid>
 
 These values are used by the Bicep templates to configure the resource names that are deployed. Make sure the App_Name variable is unique to your deployment. It will be used as the basis for the application name and for all the other Azure resources, some of which must be globally unique.
 
-These should be set at the repository level and should be the same for all environments, although you could set them up at the environment level if you want them to unique. You can customize and run the following commands (or just set it up manually by going to the Settings -> Secrets -> Actions -> Variables).  
-
-```bash
-gh variable set APP_NAME -b <<YOUR-APP-NAME>>
-gh variable set RESOURCEGROUP_PREFIX -b rg_dadabase_function
-gh variable set RESOURCEGROUP_LOCATION -b eastus2
-gh variable set API_KEY -b "somesecretstring"
-gh variable set APP_PROJECT_FOLDER_NAME -b "src\Dadabase\DadABase.Web"
-gh variable set APP_PROJECT_NAME -b "DadABase.Web"
-gh variable set APP_TEST_FOLDER_NAME -b "src\Dadabase\DadABase.Tests"
-gh variable set APP_TEST_PROJECT_NAME -b "DadABase.Tests"
-```
+See the **[CreateGitHubSecrets.md](./CreateGitHubSecrets.md)** file for the full list of commands to create these variables and secrets.
 
 ---
 

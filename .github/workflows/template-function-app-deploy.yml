@@ -29,7 +29,7 @@ jobs:
       name: ${{ inputs.envCode }}
     env:
       artifactName: functionapp
-      generatedAppEnvName: ${{ vars.APP_NAME }}-${{ inputs.functionType }}-${{ inputs.envCode }}
+      generatedAppEnvName: "${{ inputs.envCode == 'prod' && format('func-{0}', vars.webSiteName) || format('func-{0}-{1}-{2}', vars.APP_NAME, vars.INSTANCE_NUMBER, inputs.envCode) }}"
 
     steps:
     - name: Checkout Code
@@ -52,7 +52,6 @@ jobs:
         client-id: ${{ secrets.CICD_CLIENT_ID }}
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        # client-secret: ${{ secrets.CICD_CLIENT_SECRET }}
 
     - name: Deploy Azure Function Zip
       uses: Azure/functions-action@v1

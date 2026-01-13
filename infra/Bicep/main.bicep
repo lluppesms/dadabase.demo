@@ -9,6 +9,7 @@
 param appName string = ''
 param environmentCode string = 'azd'
 param location string = resourceGroup().location
+param instanceNumber string = '1'
 
 param servicePlanName string = ''
 param servicePlanResourceGroupName string = '' // if using an existing service plan in a different resource group
@@ -81,6 +82,7 @@ module resourceNames 'resourcenames.bicep' = {
     appName: appName
     environmentCode: environmentCode
     environmentSpecificFunctionName: environmentSpecificFunctionName
+    instanceNumber: instanceNumber
   }
 }
 // --------------------------------------------------------------------------------

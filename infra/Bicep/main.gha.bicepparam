@@ -5,7 +5,8 @@ using './main.bicep'
 
 param appName = '#{APP_NAME}#'
 param environmentCode = '#{ENVCODE}#'
-param location = '#{RESOURCEGROUP_LOCATION}#'
+param location = '#{RESOURCE_GROUP_LOCATION}#'
+param instanceNumber = '#{INSTANCE_NUMBER}#'
 
 param adInstance = '#{LOGIN_INSTANCEENDPOINT}#'
 param adDomain = '#{LOGIN_DOMAIN}#'
@@ -13,7 +14,7 @@ param adTenantId = '#{LOGIN_TENANTID}#'
 param adClientId = '#{LOGIN_CLIENTID}#'
 param webApiKey = '#{WEB_API_KEY}#'
 param servicePlanName = '#{EXISTING_SERVICEPLAN_NAME}#'
-param servicePlanResourceGroupName = '#{EXISTING_SERVICEPLAN_RESOURCEGROUP_NAME}#'
+param servicePlanResourceGroupName = '#{EXISTING_SERVICEPLAN_RESOURCE_GROUP_NAME}#'
 param webAppKind = 'linux' // 'linux' or 'windows'
 
 param sqlAdminLoginUserId = '#{SQLADMIN_LOGIN_USERID}#'
