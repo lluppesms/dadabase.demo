@@ -239,6 +239,8 @@ module webSiteAppSettingsModule './modules/webapp/websiteappsettings.bicep' = {
     customAppSettings: {
       AppSettings__AppInsights_InstrumentationKey: webSiteModule.outputs.appInsightsKey
       APPLICATIONINSIGHTS_CONNECTION_STRING: webSiteModule.outputs.appInsightsConnectionString
+      AppSettings__DefaultConnection: sqlDbModule.outputs.identityConnectionString
+      AppSettings__ProjectEntities: sqlDbModule.outputs.identityConnectionString
       AppSettings__EnvironmentName: environmentCode
       AppSettings__EnableSwagger: appSwaggerEnabled
       AppSettings__DataSource: appDataSource

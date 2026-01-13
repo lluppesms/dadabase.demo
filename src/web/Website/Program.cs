@@ -47,7 +47,7 @@ builder.Services.AddSingleton(builder.Configuration);
 builder.Services.AddSingleton<AppSettings>(settings);
 
 // ----- Configure Database Context and Repositories -----------------------------------------------------------------
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = appSettings["DefaultConnection"];
 var useDatabase = !string.IsNullOrEmpty(connectionString);
 if (useDatabase)
 {

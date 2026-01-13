@@ -233,3 +233,4 @@ output serverPrincipalId string = sqlServerResource.identity.principalId
 output apiVersion string = sqlServerResource.apiVersion
 output databaseName string = sqlDBResource.name
 output databaseId string = sqlDBResource.id
+output identityConnectionString string = 'Server=tcp:${sqlServerResource.name}.database.windows.net,1433;Initial Catalog=${sqlDBResource.name};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication="Active Directory Default";'

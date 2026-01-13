@@ -21,7 +21,7 @@ public partial class About : ComponentBase
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        var connectionString = Config.GetConnectionString("DefaultConnection");
+        var connectionString = Config.GetSection("AppSettings")["DefaultConnection"];
         DatabaseType = !string.IsNullOrEmpty(connectionString) ? "SQL Dad-A-Base" : "JSON Dad-A-Base";
     }
     /// <summary>
