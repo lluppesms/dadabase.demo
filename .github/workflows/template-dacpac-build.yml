@@ -68,8 +68,6 @@ jobs:
       - name: Display Files After Build
         if: inputs.listFilesAfterBuild == true
         run: |
-          Write-Host "Listing files in ${{ inputs.appFolderName }}:"
-          Get-ChildItem -Path "${{ inputs.appFolderName }}" -Recurse
           Write-Host "Listing files in ${{ inputs.appFolderName }}/bin/${{ env.CONFIGURATION }}:"
           Get-ChildItem -Path "${{ inputs.appFolderName }}/bin/${{ env.CONFIGURATION }}" -Recurse
 
