@@ -65,7 +65,7 @@ jobs:
       sqlFolderName: 'src/sql.database/Patch'
       sqlFileName: ${{ inputs.scriptName }}
       runInDatabase: ${{ inputs.databaseName }}
-      sqlServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}${{ inputs.deployEnvironment }}'
+      sqlServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.deployEnvironment }}'
       loginAccountType: ${{ inputs.loginAccountType }}
       resourceGroupName: ${{ inputs.resourceGroupName }}
       databaseCopyName: ${{ inputs.databaseCopyName }}
