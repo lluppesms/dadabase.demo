@@ -98,7 +98,6 @@ jobs:
       #   with:
       #     creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Azure Login (Reusable Action)
-        if: ${{ inputs.runCreateInfra }}
         uses: ./.github/actions/login-action
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
