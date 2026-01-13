@@ -58,7 +58,7 @@ jobs:
       envCode: ${{ inputs.deployEnvironment }}
       artifactName: 'dacpac'
       appProjectName: '${{ vars.SQL_APP_PROJECT_NAME }}'
-      sqlServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}-${{inputs.deployEnvironment}}'
+      sqlServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}${{inputs.deployEnvironment}}'
       sqlDatabaseName: '${{ vars.SQL_DATABASE_NAME }}'
       loginAccountType: ${{ inputs.loginAccountType }}
     secrets: inherit
