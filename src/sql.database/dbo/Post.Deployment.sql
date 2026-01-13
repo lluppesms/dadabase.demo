@@ -14,4 +14,14 @@ PRINT 'Schema deployment completed successfully.'
 
 PRINT 'To populate with sample jokes, run the InsertDefaultData.sql script from Docs/sql folder.'
 PRINT 'Post-deployment script completed.'
+
+PRINT 'To grant rights to your CICD pipeline to use the DACPAC to create the schema:'
+PRINT '  Creating user [your_cicd_pipeline_sp] from external provider...';
+PRINT '  ALTER ROLE db_owner ADD MEMBER [your_cicd_pipeline_sp];'
+
+PRINT 'To grant rights to your application to use database:'
+PRINT '  Creating user [your_managed_identity] from external provider...';
+PRINT '  ALTER ROLE db_datareader ADD MEMBER [your_managed_identity];'
+PRINT '  ALTER ROLE db_datawriter ADD MEMBER [your_managed_identity];'
+
 GO
