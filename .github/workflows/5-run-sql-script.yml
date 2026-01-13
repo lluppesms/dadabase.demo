@@ -27,7 +27,7 @@ on:
       scriptName:
         description: 'SQL Script to Run'
         required: true
-        default: 'Patch-20240101.sql'
+        default: 'Patch-20260101.sql'
         type: choice
         options:
           - 'DBCOPY'
