@@ -43,13 +43,13 @@ on:
         required: false
         type: string
         default: ''
-    secrets:
-      AZURE_CREDENTIALS:
-        required: true
-      SQL_ADMIN_USER:
-        required: false
-      SQL_ADMIN_PASSWORD:
-        required: false
+    #secrets:
+    #  AZURE_CREDENTIALS:
+    #    required: true
+    #  SQL_ADMIN_USER:
+    #    required: false
+    #  SQL_ADMIN_PASSWORD:
+    #    required: false
 
 # ------------------------------------------------------------------------------------------------------------------------
 jobs:
