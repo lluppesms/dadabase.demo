@@ -31,14 +31,19 @@ param autopause int = 60 // time in minutes
 })
 param workspaceId string = ''
 
-param sqlAdminUser string
+param sqlAdminUser string = ''
 @secure()
-param sqlAdminPassword string
+param sqlAdminPassword string = ''
+param addSecurityControlIgnoreTag bool = false
 
 // --------------------------------------------------------------------------------
 var templateTag = { TemplateFile: '~sqlserver.bicep' }
-var tags = union(commonTags, templateTag)
-var adAdminOnly = sqlAdminUser == '' 
+var securityControlIgnoreTag = addSecurityControlIgnoreTag ? { SecurityControl: 'Ignore' } : {}
+var tags = union(commonTags, templateTag, securityControlIgnoreTag)
+
+// Default to AD-only authentication; only enable SQL local auth if sqlAdminPassword has a value
+var useSqlAuth = !empty(sqlAdminPassword)
+var adAdminOnly = !useSqlAuth
 var adminDefinition = adAdminUserId == '' ? {} : {
   administratorType: 'ActiveDirectory'
   principalType: 'Group'
@@ -50,13 +55,8 @@ var adminDefinition = adAdminUserId == '' ? {} : {
 var primaryUser =  adAdminUserId == '' ? '' : adAdminUserId
 
 // --------------------------------------------------------------------------------
-// resource storageAccountResource 'Microsoft.Storage/storageAccounts@2021-04-01' existing = { name: storageAccountName }
-// var storageAccountKey = storageAccountResource.listKeys().keys[0].value
-// var storageEndpoint = 'https://${storageAccountResource.name}.${environment().suffixes.storage}'
-// var storageSubscriptionId = subscription().subscriptionId
-
-// --------------------------------------------------------------------------------
-resource sqlServerResource 'Microsoft.Sql/servers@2023-02-01-preview' = {
+// SQL Server with AD authentication by default; SQL local auth only if sqlAdminPassword is provided
+resource sqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' = {
   name: sqlServerName
   location: location
   tags: tags
@@ -67,16 +67,35 @@ resource sqlServerResource 'Microsoft.Sql/servers@2023-02-01-preview' = {
     publicNetworkAccess: 'Enabled'
     restrictOutboundNetworkAccess: 'Enabled'
     version: '12.0'
-    administratorLogin: sqlAdminUser
-    administratorLoginPassword: sqlAdminPassword
+    // Only configure SQL local auth if password is provided
+    // administratorLogin: useSqlAuth ? sqlAdminUser : null
+    // administratorLoginPassword: useSqlAuth ? sqlAdminPassword : null
     //keyId: 'string' // A CMK URI of the key to use for encryption.
   }
   identity: {
     type: 'SystemAssigned'
   }
 }
+resource sqlServerAzureADOnlyAuth 'Microsoft.Sql/servers/azureADOnlyAuthentications@2024-11-01-preview' = {
+  parent: sqlServerResource
+  name: 'default'
+  properties: {
+    azureADOnlyAuthentication: true
+  }
+}
 
-resource sqlDBResource 'Microsoft.Sql/servers/databases@2023-02-01-preview' = {
+resource sqlServerActiveDirectory 'Microsoft.Sql/servers/administrators@2024-11-01-preview' = {
+  name: 'ActiveDirectory'
+  parent: sqlServerResource
+  properties: {
+    administratorType: 'ActiveDirectory'
+    login: adAdminUserId
+    sid: adAdminUserSid
+    tenantId: adAdminTenantId
+  }
+}
+
+resource sqlDBResource 'Microsoft.Sql/servers/databases@2024-11-01-preview' = {
   parent: sqlServerResource
   name: sqlDBName
   location: location
@@ -102,7 +121,7 @@ resource sqlDBResource 'Microsoft.Sql/servers/databases@2023-02-01-preview' = {
 }
 
 // This rule will allow all Azure services and resources to access this server
-resource sqlAllowAllAzureIps 'Microsoft.Sql/servers/firewallRules@2023-02-01-preview' = {
+resource sqlAllowAllAzureIps 'Microsoft.Sql/servers/firewallRules@2024-11-01-preview' = {
   name: 'AllowAllWindowsAzureIps'
   parent: sqlServerResource
   properties: {
@@ -188,7 +207,7 @@ resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-pr
   }
 }
 
-resource sqlDBAuditingSettings 'Microsoft.Sql/servers/auditingSettings@2023-02-01-preview' = { // if (isMSDevOpsAuditEnabled) {
+resource sqlDBAuditingSettings 'Microsoft.Sql/servers/auditingSettings@2024-11-01-preview' = { // if (isMSDevOpsAuditEnabled) {
   parent: sqlServerResource
   name: 'default'
   properties: {

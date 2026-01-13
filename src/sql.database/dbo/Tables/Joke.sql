@@ -40,7 +40,7 @@ ALTER TABLE [dbo].[Joke] ADD CONSTRAINT [CK_Joke_ActiveInd] CHECK ([ActiveInd] I
 GO
 
 -- Foreign key constraint to JokeCategory
-ALTER TABLE [dbo].[Joke] WITH CHECK ADD CONSTRAINT [FK_Joke_JokeCategory] FOREIGN KEY([JokeCategoryId])
+ALTER TABLE [dbo].[Joke] ADD CONSTRAINT [FK_Joke_JokeCategory] FOREIGN KEY([JokeCategoryId])
 REFERENCES [dbo].[JokeCategory] ([JokeCategoryId])
 	ON UPDATE CASCADE
 	ON DELETE SET NULL

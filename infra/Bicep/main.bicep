@@ -29,9 +29,9 @@ param sqlDatabaseName string = 'dadabase'
 param sqlSkuTier string = 'GeneralPurpose'
 param sqlSkuFamily string = 'Gen5'
 param sqlSkuName string = 'GP_S_Gen5'
-param adminLoginUserId string = ''
-param adminLoginUserSid string = ''
-param adminLoginTenantId string = ''
+param sqlAdminLoginUserId string = ''
+param sqlAdminLoginUserSid string = ''
+param sqlAdminLoginTenantId string = ''
 param sqlAdminUser string = ''
 @secure()
 param sqlAdminPassword string = ''
@@ -130,12 +130,13 @@ module sqlDbModule './modules/database/sqlserver.bicep' = {
     autopause: 60
     location: location
     commonTags: commonTags
-    adAdminUserId: adminLoginUserId
-    adAdminUserSid: adminLoginUserSid
-    adAdminTenantId: adminLoginTenantId
+    adAdminUserId: sqlAdminLoginUserId
+    adAdminUserSid: sqlAdminLoginUserSid
+    adAdminTenantId: sqlAdminLoginTenantId
     sqlAdminUser:sqlAdminUser
     sqlAdminPassword: sqlAdminPassword
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
+    addSecurityControlIgnoreTag: true
   }
 }
 
