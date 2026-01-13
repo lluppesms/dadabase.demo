@@ -54,10 +54,7 @@ jobs:
     env:
       fqdnServerName: ${{ inputs.sqlServerName }}.database.windows.net
     permissions:
-      id-token: write    
-      contents: read     
-      actions: read    
-
+      id-token: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4

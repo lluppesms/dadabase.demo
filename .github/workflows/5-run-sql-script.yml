@@ -59,9 +59,7 @@ jobs:
     name: Run SQL
     uses: ./.github/workflows/template-run-sql.yml
     permissions:
-      id-token: write    
-      contents: read     
-      actions: read    
+      id-token: write  
     with:
       envCode: ${{ inputs.deployEnvironment }}
       sqlFolderName: 'src/sql.database/sql.database/Patch'

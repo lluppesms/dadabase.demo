@@ -55,6 +55,8 @@ jobs:
     name: Deploy Database
     needs: build
     uses: ./.github/workflows/template-dacpac-deploy.yml
+    permissions:
+      id-token: write  
     with:
       envCode: ${{ inputs.deployEnvironment }}
       artifactName: 'dacpac'
