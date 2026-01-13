@@ -16,6 +16,10 @@ param servicePlanName = '#{EXISTING_SERVICEPLAN_NAME}#'
 param servicePlanResourceGroupName = '#{EXISTING_SERVICEPLAN_RESOURCEGROUP_NAME}#'
 param webAppKind = 'linux' // 'linux' or 'windows'
 
+param sqlAdminLoginUserId = '$#{SQLADMIN_LOGIN_USERID}#'
+param sqlAdminLoginUserSid = '$#{SQLADMIN_LOGIN_USERSID}#'
+param sqlAdminLoginTenantId = '$#{SQLADMIN_LOGIN_TENANTID}#'
+
 param adminUserId = '#{KEYVAULT_OWNER_USERID}#'
 
 param azureOpenAIChatEndpoint = '#{OPENAI_CHAT_ENDPOINT}#'
