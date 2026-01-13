@@ -60,6 +60,10 @@ jobs:
       name: ${{ inputs.envCode }}
     env:
       fqdnServerName: ${{ inputs.sqlServerName }}.database.windows.net
+    permissions:
+      id-token: write    
+      contents: read     
+      actions: read    
 
     steps:
       - name: Checkout Repository
