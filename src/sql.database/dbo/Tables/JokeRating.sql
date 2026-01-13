@@ -23,7 +23,7 @@ ALTER TABLE [dbo].[JokeRating] ADD CONSTRAINT [CK_JokeRating_UserRating] CHECK (
 GO
 
 -- Foreign key constraint to Joke
-ALTER TABLE [dbo].[JokeRating] WITH CHECK ADD CONSTRAINT [FK_JokeRating_Joke] FOREIGN KEY([JokeId])
+ALTER TABLE [dbo].[JokeRating] ADD CONSTRAINT [FK_JokeRating_Joke] FOREIGN KEY([JokeId])
 REFERENCES [dbo].[Joke] ([JokeId])
 	ON UPDATE CASCADE
 	ON DELETE CASCADE
