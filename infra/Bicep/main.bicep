@@ -136,6 +136,7 @@ module sqlDbModule './modules/database/sqlserver.bicep' = {
     sqlAdminUser:sqlAdminUser
     sqlAdminPassword: sqlAdminPassword
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
+    addSecurityControlIgnoreTag: true
   }
 }
 

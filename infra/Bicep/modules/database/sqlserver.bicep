@@ -34,10 +34,13 @@ param workspaceId string = ''
 param sqlAdminUser string = ''
 @secure()
 param sqlAdminPassword string = ''
+param addSecurityControlIgnoreTag bool = false
 
 // --------------------------------------------------------------------------------
 var templateTag = { TemplateFile: '~sqlserver.bicep' }
-var tags = union(commonTags, templateTag)
+var securityControlIgnoreTag = addSecurityControlIgnoreTag ? { SecurityControl: 'Ignore' } : {}
+var tags = union(commonTags, templateTag, securityControlIgnoreTag)
+
 // Default to AD-only authentication; only enable SQL local auth if sqlAdminPassword has a value
 var useSqlAuth = !empty(sqlAdminPassword)
 var adAdminOnly = !useSqlAuth
@@ -50,12 +53,6 @@ var adminDefinition = adAdminUserId == '' ? {} : {
   azureADOnlyAuthentication: adAdminOnly
 } 
 var primaryUser =  adAdminUserId == '' ? '' : adAdminUserId
-
-// --------------------------------------------------------------------------------
-// resource storageAccountResource 'Microsoft.Storage/storageAccounts@2021-04-01' existing = { name: storageAccountName }
-// var storageAccountKey = storageAccountResource.listKeys().keys[0].value
-// var storageEndpoint = 'https://${storageAccountResource.name}.${environment().suffixes.storage}'
-// var storageSubscriptionId = subscription().subscriptionId
 
 // --------------------------------------------------------------------------------
 // SQL Server with AD authentication by default; SQL local auth only if sqlAdminPassword is provided
@@ -71,8 +68,8 @@ resource sqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' = {
     restrictOutboundNetworkAccess: 'Enabled'
     version: '12.0'
     // Only configure SQL local auth if password is provided
-    administratorLogin: useSqlAuth ? sqlAdminUser : null
-    administratorLoginPassword: useSqlAuth ? sqlAdminPassword : null
+    // administratorLogin: useSqlAuth ? sqlAdminUser : null
+    // administratorLoginPassword: useSqlAuth ? sqlAdminPassword : null
     //keyId: 'string' // A CMK URI of the key to use for encryption.
   }
   identity: {
