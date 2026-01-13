@@ -86,6 +86,18 @@ resource sqlServerAzureADOnlyAuth 'Microsoft.Sql/servers/azureADOnlyAuthenticati
     azureADOnlyAuthentication: true
   }
 }
+
+resource sqlServerActiveDirectory 'Microsoft.Sql/servers/administrators@2024-11-01-preview' = {
+  name: 'ActiveDirectory'
+  parent: sqlServerResource
+  properties: {
+    administratorType: 'ActiveDirectory'
+    login: adAdminUserId
+    sid: adAdminUserSid
+    tenantId: adAdminTenantId
+  }
+}
+
 resource sqlDBResource 'Microsoft.Sql/servers/databases@2024-11-01-preview' = {
   parent: sqlServerResource
   name: sqlDBName
