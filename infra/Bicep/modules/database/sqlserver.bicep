@@ -31,14 +31,16 @@ param autopause int = 60 // time in minutes
 })
 param workspaceId string = ''
 
-param sqlAdminUser string
+param sqlAdminUser string = ''
 @secure()
-param sqlAdminPassword string
+param sqlAdminPassword string = ''
 
 // --------------------------------------------------------------------------------
 var templateTag = { TemplateFile: '~sqlserver.bicep' }
 var tags = union(commonTags, templateTag)
-var adAdminOnly = sqlAdminUser == '' 
+// Default to AD-only authentication; only enable SQL local auth if sqlAdminPassword has a value
+var useSqlAuth = !empty(sqlAdminPassword)
+var adAdminOnly = !useSqlAuth
 var adminDefinition = adAdminUserId == '' ? {} : {
   administratorType: 'ActiveDirectory'
   principalType: 'Group'
@@ -56,6 +58,7 @@ var primaryUser =  adAdminUserId == '' ? '' : adAdminUserId
 // var storageSubscriptionId = subscription().subscriptionId
 
 // --------------------------------------------------------------------------------
+// SQL Server with AD authentication by default; SQL local auth only if sqlAdminPassword is provided
 resource sqlServerResource 'Microsoft.Sql/servers@2023-02-01-preview' = {
   name: sqlServerName
   location: location
@@ -67,8 +70,9 @@ resource sqlServerResource 'Microsoft.Sql/servers@2023-02-01-preview' = {
     publicNetworkAccess: 'Enabled'
     restrictOutboundNetworkAccess: 'Enabled'
     version: '12.0'
-    administratorLogin: sqlAdminUser
-    administratorLoginPassword: sqlAdminPassword
+    // Only configure SQL local auth if password is provided
+    administratorLogin: useSqlAuth ? sqlAdminUser : null
+    administratorLoginPassword: useSqlAuth ? sqlAdminPassword : null
     //keyId: 'string' // A CMK URI of the key to use for encryption.
   }
   identity: {
