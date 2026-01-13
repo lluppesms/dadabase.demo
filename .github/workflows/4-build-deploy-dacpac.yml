@@ -1,11 +1,6 @@
 # ------------------------------------------------------------------------------------------------------------------------
 # GHA Workflow to build and deploy SQL Database Objects (DACPAC)
 # ------------------------------------------------------------------------------------------------------------------------
-# You need to set up secrets in the GitHub Secrets Repository before running these workflows.
-#   AZURE_CREDENTIALS - Service principal credentials for Azure login
-#   SQL_ADMIN_USER - (Optional) SQL admin username for local SQL authentication
-#   SQL_ADMIN_PASSWORD - (Optional) SQL admin password for local SQL authentication
-# ------------------------------------------------------------------------------------------------------------------------
 name: 4.build.deploy.dacpac
 run-name: '4. Build and Deploy DACPAC'
 on:
@@ -23,14 +18,14 @@ on:
         options:
           - 'SVC_PRINCIPAL'
           - 'LOCAL_SQL'
-
-# env:
-#   appFolderName: '${{ vars.SQL_APP_PROJECT_FOLDER_NAME }}' # 'src/sql.database'
-#   appSolutionName: '${{ vars.SQL_APP_SOLUTION_NAME }}' # 'dadabase.sql.database'
-#   appProjectName: '${{ vars.SQL_APP_PROJECT_NAME }}' # 'sql.database'
-#   sqlServerNamePrefix: '${{ vars.SQL_SERVER_NAME_PREFIX }}'
-#   sqlServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}-${{inputs.deployEnvironment}}'
-#   sqlDatabaseName: '${{ vars.SQL_DATABASE_NAME }}'
+      dacpacAction:
+        description: DACPAC Action
+        required: true
+        default: 'build-deploy'
+        type: choice
+        options:
+          - 'build-deploy'
+          - 'build-only'
 
 # ------------------------------------------------------------------------------------------------------------------------
 jobs:
@@ -40,6 +35,7 @@ jobs:
   build:
     name: Build
     uses: ./.github/workflows/template-dacpac-build.yml
+    if: ${{ inputs.dacpacAction == 'build-deploy' || inputs.dacpacAction == 'build-only' }}
     with:
       envCode: ${{ inputs.deployEnvironment }}
       appFolderName: '${{ vars.SQL_APP_PROJECT_FOLDER_NAME }}'
@@ -55,6 +51,7 @@ jobs:
     name: Deploy Database
     needs: build
     uses: ./.github/workflows/template-dacpac-deploy.yml
+    if: ${{ inputs.dacpacAction == 'build-deploy' }}
     permissions:
       id-token: write  
     with:

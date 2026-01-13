@@ -42,7 +42,7 @@ on:
       databaseCopyName:
         description: 'Database Copy Name (for DBCOPY action)'
         required: false
-        default: 'DADABASEV093001'
+        default: 'DADABASEV099001'
         type: string
       resourceGroupName:
         description: 'Resource Group Name (for DBCOPY action)'
