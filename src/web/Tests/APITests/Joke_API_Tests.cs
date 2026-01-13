@@ -15,31 +15,18 @@ using DadABase.Data.Repositories;
 [ExcludeFromCodeCoverage]
 public class Joke_API_Tests : BaseTest
 {
-    private readonly JokeSQLRepository repo;
+    private readonly IJokeRepository repo;
     private readonly JokeController apiController;
-    private readonly DadABaseDbContext context;
 
     public Joke_API_Tests(ITestOutputHelper output)
     {
         Task.Run(() => SetupInitialize(output)).Wait();
 
-        // Create in-memory database for testing
-        var options = new DbContextOptionsBuilder<DadABaseDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-        
-        context = new DadABaseDbContext(options);
-        
-        // Seed some test data
-        context.Jokes.AddRange(
-            new Joke { JokeId = 1, JokeTxt = "Test joke 1", JokeCategoryTxt = "Engineers", ActiveInd = "Y" },
-            new Joke { JokeId = 2, JokeTxt = "Test joke 2 with it", JokeCategoryTxt = "Test", ActiveInd = "Y" },
-            new Joke { JokeId = 3, JokeTxt = "Test joke 3 it works", JokeCategoryTxt = "Other", ActiveInd = "Y" }
-        );
-        context.SaveChanges();
+        // Use JSON repository for testing (avoids SQL stored procedure dependencies)
+        var jsonFilePath = Path.Combine(AppContext.BaseDirectory, "Data", "Jokes.json");
+        repo = new JokeJsonRepository(jsonFilePath);
 
         var mockContext = GetMockHttpContext(testData.UserName);
-        repo = new JokeSQLRepository(context);
         apiController = new JokeController(appSettings, mockContext, repo);
     }
 
@@ -145,11 +132,8 @@ public class Joke_API_Tests : BaseTest
     public void Api_Joke_Initialize_Works()
     {
         // Arrange
-        var options = new DbContextOptionsBuilder<DadABaseDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-        var testContext = new DadABaseDbContext(options);
-        _ = new JokeController(appSettings, GetMockHttpContext(testData.UserName), new JokeSQLRepository(testContext));
+        var jsonFilePath = Path.Combine(AppContext.BaseDirectory, "Data", "Jokes.json");
+        _ = new JokeController(appSettings, GetMockHttpContext(testData.UserName), new JokeJsonRepository(jsonFilePath));
         // Act
         // Assert
     }

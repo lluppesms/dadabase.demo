@@ -48,4 +48,10 @@
     <ProjectReference Include="..\Data\DadABase.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\Website\Data\Jokes.json" Link="Data\Jokes.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
