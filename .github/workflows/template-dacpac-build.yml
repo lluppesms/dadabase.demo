@@ -68,12 +68,14 @@ jobs:
       - name: Display Files After Build
         if: inputs.listFilesAfterBuild == true
         run: |
-          Write-Host "Listing files in ${{ inputs.appFolderName }}/${{ inputs.appProjectName }}/bin/${{ env.CONFIGURATION }}:"
-          Get-ChildItem -Path "${{ inputs.appFolderName }}/${{ inputs.appProjectName }}/bin/${{ env.CONFIGURATION }}" -Recurse
+          Write-Host "Listing files in ${{ inputs.appFolderName }}:"
+          Get-ChildItem -Path "${{ inputs.appFolderName }}" -Recurse
+          Write-Host "Listing files in ${{ inputs.appFolderName }}/bin/${{ env.CONFIGURATION }}:"
+          Get-ChildItem -Path "${{ inputs.appFolderName }}/bin/${{ env.CONFIGURATION }}" -Recurse
 
       - name: Upload DACPAC Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.artifactName }}
-          path: ${{ inputs.appFolderName }}/${{ inputs.appProjectName }}/bin/${{ env.CONFIGURATION }}/${{ inputs.appProjectName }}.dacpac
+          path: ${{ inputs.appFolderName }}/bin/${{ env.CONFIGURATION }}/${{ inputs.appProjectName }}.dacpac
           if-no-files-found: error
