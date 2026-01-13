@@ -1,3 +1,5 @@
-CREATE USER [llldadabase1-app-id] FROM EXTERNAL PROVIDER;
-ALTER ROLE db_datareader ADD MEMBER [llldadabase1-app-id];
-ALTER ROLE db_datawriter ADD MEMBER [llldadabase1-app-id];
+-- -- Good idea, but this needs to be run by someone authorized...
+-- -- ERROR: Server identity does not have the Microsoft Entra Directory Readers permission.
+-- CREATE USER [llldadabase1-app-id] FROM EXTERNAL PROVIDER;
+-- ALTER ROLE db_datareader ADD MEMBER [llldadabase1-app-id];
+-- ALTER ROLE db_datawriter ADD MEMBER [llldadabase1-app-id];
