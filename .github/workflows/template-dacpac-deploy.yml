@@ -71,11 +71,13 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       # Deploy using Service Principal (Entra ID authentication)
+      # For details on how to authenticate, see: https://github.com/Azure/sql-action/blob/master/CONNECTION.md#azure-active-directory-managed-identity-authentication
       - name: Deploy DACPAC - Service Principal
         if: inputs.loginAccountType == 'SVC_PRINCIPAL'
         uses: azure/sql-action@v2.3
         with:
-          connection-string: 'Server=${{ env.fqdnServerName }};Database=${{ inputs.sqlDatabaseName }};Authentication=Active Directory Service Principal;'
+          connection-string: 'Server=${{ env.fqdnServerName }};Database=${{ inputs.sqlDatabaseName }};Authentication=Active Directory Default; Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
+          # connection-string: 'Server=${{ env.fqdnServerName }};Database=${{ inputs.sqlDatabaseName }};Authentication=Active Directory Service Principal;'
           path: './dacpac/${{ inputs.appProjectName }}.dacpac'
           action: 'publish'
 
