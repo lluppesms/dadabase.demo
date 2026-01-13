@@ -31,9 +31,9 @@ on:
         type: choice
         options:
           - 'DBCOPY'
-          - 'Patch-20240101.sql'
-          - 'Patch-20240102.sql'
-          - 'Patch-20240103.sql'
+          - 'Patch-20260101.sql'
+          - 'Patch-20260102.sql'
+          - 'Patch-20260103.sql'
       databaseName:
         description: 'Database Name'
         required: true
@@ -62,7 +62,7 @@ jobs:
       id-token: write  
     with:
       envCode: ${{ inputs.deployEnvironment }}
-      sqlFolderName: 'src/sql.database/sql.database/Patch'
+      sqlFolderName: 'src/sql.database/Patch'
       sqlFileName: ${{ inputs.scriptName }}
       runInDatabase: ${{ inputs.databaseName }}
       sqlServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}-${{ inputs.deployEnvironment }}'
