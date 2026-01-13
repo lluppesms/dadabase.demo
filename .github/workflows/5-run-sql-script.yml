@@ -27,13 +27,14 @@ on:
       scriptName:
         description: 'SQL Script to Run'
         required: true
-        default: 'Patch-20260101.sql'
+        default: 'Add-App-User-Rights.sql'
         type: choice
         options:
-          - 'DBCOPY'
+          - 'Add-App-User-Rights.sql'
           - 'Patch-20260101.sql'
           - 'Patch-20260102.sql'
           - 'Patch-20260103.sql'
+          - 'DBCOPY'
       databaseName:
         description: 'Database Name'
         required: true
