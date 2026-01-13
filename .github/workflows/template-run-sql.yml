@@ -43,13 +43,6 @@ on:
         required: false
         type: string
         default: ''
-    secrets:
-      AZURE_CREDENTIALS:
-        required: true
-      SQL_ADMIN_USER:
-        required: false
-      SQL_ADMIN_PASSWORD:
-        required: false
 
 # ------------------------------------------------------------------------------------------------------------------------
 jobs:
@@ -60,6 +53,10 @@ jobs:
       name: ${{ inputs.envCode }}
     env:
       fqdnServerName: ${{ inputs.sqlServerName }}.database.windows.net
+    permissions:
+      id-token: write    
+      contents: read     
+      actions: read    
 
     steps:
       - name: Checkout Repository
@@ -98,7 +95,6 @@ jobs:
       #   with:
       #     creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Azure Login (Reusable Action)
-        if: ${{ inputs.runCreateInfra }}
         uses: ./.github/actions/login-action
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
