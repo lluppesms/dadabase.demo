@@ -1,6 +1,5 @@
-
--- CREATE PROC [dbo].[usp_Get_Random_Joke] AS
-ALTER PROC [dbo].usp_Get_Random_Joke AS
+CREATE PROCEDURE [dbo].[usp_Get_Random_Joke]
+AS
 /*
 Example Usage:
   exec usp_Get_Random_Joke
