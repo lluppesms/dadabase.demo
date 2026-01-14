@@ -3277,6 +3277,7 @@ BEGIN
   PRINT ''
   PRINT 'Removing previous set of jokes...'
   DELETE FROM JokeRating
+  DELETE FROM JokeJokeCategory
   DELETE FROM JokeCategory
   DELETE FROM Joke
   DBCC CHECKIDENT('JokeRating', RESEED, 0)
@@ -3299,6 +3300,17 @@ INSERT INTO Joke (JokeCategoryId, JokeCategoryTxt, JokeTxt, Attribution, ImageTx
   SELECT c.JokeCategoryId, j.JokeCategoryTxt, j.JokeTxt, j.Attribution, j.ImageTxt, 0, 0
   FROM @tmpJokes j INNER JOIN JokeCategory c on j.JokeCategoryTxt = c.JokeCategoryTxt
   WHERE j.JokeTxt NOT IN (Select JokeTxt From Joke)
+
+PRINT ''
+PRINT 'Populating JokeJokeCategory junction table...'
+INSERT INTO JokeJokeCategory (JokeId, JokeCategoryId)
+  SELECT DISTINCT jk.JokeId, jk.JokeCategoryId
+  FROM Joke jk
+  WHERE jk.JokeCategoryId IS NOT NULL
+    AND NOT EXISTS (
+      SELECT 1 FROM JokeJokeCategory jjc 
+      WHERE jjc.JokeId = jk.JokeId AND jjc.JokeCategoryId = jk.JokeCategoryId
+    )
 
 PRINT ''
 PRINT 'Displaying All Jokes...'
