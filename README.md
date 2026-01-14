@@ -30,7 +30,9 @@ Deployment Options include:
 
 [![azd Compatible](/Docs/images/AZD_Compatible.png)](/.azure/readme.md)
 
-[![deploy.infra.and.website](https://github.com/lluppesms/dadabase.blazor.demo/actions/workflows/deploy-infra-website.yml/badge.svg)](https://github.com/lluppesms/dadabase.blazor.demo/actions/workflows/deploy-infra-website.yml)
+[![bicep-build-deploy-webapp](https://github.com/lluppesms/dadabase.demo/actions/workflows/3-bicep-build-deploy-webapp.yml/badge.svg)](https://github.com/lluppesms/dadabase.demo/actions/workflows/3-bicep-build-deploy-webapp.yml)
+
+[![build-deploy-dacpac](https://github.com/lluppesms/dadabase.demo/actions/workflows/4-build-deploy-dacpac.yml/badge.svg)](https://github.com/lluppesms/dadabase.demo/actions/workflows/4-build-deploy-dacpac.yml)
 
 ---
 
