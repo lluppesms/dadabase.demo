@@ -173,6 +173,24 @@ public class JokeJsonRepository : IJokeRepository
     }
 
     /// <summary>
+    /// Update ImageTxt field for a specific joke
+    /// </summary>
+    /// <param name="jokeId">Joke ID</param>
+    /// <param name="imageTxt">Image description text</param>
+    /// <param name="requestingUserName">Requesting UserName</param>
+    /// <returns>Success</returns>
+    public bool UpdateImageTxt(int jokeId, string imageTxt, string requestingUserName = "ANON")
+    {
+        var joke = _jokes.FirstOrDefault(j => j.JokeId == jokeId);
+        if (joke != null)
+        {
+            joke.ImageTxt = imageTxt;
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
     /// Disposal
     /// </summary>
     public void Dispose()
