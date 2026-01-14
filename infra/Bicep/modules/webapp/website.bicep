@@ -52,12 +52,9 @@ resource webSiteResource 'Microsoft.Web/sites@2024-11-01' = {
   location: location
   kind: 'app'
   identity: {
-    type: 'UserAssigned'
+    type: 'SystemAssigned, UserAssigned'
     userAssignedIdentities: { '${managedIdentityId}': {} }
   }
-  // identity: {
-  //   type: 'SystemAssigned'
-  // }
   tags: webSiteTags
   properties: {
     serverFarmId: appServiceResource.id
