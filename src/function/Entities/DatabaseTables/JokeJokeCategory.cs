@@ -43,7 +43,7 @@ public class JokeJokeCategory
     [JsonIgnore]
     [Display(Name = "Create User Name")]
     [StringLength(255)]
-    public string CreateUserName { get; set; }
+    public string? CreateUserName { get; set; }
 
     /// <summary>
     /// New Instance of JokeJokeCategory

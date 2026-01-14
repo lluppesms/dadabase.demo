@@ -62,7 +62,7 @@ public class Joke
     /// </summary>
     [Display(Name = "Categories", Description = "Multiple categories for this joke (comma-separated).", Prompt = "Enter Categories")]
     [NotMapped]
-    public string Categories { get; set; }
+    public string? Categories { get; set; }
 
     /// <summary>
     /// Attribution
