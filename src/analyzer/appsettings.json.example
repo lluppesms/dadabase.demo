@@ -1,0 +1,9 @@
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=DadABase;Integrated Security=true;TrustServerCertificate=true;"
+  },
+  "Phi4": {
+    "ModelId": "phi-4",
+    "Endpoint": "http://localhost:1234/v1"
+  }
+}
