@@ -18,9 +18,9 @@ namespace DadABase.Data.Repositories;
 public class JokeJsonRepository : IJokeRepository
 {
     /// <summary>
-    /// List of Jokes
+    /// List of Jokes (mapped from JSON)
     /// </summary>
-    private readonly JsonJokeList _jokeData;
+    private readonly List<Joke> _jokes;
 
     /// <summary>
     /// List of Categories
@@ -34,15 +34,21 @@ public class JokeJsonRepository : IJokeRepository
     public JokeJsonRepository(string jsonFilePath)
     {
         // Load jokes from JSON file
+        JsonJokeList jsonData;
         using (var r = new StreamReader(jsonFilePath))
         {
             var json = r.ReadToEnd();
-            _jokeData = JsonConvert.DeserializeObject<JsonJokeList>(json) ?? new JsonJokeList();
+            jsonData = JsonConvert.DeserializeObject<JsonJokeList>(json) ?? new JsonJokeList();
         }
+
+        // Map JSON jokes to Joke entities with auto-generated IDs
+        _jokes = jsonData.Jokes
+            .Select((jsonJoke, index) => jsonJoke.ToJoke(index + 1))
+            .ToList();
 
         // Extract distinct categories from all jokes' Categories field (comma-separated)
         var allCategories = new HashSet<string>();
-        foreach (var joke in _jokeData.Jokes)
+        foreach (var joke in _jokes)
         {
             if (!string.IsNullOrEmpty(joke.Categories))
             {
@@ -63,12 +69,12 @@ public class JokeJsonRepository : IJokeRepository
     /// <returns>Record</returns>
     public Joke GetRandomJoke(string requestingUserName = "ANON")
     {
-        if (_jokeData.Jokes == null || _jokeData.Jokes.Count == 0)
+        if (_jokes == null || _jokes.Count == 0)
         {
             return new Joke { JokeTxt = "No jokes here!", Categories = "None" };
         }
 
-        var joke = _jokeData.Jokes[Random.Shared.Next(0, _jokeData.Jokes.Count)];
+        var joke = _jokes[Random.Shared.Next(0, _jokes.Count)];
         return joke ?? new Joke { JokeTxt = "No jokes here!", Categories = "None" };
     }
 
@@ -80,7 +86,7 @@ public class JokeJsonRepository : IJokeRepository
     /// <returns>Record</returns>
     public Joke GetOne(int id, string requestingUserName = "ANON")
     {
-        var joke = _jokeData.Jokes.FirstOrDefault(j => j.JokeId == id);
+        var joke = _jokes.FirstOrDefault(j => j.JokeId == id);
         return joke ?? new Joke { JokeTxt = "Joke not found", Categories = "None" };
     }
 
@@ -106,7 +112,7 @@ public class JokeJsonRepository : IJokeRepository
         // User supplied both category and search term
         if (!string.IsNullOrEmpty(jokeCategoryTxt) && !string.IsNullOrEmpty(searchTxt))
         {
-            var jokesByTermAndCategory = _jokeData.Jokes
+            var jokesByTermAndCategory = _jokes
                 .Where(joke => 
                 {
                     if (string.IsNullOrEmpty(joke.Categories)) return false;
@@ -121,7 +127,7 @@ public class JokeJsonRepository : IJokeRepository
         // User supplied ONLY category and NOT search term
         if (!string.IsNullOrEmpty(jokeCategoryTxt) && string.IsNullOrEmpty(searchTxt))
         {
-            var jokesInCategory = _jokeData.Jokes
+            var jokesInCategory = _jokes
                 .Where(joke =>
                 {
                     if (string.IsNullOrEmpty(joke.Categories)) return false;
@@ -135,14 +141,14 @@ public class JokeJsonRepository : IJokeRepository
         // User supplied NOT category and ONLY search term
         if (string.IsNullOrEmpty(jokeCategoryTxt) && !string.IsNullOrEmpty(searchTxt))
         {
-            var jokesByTerm = _jokeData.Jokes
+            var jokesByTerm = _jokes
                 .Where(joke => joke.JokeTxt.Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase))
                 .ToList();
             return jokesByTerm.AsQueryable();
         }
 
         // User supplied neither category nor search term - return all
-        return _jokeData.Jokes.AsQueryable();
+        return _jokes.AsQueryable();
     }
 
     /// <summary>
@@ -163,7 +169,7 @@ public class JokeJsonRepository : IJokeRepository
     /// <returns>Records</returns>
     public IQueryable<Joke> ListAll(string activeInd = "Y", string requestingUserName = "ANON")
     {
-        return _jokeData.Jokes.AsQueryable();
+        return _jokes.AsQueryable();
     }
 
     /// <summary>
@@ -173,16 +179,4 @@ public class JokeJsonRepository : IJokeRepository
     {
         // No resources to dispose for JSON-based repository
     }
-}
-
-/// <summary>
-/// Helper class for deserializing JSON
-/// </summary>
-[ExcludeFromCodeCoverage]
-public class JsonJokeList
-{
-    /// <summary>
-    /// List of Jokes
-    /// </summary>
-    public List<Joke> Jokes { get; set; } = new List<Joke>();
 }
