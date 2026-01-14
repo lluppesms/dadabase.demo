@@ -120,8 +120,11 @@ public partial class Index : ComponentBase
         }
 
         // Save the description to the database
-        JokeRepository.UpdateImageTxt(myJoke.JokeId, jokeImageDescription);
-        myJoke.ImageTxt = jokeImageDescription;
+        var updateSuccess = JokeRepository.UpdateImageTxt(myJoke.JokeId, jokeImageDescription);
+        if (updateSuccess)
+        {
+            myJoke.ImageTxt = jokeImageDescription;
+        }
 
         // Step 2: Generate the actual image from the description
         jokeImageMessage = "🚀 OK - I've got an idea! Let me draw that for you! (gimme a sec...)";

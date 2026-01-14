@@ -137,6 +137,7 @@ public class Joke
         JokeTxt = string.Empty;
         Categories = string.Empty;
         Attribution = string.Empty;
+        ImageTxt = string.Empty;
         SortOrderNbr = 50;
         ActiveInd = "Y";
         CreateUserName = "UNKNOWN";
@@ -154,6 +155,7 @@ public class Joke
         JokeTxt = string.Empty;
         Categories = string.Empty;
         Attribution = string.Empty;
+        ImageTxt = string.Empty;
         SortOrderNbr = 50;
         ActiveInd = "Y";
         CreateUserName = "UNKNOWN";
@@ -171,6 +173,7 @@ public class Joke
         JokeTxt = jokeTxt;
         Categories = string.Empty;
         Attribution = string.Empty;
+        ImageTxt = string.Empty;
         SortOrderNbr = 50;
         ActiveInd = "Y";
         CreateUserName = "UNKNOWN";
@@ -188,6 +191,7 @@ public class Joke
         JokeTxt = jokeTxt;
         Categories = categories;
         Attribution = string.Empty;
+        ImageTxt = string.Empty;
         SortOrderNbr = 50;
         ActiveInd = "Y";
         CreateUserName = "UNKNOWN";
