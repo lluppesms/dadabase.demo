@@ -1,6 +1,6 @@
 # Copilot Instructions
 
-The github repo is lluppesms/dadabase.full and the primary branch that I work off of is main.
+The github repo is lluppesms/dadabase.demo and the primary branch that I work off of is main.
 
 ## File Organization
 - Keep related files together
