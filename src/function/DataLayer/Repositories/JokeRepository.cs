@@ -177,8 +177,13 @@ public class JokeRepository : BaseRepository, IJokeRepository
             if (!string.IsNullOrEmpty(jokeCategoryTxt) && !string.IsNullOrEmpty(searchTxt))
             {
                 var jokesByTermAndCategory = JokeData.Jokes
-                    .Where(joke => jokeCategoryList.Any(category => joke.Categories != null && joke.Categories.Contains(category))
-                        && joke.JokeTxt.Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase))
+                    .Where(joke =>
+                    {
+                        if (string.IsNullOrEmpty(joke.Categories)) return false;
+                        var jokeCategories = joke.Categories.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                        return jokeCategoryList.Any(category => jokeCategories.Contains(category, StringComparer.OrdinalIgnoreCase))
+                            && joke.JokeTxt.Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase);
+                    })
                     .Select(joke => new JokeBasicPlus(joke))
                     .ToList();
                 return jokesByTermAndCategory.AsQueryable();
@@ -188,7 +193,12 @@ public class JokeRepository : BaseRepository, IJokeRepository
             if (!string.IsNullOrEmpty(jokeCategoryTxt) && string.IsNullOrEmpty(searchTxt))
             {
                 var jokesInCategory = JokeData.Jokes
-                    .Where(joke => jokeCategoryList.Any(category => joke.Categories != null && joke.Categories.Contains(category)))
+                    .Where(joke =>
+                    {
+                        if (string.IsNullOrEmpty(joke.Categories)) return false;
+                        var jokeCategories = joke.Categories.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                        return jokeCategoryList.Any(category => jokeCategories.Contains(category, StringComparer.OrdinalIgnoreCase));
+                    })
                     .Select(joke => new JokeBasicPlus(joke))
                     .ToList();
                 return jokesInCategory.AsQueryable();

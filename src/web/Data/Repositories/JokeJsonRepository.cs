@@ -107,8 +107,13 @@ public class JokeJsonRepository : IJokeRepository
         if (!string.IsNullOrEmpty(jokeCategoryTxt) && !string.IsNullOrEmpty(searchTxt))
         {
             var jokesByTermAndCategory = _jokeData.Jokes
-                .Where(joke => jokeCategoryList.Any(category => joke.Categories != null && joke.Categories.Contains(category))
-                    && joke.JokeTxt.Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase))
+                .Where(joke => 
+                {
+                    if (string.IsNullOrEmpty(joke.Categories)) return false;
+                    var jokeCategories = joke.Categories.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    return jokeCategoryList.Any(category => jokeCategories.Contains(category, StringComparer.OrdinalIgnoreCase))
+                        && joke.JokeTxt.Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase);
+                })
                 .ToList();
             return jokesByTermAndCategory.AsQueryable();
         }
@@ -117,7 +122,12 @@ public class JokeJsonRepository : IJokeRepository
         if (!string.IsNullOrEmpty(jokeCategoryTxt) && string.IsNullOrEmpty(searchTxt))
         {
             var jokesInCategory = _jokeData.Jokes
-                .Where(joke => jokeCategoryList.Any(category => joke.Categories != null && joke.Categories.Contains(category)))
+                .Where(joke =>
+                {
+                    if (string.IsNullOrEmpty(joke.Categories)) return false;
+                    var jokeCategories = joke.Categories.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    return jokeCategoryList.Any(category => jokeCategories.Contains(category, StringComparer.OrdinalIgnoreCase));
+                })
                 .ToList();
             return jokesInCategory.AsQueryable();
         }
