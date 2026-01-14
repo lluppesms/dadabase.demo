@@ -65,8 +65,20 @@ public class JokeRepository : BaseRepository, IJokeRepository
             JokeData = JsonConvert.DeserializeObject<JokeList>(json);
         }
 
-        // select distinct categories from JokeData
-        JokeCategories = JokeData.Jokes.Select(joke => joke.JokeCategoryTxt).Distinct().Order().ToList();
+        // Extract distinct categories from all jokes' Categories field (comma-separated)
+        var allCategories = new HashSet<string>();
+        foreach (var joke in JokeData.Jokes)
+        {
+            if (!string.IsNullOrEmpty(joke.Categories))
+            {
+                var categories = joke.Categories.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                foreach (var cat in categories)
+                {
+                    allCategories.Add(cat);
+                }
+            }
+        }
+        JokeCategories = allCategories.Order().ToList();
     }
 
     /// <summary>
@@ -165,7 +177,7 @@ public class JokeRepository : BaseRepository, IJokeRepository
             if (!string.IsNullOrEmpty(jokeCategoryTxt) && !string.IsNullOrEmpty(searchTxt))
             {
                 var jokesByTermAndCategory = JokeData.Jokes
-                    .Where(joke => jokeCategoryList.Any(category => category == joke.JokeCategoryTxt)
+                    .Where(joke => jokeCategoryList.Any(category => joke.Categories != null && joke.Categories.Contains(category))
                         && joke.JokeTxt.Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase))
                     .Select(joke => new JokeBasicPlus(joke))
                     .ToList();
@@ -176,7 +188,7 @@ public class JokeRepository : BaseRepository, IJokeRepository
             if (!string.IsNullOrEmpty(jokeCategoryTxt) && string.IsNullOrEmpty(searchTxt))
             {
                 var jokesInCategory = JokeData.Jokes
-                    .Where(joke => jokeCategoryList.Any(category => category == joke.JokeCategoryTxt))
+                    .Where(joke => jokeCategoryList.Any(category => joke.Categories != null && joke.Categories.Contains(category)))
                     .Select(joke => new JokeBasicPlus(joke))
                     .ToList();
                 return jokesInCategory.AsQueryable();

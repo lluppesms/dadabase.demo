@@ -57,7 +57,7 @@ public class BaseAPIController : ControllerBase
             {
                 cfg.CreateMap<Joke, JokeBasic>()
                     .ForMember(dest => dest.Joke, opt => opt.MapFrom(src => src.JokeTxt))
-                    .ForMember(dest => dest.Category, opt => opt.MapFrom(src => src.JokeCategoryTxt));
+                    .ForMember(dest => dest.Category, opt => opt.MapFrom(src => src.Categories));
                 cfg.CreateMap<JokeCategory, CategoryBasic>()
                     .ForMember(dest => dest.Category, opt => opt.MapFrom(src => src.JokeCategoryTxt));
             }, new LoggerFactory());

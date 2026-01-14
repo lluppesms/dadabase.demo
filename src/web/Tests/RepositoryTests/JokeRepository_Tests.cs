@@ -31,9 +31,9 @@ public class Joke_Repository_Tests : BaseTest
         
         // Seed some test data
         context.Jokes.AddRange(
-            new Joke { JokeId = 1, JokeTxt = "Test joke 1", JokeCategoryTxt = "Test", ActiveInd = "Y" },
-            new Joke { JokeId = 2, JokeTxt = "Test joke 2", JokeCategoryTxt = "Test", ActiveInd = "Y" },
-            new Joke { JokeId = 3, JokeTxt = "Test joke 3", JokeCategoryTxt = "Other", ActiveInd = "Y" }
+            new Joke { JokeId = 1, JokeTxt = "Test joke 1", Categories = "Test", ActiveInd = "Y" },
+            new Joke { JokeId = 2, JokeTxt = "Test joke 2", Categories = "Test", ActiveInd = "Y" },
+            new Joke { JokeId = 3, JokeTxt = "Test joke 3", Categories = "Other", ActiveInd = "Y" }
         );
         context.SaveChanges();
 

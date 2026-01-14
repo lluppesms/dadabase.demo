@@ -5,10 +5,7 @@
 CREATE VIEW [dbo].[vw_Jokes] AS
 SELECT 
     j.JokeId, 
-    -- Legacy fields kept for backward compatibility
-    j.JokeCategoryId, 
-    j.JokeCategoryTxt,
-    -- New multiple categories field (comma-separated)
+    -- Multiple categories field (comma-separated)
     STUFF((SELECT ', ' + c.JokeCategoryTxt
            FROM JokeJokeCategory jjc
            INNER JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId

@@ -12,10 +12,7 @@ BEGIN
   SET @category = '%' + ISNULL(@category, '') + '%'
   SET @searchTxt = '%' + ISNULL(@searchTxt, '') + '%'
 	SELECT DISTINCT j.JokeId, 
-	  -- Legacy fields kept for backward compatibility
-	  j.JokeCategoryId, 
-	  j.JokeCategoryTxt, 
-	  -- New multiple categories field (comma-separated)
+	  -- Multiple categories field (comma-separated)
 	  STUFF((SELECT ', ' + c.JokeCategoryTxt
 	         FROM JokeJokeCategory jjc
 	         INNER JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId
@@ -27,7 +24,7 @@ BEGIN
 	FROM Joke j 
 	LEFT JOIN JokeJokeCategory jjc ON j.JokeId = jjc.JokeId
 	LEFT JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId
-	WHERE (c.JokeCategoryTxt LIKE @category OR j.JokeCategoryTxt LIKE @category)
+	WHERE c.JokeCategoryTxt LIKE @category
 	  AND j.JokeTxt LIKE @searchTxt
-	ORDER BY j.JokeCategoryTxt, j.JokeTxt 
+	ORDER BY j.JokeTxt 
 END

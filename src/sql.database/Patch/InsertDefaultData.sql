@@ -3296,22 +3296,32 @@ DECLARE @JokeCount int
 SELECT @JokeCount = Count(*) From @TmpJokes
 PRINT ''
 PRINT 'Inserting ' + CAST(@JokeCount as varchar) + ' fresh jokes...'
-INSERT INTO Joke (JokeCategoryId, JokeCategoryTxt, JokeTxt, Attribution, ImageTxt, Rating, VoteCount) 
-  SELECT c.JokeCategoryId, j.JokeCategoryTxt, j.JokeTxt, j.Attribution, j.ImageTxt, 0, 0
-  FROM @tmpJokes j INNER JOIN JokeCategory c on j.JokeCategoryTxt = c.JokeCategoryTxt
+INSERT INTO Joke (JokeTxt, Attribution, ImageTxt, Rating, VoteCount) 
+  SELECT j.JokeTxt, j.Attribution, j.ImageTxt, 0, 0
+  FROM @tmpJokes j
   WHERE j.JokeTxt NOT IN (Select JokeTxt From Joke)
 
 PRINT ''
 PRINT 'Populating JokeJokeCategory junction table...'
 INSERT INTO JokeJokeCategory (JokeId, JokeCategoryId)
-  SELECT DISTINCT jk.JokeId, jk.JokeCategoryId
+  SELECT DISTINCT jk.JokeId, c.JokeCategoryId
   FROM Joke jk
-  WHERE jk.JokeCategoryId IS NOT NULL
-    AND NOT EXISTS (
-      SELECT 1 FROM JokeJokeCategory jjc 
-      WHERE jjc.JokeId = jk.JokeId AND jjc.JokeCategoryId = jk.JokeCategoryId
-    )
+  INNER JOIN @tmpJokes tj ON jk.JokeTxt = tj.JokeTxt
+  INNER JOIN JokeCategory c ON tj.JokeCategoryTxt = c.JokeCategoryTxt
+  WHERE NOT EXISTS (
+    SELECT 1 FROM JokeJokeCategory jjc 
+    WHERE jjc.JokeId = jk.JokeId AND jjc.JokeCategoryId = c.JokeCategoryId
+  )
 
 PRINT ''
 PRINT 'Displaying All Jokes...'
-Select j.JokeId, j.JokeCategoryId, j.JokeCategoryTxt, j.JokeTxt, j.ImageTxt, j.Rating, j.CreateDateTime From Joke j ORDER BY j.JokeCategoryTxt, j.JokeTxt 
+SELECT j.JokeId, 
+  STUFF((SELECT ', ' + c.JokeCategoryTxt
+         FROM JokeJokeCategory jjc
+         INNER JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId
+         WHERE jjc.JokeId = j.JokeId
+         ORDER BY c.JokeCategoryTxt
+         FOR XML PATH('')), 1, 2, '') AS Categories,
+  j.JokeTxt, j.ImageTxt, j.Rating, j.CreateDateTime 
+FROM Joke j 
+ORDER BY j.JokeTxt

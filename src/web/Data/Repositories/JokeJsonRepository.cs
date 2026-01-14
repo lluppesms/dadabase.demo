@@ -40,8 +40,20 @@ public class JokeJsonRepository : IJokeRepository
             _jokeData = JsonConvert.DeserializeObject<JsonJokeList>(json) ?? new JsonJokeList();
         }
 
-        // Extract distinct categories
-        _jokeCategories = _jokeData.Jokes.Select(joke => joke.JokeCategoryTxt).Distinct().Order().ToList();
+        // Extract distinct categories from all jokes' Categories field (comma-separated)
+        var allCategories = new HashSet<string>();
+        foreach (var joke in _jokeData.Jokes)
+        {
+            if (!string.IsNullOrEmpty(joke.Categories))
+            {
+                var categories = joke.Categories.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                foreach (var cat in categories)
+                {
+                    allCategories.Add(cat);
+                }
+            }
+        }
+        _jokeCategories = allCategories.Order().ToList();
     }
 
     /// <summary>
@@ -53,11 +65,11 @@ public class JokeJsonRepository : IJokeRepository
     {
         if (_jokeData.Jokes == null || _jokeData.Jokes.Count == 0)
         {
-            return new Joke { JokeTxt = "No jokes here!", JokeCategoryTxt = "None" };
+            return new Joke { JokeTxt = "No jokes here!", Categories = "None" };
         }
 
         var joke = _jokeData.Jokes[Random.Shared.Next(0, _jokeData.Jokes.Count)];
-        return joke ?? new Joke { JokeTxt = "No jokes here!", JokeCategoryTxt = "None" };
+        return joke ?? new Joke { JokeTxt = "No jokes here!", Categories = "None" };
     }
 
     /// <summary>
@@ -69,7 +81,7 @@ public class JokeJsonRepository : IJokeRepository
     public Joke GetOne(int id, string requestingUserName = "ANON")
     {
         var joke = _jokeData.Jokes.FirstOrDefault(j => j.JokeId == id);
-        return joke ?? new Joke { JokeTxt = "Joke not found", JokeCategoryTxt = "None" };
+        return joke ?? new Joke { JokeTxt = "Joke not found", Categories = "None" };
     }
 
     /// <summary>
@@ -95,7 +107,7 @@ public class JokeJsonRepository : IJokeRepository
         if (!string.IsNullOrEmpty(jokeCategoryTxt) && !string.IsNullOrEmpty(searchTxt))
         {
             var jokesByTermAndCategory = _jokeData.Jokes
-                .Where(joke => jokeCategoryList.Any(category => category == joke.JokeCategoryTxt)
+                .Where(joke => jokeCategoryList.Any(category => joke.Categories != null && joke.Categories.Contains(category))
                     && joke.JokeTxt.Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase))
                 .ToList();
             return jokesByTermAndCategory.AsQueryable();
@@ -105,7 +117,7 @@ public class JokeJsonRepository : IJokeRepository
         if (!string.IsNullOrEmpty(jokeCategoryTxt) && string.IsNullOrEmpty(searchTxt))
         {
             var jokesInCategory = _jokeData.Jokes
-                .Where(joke => jokeCategoryList.Any(category => category == joke.JokeCategoryTxt))
+                .Where(joke => jokeCategoryList.Any(category => joke.Categories != null && joke.Categories.Contains(category)))
                 .ToList();
             return jokesInCategory.AsQueryable();
         }

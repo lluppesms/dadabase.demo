@@ -64,7 +64,7 @@ public class JokeBasicPlus
     public JokeBasicPlus(Joke joke)
     {
         Joke = joke.JokeTxt;
-        Category = joke.JokeCategoryTxt;
+        Category = joke.Categories;
         Attribution = string.IsNullOrEmpty(joke.Attribution) ? null : joke.Attribution;
     }
 }

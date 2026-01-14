@@ -43,29 +43,33 @@ BEGIN
 END
 GO
 
--- Step 2: Migrate existing data from Joke table to junction table
-PRINT 'Migrating existing category data to junction table...'
+-- Step 2: Migrate existing data from Joke table to junction table (if legacy fields exist)
+IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[Joke]') AND name = 'JokeCategoryId')
+BEGIN
+    PRINT 'Migrating existing category data to junction table...'
+    
+    INSERT INTO [dbo].[JokeJokeCategory] (JokeId, JokeCategoryId, CreateDateTime, CreateUserName)
+    SELECT 
+        j.JokeId, 
+        j.JokeCategoryId,
+        GETDATE(),
+        'MIGRATION'
+    FROM [dbo].[Joke] j
+    WHERE j.JokeCategoryId IS NOT NULL
+        AND NOT EXISTS (
+            SELECT 1 FROM [dbo].[JokeJokeCategory] jjc 
+            WHERE jjc.JokeId = j.JokeId AND jjc.JokeCategoryId = j.JokeCategoryId
+        )
+    
+    PRINT 'Data migration completed.'
+END
+ELSE
+BEGIN
+    PRINT 'Legacy JokeCategoryId field does not exist, skipping data migration.'
+END
 GO
 
--- Insert existing joke-category relationships into junction table
-INSERT INTO [dbo].[JokeJokeCategory] (JokeId, JokeCategoryId, CreateDateTime, CreateUserName)
-SELECT 
-    j.JokeId, 
-    j.JokeCategoryId,
-    GETDATE(),
-    'MIGRATION'
-FROM [dbo].[Joke] j
-WHERE j.JokeCategoryId IS NOT NULL
-    AND NOT EXISTS (
-        SELECT 1 FROM [dbo].[JokeJokeCategory] jjc 
-        WHERE jjc.JokeId = j.JokeId AND jjc.JokeCategoryId = j.JokeCategoryId
-    )
-GO
-
-PRINT 'Data migration completed.'
-GO
-
--- Step 3: Drop foreign key constraint on Joke table
+-- Step 3: Drop foreign key constraint on Joke table if it exists
 IF EXISTS (SELECT * FROM sys.foreign_keys WHERE object_id = OBJECT_ID(N'[dbo].[FK_Joke_JokeCategory]') AND parent_object_id = OBJECT_ID(N'[dbo].[Joke]'))
 BEGIN
     PRINT 'Dropping FK_Joke_JokeCategory constraint...'
@@ -74,11 +78,22 @@ BEGIN
 END
 GO
 
--- Step 4: Drop old columns from Joke table (keeping them for now as backup, can be removed later)
--- Note: Keeping JokeCategoryId and JokeCategoryTxt for backward compatibility temporarily
--- They can be removed in a future migration once all code is updated
+-- Step 4: Drop legacy columns from Joke table
+IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[Joke]') AND name = 'JokeCategoryId')
+BEGIN
+    PRINT 'Dropping JokeCategoryId column...'
+    ALTER TABLE [dbo].[Joke] DROP COLUMN [JokeCategoryId]
+    PRINT 'JokeCategoryId column dropped.'
+END
+GO
+
+IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[Joke]') AND name = 'JokeCategoryTxt')
+BEGIN
+    PRINT 'Dropping JokeCategoryTxt column...'
+    ALTER TABLE [dbo].[Joke] DROP COLUMN [JokeCategoryTxt]
+    PRINT 'JokeCategoryTxt column dropped.'
+END
+GO
 
 PRINT 'Migration to multiple categories support completed successfully.'
-PRINT 'Note: JokeCategoryId and JokeCategoryTxt columns retained for backward compatibility.'
-PRINT 'These columns can be removed in a future migration.'
 GO

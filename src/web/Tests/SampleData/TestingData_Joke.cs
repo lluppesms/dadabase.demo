@@ -53,12 +53,12 @@ public partial class TestingData
         {
             db.Joke.AddRange(
                 new List<Joke>() {
-                  new() { JokeCategoryId = 1, JokeCategoryTxt = "Chickens",  JokeId = 1, JokeTxt = "What do you call a chicken crossing the road? Poultry in motion." },
-                  new() { JokeCategoryId = 1, JokeCategoryTxt = "Chickens",  JokeId = 2, JokeTxt = "What do you get when a chicken lays an egg on top of a barn? An eggroll." },
-                  new() { JokeCategoryId = 1, JokeCategoryTxt = "Engineers", JokeId = 3, JokeTxt = "Normal: if it ain't broke, don't fix it. Engineer: if it ain't broke, it doesn't have enough features yet." },
-                  new() { JokeCategoryId = 1, JokeCategoryTxt = "Engineers", JokeId = 4, JokeTxt = "Optimist: the glass is half-full. Pessimist: the glass is half-empty. Engineer: that glass is twice as big as it needs to be." },
-                  new() { JokeCategoryId = 1, JokeCategoryTxt = "Jobs",      JokeId = 5, JokeTxt = "I want a job cleaning mirrors. It's a job I can see myself doing." },
-                  new() { JokeCategoryId = 1, JokeCategoryTxt = "Jobs",      JokeId = 6, JokeTxt = "I wasn't happy being a glue salesman, but I stuck with it." }
+                  new() { Categories = "Chickens",  JokeId = 1, JokeTxt = "What do you call a chicken crossing the road? Poultry in motion." },
+                  new() { Categories = "Chickens",  JokeId = 2, JokeTxt = "What do you get when a chicken lays an egg on top of a barn? An eggroll." },
+                  new() { Categories = "Engineers", JokeId = 3, JokeTxt = "Normal: if it ain't broke, don't fix it. Engineer: if it ain't broke, it doesn't have enough features yet." },
+                  new() { Categories = "Engineers", JokeId = 4, JokeTxt = "Optimist: the glass is half-full. Pessimist: the glass is half-empty. Engineer: that glass is twice as big as it needs to be." },
+                  new() { Categories = "Jobs",      JokeId = 5, JokeTxt = "I want a job cleaning mirrors. It's a job I can see myself doing." },
+                  new() { Categories = "Jobs",      JokeId = 6, JokeTxt = "I wasn't happy being a glue salesman, but I stuck with it." }
                 }
             );
         }
