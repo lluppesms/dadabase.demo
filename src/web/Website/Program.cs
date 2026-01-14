@@ -29,6 +29,28 @@ if (!string.IsNullOrEmpty(keyVaultName))
     builder.Configuration.AddAzureKeyVault(keyVaultUri, Utilities.GetCredentials());
 }
 
+// Register DefaultAzureCredential for managed identity authentication
+builder.Services.AddSingleton<DefaultAzureCredential>(provider =>
+{
+    var creds = new DefaultAzureCredential();
+    // For some local development scenarios, you may need to specify the AD Tenant to make the credentials work.
+    // This is useful when developing with Visual Studio and your account has access to multiple tenants.
+    // NOTE: When VisualStudioTenantId is set, managed identity and environment credentials are excluded,
+    // so this configuration should ONLY be used for local development, never in Azure environments.
+    var visualStudioTenantId = builder.Configuration["VisualStudioTenantId"];
+    if (!string.IsNullOrEmpty(visualStudioTenantId))
+    {
+        Console.WriteLine($"Overwriting tenant for local development credentials...");
+        creds = new DefaultAzureCredential(new DefaultAzureCredentialOptions
+        {
+            ExcludeEnvironmentCredential = true,
+            ExcludeManagedIdentityCredential = true,
+            TenantId = visualStudioTenantId
+        });
+    }
+    return creds;
+});
+
 // set the application title from the app settings
 DadABase.Data.Constants.Initialize(settings);
 
