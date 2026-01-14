@@ -13,18 +13,13 @@ namespace DadABase.Data;
 /// <summary>
 /// DadABase Database Context
 /// </summary>
+/// <remarks>
+/// Initializes a new instance of the DadABaseDbContext class
+/// </remarks>
+/// <param name="options">DbContext options</param>
 [ExcludeFromCodeCoverage]
-public class DadABaseDbContext : DbContext
+public class DadABaseDbContext(DbContextOptions<DadABaseDbContext> options) : DbContext(options)
 {
-    /// <summary>
-    /// Initializes a new instance of the DadABaseDbContext class
-    /// </summary>
-    /// <param name="options">DbContext options</param>
-    public DadABaseDbContext(DbContextOptions<DadABaseDbContext> options)
-        : base(options)
-    {
-    }
-
     /// <summary>
     /// Jokes
     /// </summary>

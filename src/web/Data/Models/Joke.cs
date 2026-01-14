@@ -48,9 +48,10 @@ public class Joke
 
     /// <summary>
     /// Multiple Categories (comma-separated)
+    /// Note: This is populated by stored procedures via FOR XML PATH aggregation, not a direct table column.
+    /// Do NOT add [NotMapped] - EF Core needs to map this from raw SQL query results.
     /// </summary>
     [Display(Name = "Categories", Description = "Multiple categories for this joke (comma-separated).", Prompt = "Enter Categories")]
-    [NotMapped]
     public string? Categories { get; set; }
 
     /// <summary>
