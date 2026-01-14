@@ -48,7 +48,7 @@ on:
       resourceGroupName:
         description: 'Resource Group Name (for DBCOPY action)'
         required: false
-        default: 'rg_sqldeploy_demo'
+        default: 'rg-dadabase-dev'
         type: string
 
 # ------------------------------------------------------------------------------------------------------------------------
