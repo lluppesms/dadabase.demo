@@ -41,6 +41,11 @@ public class DadABaseDbContext : DbContext
     public DbSet<JokeRating> JokeRatings { get; set; }
 
     /// <summary>
+    /// Joke to Category Junction
+    /// </summary>
+    public DbSet<JokeJokeCategory> JokeJokeCategories { get; set; }
+
+    /// <summary>
     /// On Model Creating
     /// </summary>
     /// <param name="modelBuilder">Model Builder</param>

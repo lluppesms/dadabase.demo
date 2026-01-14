@@ -58,6 +58,13 @@ public class Joke
     public string JokeCategoryTxt { get; set; }
 
     /// <summary>
+    /// Multiple Categories (comma-separated)
+    /// </summary>
+    [Display(Name = "Categories", Description = "Multiple categories for this joke (comma-separated).", Prompt = "Enter Categories")]
+    [NotMapped]
+    public string Categories { get; set; }
+
+    /// <summary>
     /// Attribution
     /// </summary>
     [Display(Name = "Attribution", Description = "This is the Attribution field.", Prompt = "Enter Attribution")]
