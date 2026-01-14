@@ -7,7 +7,7 @@
 #   SQL_ADMIN_PASSWORD - (Optional) SQL admin password for local SQL authentication
 # ------------------------------------------------------------------------------------------------------------------------
 name: 5.run.sql.script
-run-name: '5. Run SQL Script'
+run-name: '5. Run SQL Script using ENV ${{ inputs.deployEnvironment }} by @${{ github.actor }}'
 on:
   workflow_dispatch:
     inputs:

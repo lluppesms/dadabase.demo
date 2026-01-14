@@ -100,6 +100,7 @@ jobs:
         echo "templateFilePath=${{ inputs.templatePath }}${{ inputs.templateFile }}"
         echo "parameterFilePath=${{ inputs.templatePath }}${{ inputs.parameterFile }}"
         echo "bicepDeploymentMode=${{ inputs.bicepDeploymentMode }}"
+        echo "vars.INSTANCE_NUMBER=${{ vars.INSTANCE_NUMBER }}"
         echo "vars.RESOURCE_GROUP_PREFIX=${{ vars.RESOURCE_GROUP_PREFIX }}"
         echo "vars.RESOURCE_GROUP_LOCATION=${{ vars.RESOURCE_GROUP_LOCATION }}"
         echo "location=${{ vars.RESOURCE_GROUP_LOCATION }}"

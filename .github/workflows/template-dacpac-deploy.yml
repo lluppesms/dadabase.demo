@@ -58,10 +58,17 @@ jobs:
           name: ${{ inputs.artifactName }}
           path: ./dacpac
 
-      - name: Display Downloaded Files
+      - name: Display Downloaded Files and Variables
         run: |
           Write-Host "Downloaded DACPAC files:"
           Get-ChildItem -Path "./dacpac" -Recurse
+          echo ""
+          echo "Deployment Variables:"
+          echo "vars.INSTANCE_NUMBER=${{ vars.INSTANCE_NUMBER }}"
+          echo "inputs.sqlServerName=${{ inputs.sqlServerName }}"
+          echo "env.fqdnServerName=${{ env.fqdnServerName }}"
+          echo "Database: inputs.sqlDatabaseName=${{ inputs.sqlDatabaseName }}"
+          echo "Project: inputs.appProjectName=${{ inputs.appProjectName }}"
 
       - name: Azure Login (Reusable Action)
         uses: ./.github/actions/login-action
