@@ -91,7 +91,7 @@ public partial class Index : ComponentBase
         imageLoading = true;
         StateHasChanged();
 
-        var scene = $"{myJoke.JokeTxt} ({myJoke.JokeCategoryTxt})";
+        var scene = $"{myJoke.JokeTxt} ({myJoke.Categories})";
         (jokeImageDescription, var descSuccess, var descErrorMessage) = await GenAIAgent.GetJokeSceneDescription(scene);
         
         if (!descSuccess)

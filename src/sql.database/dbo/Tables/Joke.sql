@@ -5,8 +5,6 @@
 CREATE TABLE [dbo].[Joke](
 	[JokeId] [int] IDENTITY(1,1) NOT NULL,
 	[JokeTxt] [nvarchar](max) NOT NULL,
-	[JokeCategoryId] [int] NULL,
-	[JokeCategoryTxt] [nvarchar](500) NULL,
 	[Attribution] [nvarchar](500) NULL,
 	[ImageTxt]  [nvarchar](max) NULL,
 	[SortOrderNbr] [int] NOT NULL,
@@ -37,13 +35,4 @@ GO
 
 -- Check constraints
 ALTER TABLE [dbo].[Joke] ADD CONSTRAINT [CK_Joke_ActiveInd] CHECK ([ActiveInd] IN ('Y', 'N'))
-GO
-
--- Foreign key constraint to JokeCategory
-ALTER TABLE [dbo].[Joke] ADD CONSTRAINT [FK_Joke_JokeCategory] FOREIGN KEY([JokeCategoryId])
-REFERENCES [dbo].[JokeCategory] ([JokeCategoryId])
-	ON UPDATE CASCADE
-	ON DELETE SET NULL
-GO
-ALTER TABLE [dbo].[Joke] CHECK CONSTRAINT [FK_Joke_JokeCategory]
 GO

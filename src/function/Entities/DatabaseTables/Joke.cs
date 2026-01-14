@@ -45,17 +45,11 @@ public class Joke
     public string JokeTxt { get; set; }
 
     /// <summary>
-    /// Category
+    /// Multiple Categories (comma-separated)
     /// </summary>
-    [Display(Name = "Category", Description = "This is the Category field.", Prompt = "Enter Category")]
-    public int? JokeCategoryId { get; set; }
-
-    /// <summary>
-    /// Joke Category Text
-    /// </summary>
-    [Display(Name = "Joke Category Text", Description = "This is the Joke Category Text field.", Prompt = "Enter Joke TCategory ext")]
-    [StringLength(500)]
-    public string JokeCategoryTxt { get; set; }
+    [Display(Name = "Categories", Description = "Multiple categories for this joke (comma-separated).", Prompt = "Enter Categories")]
+    [NotMapped]
+    public string? Categories { get; set; }
 
     /// <summary>
     /// Attribution
@@ -139,8 +133,7 @@ public class Joke
     {
         JokeId = 0;
         JokeTxt = string.Empty;
-        JokeCategoryId = null;
-        JokeCategoryTxt = string.Empty;
+        Categories = string.Empty;
         Attribution = string.Empty;
         ImageTxt = string.Empty;
         SortOrderNbr = 50;
@@ -158,8 +151,7 @@ public class Joke
     {
         JokeId = jokeId;
         JokeTxt = string.Empty;
-        JokeCategoryId = null;
-        JokeCategoryTxt = string.Empty;
+        Categories = string.Empty;
         Attribution = string.Empty;
         ImageTxt = string.Empty;
         SortOrderNbr = 50;
@@ -177,8 +169,7 @@ public class Joke
     {
         JokeId = 0;
         JokeTxt = jokeTxt;
-        JokeCategoryId = null;
-        JokeCategoryTxt = string.Empty;
+        Categories = string.Empty;
         Attribution = string.Empty;
         ImageTxt = jokeTxt;
         SortOrderNbr = 50;
@@ -192,12 +183,11 @@ public class Joke
     /// <summary>
     /// New Instance of Joke
     /// </summary>
-    public Joke(string jokeTxt, string jokeCategoryTxt)
+    public Joke(string jokeTxt, string categories)
     {
         JokeId = 0;
         JokeTxt = jokeTxt;
-        JokeCategoryId = null;
-        JokeCategoryTxt = jokeCategoryTxt;
+        Categories = categories;
         Attribution = string.Empty;
         ImageTxt = jokeTxt;
         SortOrderNbr = 50;
@@ -211,12 +201,11 @@ public class Joke
     /// <summary>
     /// New Instance of Joke
     /// </summary>
-    public Joke(string jokeTxt, string jokeCategoryTxt, string imageTxt)
+    public Joke(string jokeTxt, string categories, string imageTxt)
     {
         JokeId = 0;
         JokeTxt = jokeTxt;
-        JokeCategoryId = null;
-        JokeCategoryTxt = jokeCategoryTxt;
+        Categories = categories;
         Attribution = string.Empty;
         ImageTxt = imageTxt;
         SortOrderNbr = 50;
@@ -230,12 +219,11 @@ public class Joke
     /// <summary>
     /// New Instance of Joke
     /// </summary>
-    public Joke(int jokeId, string jokeTxt, int jokeCategory, string jokeCategoryTxt, string attribution, string imageTxt)
+    public Joke(int jokeId, string jokeTxt, string categories, string attribution, string imageTxt)
     {
         JokeId = jokeId;
         JokeTxt = jokeTxt;
-        JokeCategoryId = jokeCategory;
-        JokeCategoryTxt = jokeCategoryTxt;
+        Categories = categories;
         Attribution = attribution;
         ImageTxt = imageTxt;
         SortOrderNbr = 50;

@@ -75,12 +75,29 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
-    /// List All Jokes
+    /// List All Jokes with Categories populated
     /// </summary>
-    /// <returns>List of Category Names</returns>
+    /// <returns>List of Jokes</returns>
     public IQueryable<Joke> ListAll(string activeInd = "Y", string requestingUserName = "ANON")
     {
-        return _context.Jokes.Where(j => j.ActiveInd == activeInd);
+        // Use raw SQL to include Categories from the many-to-many relationship
+        var jokes = _context.Jokes
+            .FromSqlInterpolated($@"
+                SELECT j.JokeId, 
+                    STUFF((SELECT ', ' + c.JokeCategoryTxt
+                           FROM JokeJokeCategory jjc
+                           INNER JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId
+                           WHERE jjc.JokeId = j.JokeId
+                           ORDER BY c.JokeCategoryTxt
+                           FOR XML PATH('')), 1, 2, '') AS Categories,
+                    j.JokeTxt, j.ImageTxt, j.Rating, j.ActiveInd, j.Attribution, j.VoteCount, j.SortOrderNbr,
+                    j.CreateDateTime, j.CreateUserName, j.ChangeDateTime, j.ChangeUserName
+                FROM Joke j
+                WHERE j.ActiveInd = {activeInd}")
+            .AsEnumerable()
+            .AsQueryable();
+
+        return jokes;
     }
 
     /// <summary>
@@ -95,14 +112,30 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
-    /// Get One Record
+    /// Get One Record with Categories populated
     /// </summary>
     /// <param name="id"></param>
     /// <param name="requestingUserName"></param>
     /// <returns></returns>
     public Joke GetOne(int id, string requestingUserName = "ANON")
     {
-        var joke = _context.Jokes.FirstOrDefault(j => j.JokeId == id);
+        // Use raw SQL to include Categories from the many-to-many relationship
+        var joke = _context.Jokes
+            .FromSqlInterpolated($@"
+                SELECT j.JokeId, 
+                    STUFF((SELECT ', ' + c.JokeCategoryTxt
+                           FROM JokeJokeCategory jjc
+                           INNER JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId
+                           WHERE jjc.JokeId = j.JokeId
+                           ORDER BY c.JokeCategoryTxt
+                           FOR XML PATH('')), 1, 2, '') AS Categories,
+                    j.JokeTxt, j.ImageTxt, j.Rating, j.ActiveInd, j.Attribution, j.VoteCount, j.SortOrderNbr,
+                    j.CreateDateTime, j.CreateUserName, j.ChangeDateTime, j.ChangeUserName
+                FROM Joke j
+                WHERE j.JokeId = {id}")
+            .AsEnumerable()
+            .FirstOrDefault();
+
         return joke ?? new Joke("Joke not found!");
     }
 

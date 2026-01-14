@@ -25,6 +25,7 @@
     <Build Include="dbo\Stored Procedures\usp_Joke_Search.sql" />
     <Build Include="dbo\Tables\Joke.sql" />
     <Build Include="dbo\Tables\JokeCategory.sql" />
+    <Build Include="dbo\Tables\JokeJokeCategory.sql" />
     <Build Include="dbo\Tables\JokeRating.sql" />
     <Build Include="dbo\Views\vw_Jokes.sql" />
   </ItemGroup>

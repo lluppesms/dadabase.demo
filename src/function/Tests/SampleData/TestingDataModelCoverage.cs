@@ -21,7 +21,7 @@ public partial class TestingData
     private static void AddDataModelCodeCoverage()
     {
         _ = new JokeCategory() { JokeCategoryId = 1, JokeCategoryTxt = "Test" };
-        _ = new Joke() { JokeId = 1, JokeCategoryId = 1, JokeTxt = "Test", ImageTxt = "Picture" };
+        _ = new Joke() { JokeId = 1, Categories = "Test", JokeTxt = "Test", ImageTxt = "Picture" };
 
         _ = new CategoryBasic();
         _ = new CategoryBasic().Category = "newCategory";
