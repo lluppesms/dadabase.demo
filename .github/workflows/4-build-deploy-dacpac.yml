@@ -48,7 +48,7 @@ jobs:
   # Deploy to DEV
   # ----------------------------------------------------------------------------------------------------
   deploy:
-    name: Deploy Database
+    name: 'Deploy Database ${{vars.INSTANCE_NUMBER}}'
     needs: build
     uses: ./.github/workflows/template-dacpac-deploy.yml
     if: ${{ inputs.dacpacAction == 'build-deploy' }}
