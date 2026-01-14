@@ -1,4 +1,5 @@
 ﻿global using AutoMapper;
+global using Azure.Identity;
 global using Blazored.LocalStorage;
 global using MudBlazor;
 global using MudBlazor.Services;

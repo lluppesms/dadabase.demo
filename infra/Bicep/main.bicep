@@ -125,6 +125,8 @@ module sqlDbModule './modules/database/sqlserver.bicep' = {
   params: {
     sqlServerName: resourceNames.outputs.sqlServerName
     sqlDBName: sqlDatabaseName
+    existingSqlServerName: ''
+    existingSqlServerResourceGroupName: ''
     sqlSkuTier: sqlSkuTier
     sqlSkuName: sqlSkuName
     sqlSkuFamily: sqlSkuFamily
@@ -135,6 +137,7 @@ module sqlDbModule './modules/database/sqlserver.bicep' = {
     adAdminUserId: sqlAdminLoginUserId
     adAdminUserSid: sqlAdminLoginUserSid
     adAdminTenantId: sqlAdminLoginTenantId
+    userAssignedIdentityResourceId: identity.outputs.managedIdentityId
     sqlAdminUser:sqlAdminUser
     sqlAdminPassword: sqlAdminPassword
     workspaceId: logAnalyticsWorkspaceModule.outputs.id

@@ -5,9 +5,13 @@
 // --------------------------------------------------------------------------------
 param sqlServerName string = uniqueString('sql', resourceGroup().id)
 param sqlDBName string = 'SampleDB'
+param existingSqlServerName string = ''
+param existingSqlServerResourceGroupName string = ''
+
 param adAdminUserId string = '' // 'somebody@somedomain.com'
 param adAdminUserSid string = '' // '12345678-1234-1234-1234-123456789012'
 param adAdminTenantId string = '' // '12345678-1234-1234-1234-123456789012'
+param userAssignedIdentityResourceId string = ''
 param location string = resourceGroup().location
 param commonTags object = {}
 
@@ -52,50 +56,53 @@ var adminDefinition = adAdminUserId == '' ? {} : {
   tenantId: adAdminTenantId
   azureADOnlyAuthentication: adAdminOnly
 } 
-var primaryUser =  adAdminUserId == '' ? '' : adAdminUserId
+var primaryUserIdentity = userAssignedIdentityResourceId
+
+var deployNewServer = empty(existingSqlServerName)
 
 // --------------------------------------------------------------------------------
-// SQL Server with AD authentication by default; SQL local auth only if sqlAdminPassword is provided
-resource sqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' = {
+// resource storageAccountResource 'Microsoft.Storage/storageAccounts@2021-04-01' existing = { name: storageAccountName }
+// var storageAccountKey = storageAccountResource.listKeys().keys[0].value
+// var storageEndpoint = 'https://${storageAccountResource.name}.${environment().suffixes.storage}'
+// var storageSubscriptionId = subscription().subscriptionId
+
+// --------------------------------------------------------------------------------
+resource existingSqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' existing = if (!deployNewServer) {
+  name: existingSqlServerName
+  scope: resourceGroup(existingSqlServerResourceGroupName)
+}
+resource existingSqlDBResource 'Microsoft.Sql/servers/databases@2024-11-01-preview' existing = if (!deployNewServer) {
+  parent: existingSqlServerResource
+  name: sqlDBName
+}
+
+resource sqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' = if (deployNewServer) {
   name: sqlServerName
   location: location
   tags: tags
   properties: {
     administrators: adminDefinition
-    primaryUserAssignedIdentityId: primaryUser
+    primaryUserAssignedIdentityId: primaryUserIdentity
     minimalTlsVersion: '1.2'
     publicNetworkAccess: 'Enabled'
     restrictOutboundNetworkAccess: 'Enabled'
     version: '12.0'
-    // Only configure SQL local auth if password is provided
-    // administratorLogin: useSqlAuth ? sqlAdminUser : null
-    // administratorLoginPassword: useSqlAuth ? sqlAdminPassword : null
+    administratorLogin: sqlAdminUser != '' ? sqlAdminUser : null
+    administratorLoginPassword: sqlAdminPassword != '' ? sqlAdminPassword : null
     //keyId: 'string' // A CMK URI of the key to use for encryption.
   }
-  identity: {
-    type: 'SystemAssigned'
+  identity:{
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${userAssignedIdentityResourceId}': {}
+    }
   }
-}
-resource sqlServerAzureADOnlyAuth 'Microsoft.Sql/servers/azureADOnlyAuthentications@2024-11-01-preview' = {
-  parent: sqlServerResource
-  name: 'default'
-  properties: {
-    azureADOnlyAuthentication: true
-  }
-}
-
-resource sqlServerActiveDirectory 'Microsoft.Sql/servers/administrators@2024-11-01-preview' = {
-  name: 'ActiveDirectory'
-  parent: sqlServerResource
-  properties: {
-    administratorType: 'ActiveDirectory'
-    login: adAdminUserId
-    sid: adAdminUserSid
-    tenantId: adAdminTenantId
-  }
+  // identity: {
+  //   type: 'SystemAssigned'
+  // }
 }
 
-resource sqlDBResource 'Microsoft.Sql/servers/databases@2024-11-01-preview' = {
+resource sqlDBResource 'Microsoft.Sql/servers/databases@2024-11-01-preview' = if (deployNewServer) {
   parent: sqlServerResource
   name: sqlDBName
   location: location
@@ -121,7 +128,7 @@ resource sqlDBResource 'Microsoft.Sql/servers/databases@2024-11-01-preview' = {
 }
 
 // This rule will allow all Azure services and resources to access this server
-resource sqlAllowAllAzureIps 'Microsoft.Sql/servers/firewallRules@2024-11-01-preview' = {
+resource sqlAllowAllAzureIps 'Microsoft.Sql/servers/firewallRules@2024-11-01-preview' = if (deployNewServer) {
   name: 'AllowAllWindowsAzureIps'
   parent: sqlServerResource
   properties: {
@@ -131,7 +138,7 @@ resource sqlAllowAllAzureIps 'Microsoft.Sql/servers/firewallRules@2024-11-01-pre
 }
 
 var diagnosticSettingsName = 'SQLSecurityAuditEvents_3d229c42-c7e7-4c97-9a99-ec0d0d8b86c1'
-resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (deployNewServer) {
   scope: sqlDBResource
   name: diagnosticSettingsName
   properties: {
@@ -153,61 +160,38 @@ resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-pr
           enabled: false
         }
       }
-      {
-        category: 'SQLInsights'
-        enabled: true
-      }
-      {
-        category: 'AutomaticTuning'
-        enabled: true
-      }
-      {
-        category: 'QueryStoreRuntimeStatistics'
-        enabled: true
-      }
-      {
-        category: 'QueryStoreWaitStatistics'
-        enabled: true
-      }
-      {
-        category: 'Errors'
-        enabled: true
-      }
-      {
-        category: 'DatabaseWaitStatistics'
-        enabled: true
-      }
-      {
-        category: 'Timeouts'
-        enabled: true
-      }
-      {
-        category: 'Blocks'
-        enabled: true
-      }
-      {
-        category: 'Deadlocks'
-        enabled: true
-      }
-    ]
-    metrics: [
-      {
-        category: 'Basic'
-        enabled: true
-      }
-      {
-        category: 'InstanceAndAppAdvanced'
-        enabled: true
-      }
-      {
-        category: 'WorkloadManagement'
-        enabled: true
-      }
     ]
   }
 }
 
-resource sqlDBAuditingSettings 'Microsoft.Sql/servers/auditingSettings@2024-11-01-preview' = { // if (isMSDevOpsAuditEnabled) {
+// --------------------------------------------------------------------------------
+// Attempts to set up auditing on the database... still not quite working right...!
+//   Would be nice but not critical for now
+// --------------------------------------------------------------------------------
+// Current issue:  (fix storage issue or switch to figure out LAW export instead...!)
+//   "error": {
+//     "code": "BlobAuditingStorageOutboundFirewallNotAllowed",
+//     "message": "Storage account 'xxxxx' is not in the list of Outbound Firewall Rules on the Azure SQL Server.
+//                 Please add the target to the Outbound Firewall Rules on server 'xxxxx' and retry the operation."
+//   }
+// --------------------------------------------------------------------------------
+// resource auditingSettings 'Microsoft.Sql/servers/auditingSettings@2021-11-01-preview' = {
+//   parent: sqlServerResource
+//   name: 'default'
+//   properties: {
+//     state: 'Enabled'
+//     isAzureMonitorTargetEnabled: true
+//   }
+// }
+// resource devOpsAuditingSettings 'Microsoft.Sql/servers/devOpsAuditingSettings@2021-11-01-preview' = if (isMSDevOpsAuditEnabled) {
+//   parent: sqlServerResource
+//   name: 'default'
+//   properties: {
+//     state: 'Enabled'
+//     isAzureMonitorTargetEnabled: true
+//   }
+// }
+resource sqlDBAuditingSettings 'Microsoft.Sql/servers/auditingSettings@2024-11-01-preview' = if (deployNewServer) { // if (isMSDevOpsAuditEnabled) {
   parent: sqlServerResource
   name: 'default'
   properties: {
@@ -227,10 +211,10 @@ resource sqlDBAuditingSettings 'Microsoft.Sql/servers/auditingSettings@2024-11-0
 }
 
 // --------------------------------------------------------------------------------
-output serverName string = sqlServerResource.name
-output serverId string = sqlServerResource.id
-output serverPrincipalId string = sqlServerResource.identity.principalId
-output apiVersion string = sqlServerResource.apiVersion
-output databaseName string = sqlDBResource.name
-output databaseId string = sqlDBResource.id
-output identityConnectionString string = 'Server=tcp:${sqlServerResource.name}.database.windows.net,1433;Initial Catalog=${sqlDBResource.name};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication="Active Directory Default";'
+output serverName string = deployNewServer ? sqlServerResource.name : existingSqlServerResource.name
+output serverId string = deployNewServer ? sqlServerResource.id : existingSqlServerResource.id
+output apiVersion string = deployNewServer ? sqlServerResource.apiVersion : existingSqlServerResource.apiVersion
+output databaseName string = deployNewServer ? sqlDBResource.name : existingSqlDBResource.name
+output databaseId string = deployNewServer ? sqlDBResource.id : existingSqlDBResource.id
+output identityConnectionString string = 'Server=tcp:${deployNewServer ? sqlServerResource.name : existingSqlServerResource.name}.database.windows.net,1433;Initial Catalog=${deployNewServer ? sqlDBResource.name : existingSqlDBResource.name};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication="Active Directory Default";'
+//output serverPrincipalId string = sqlServerResource.identity.principalId
