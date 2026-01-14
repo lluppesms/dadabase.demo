@@ -61,12 +61,6 @@ var primaryUserIdentity = userAssignedIdentityResourceId
 var deployNewServer = empty(existingSqlServerName)
 
 // --------------------------------------------------------------------------------
-// resource storageAccountResource 'Microsoft.Storage/storageAccounts@2021-04-01' existing = { name: storageAccountName }
-// var storageAccountKey = storageAccountResource.listKeys().keys[0].value
-// var storageEndpoint = 'https://${storageAccountResource.name}.${environment().suffixes.storage}'
-// var storageSubscriptionId = subscription().subscriptionId
-
-// --------------------------------------------------------------------------------
 resource existingSqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' existing = if (!deployNewServer) {
   name: existingSqlServerName
   scope: resourceGroup(existingSqlServerResourceGroupName)
@@ -211,10 +205,13 @@ resource sqlDBAuditingSettings 'Microsoft.Sql/servers/auditingSettings@2024-11-0
 }
 
 // --------------------------------------------------------------------------------
-output serverName string = deployNewServer ? sqlServerResource.name : existingSqlServerResource.name
+var outputServerName = deployNewServer ? sqlServerResource.name : existingSqlServerResource.name
+var outputDatabaseName = deployNewServer ? sqlDBResource.name : existingSqlDBResource.name
+
+output serverName string = outputServerName
 output serverId string = deployNewServer ? sqlServerResource.id : existingSqlServerResource.id
 output apiVersion string = deployNewServer ? sqlServerResource.apiVersion : existingSqlServerResource.apiVersion
-output databaseName string = deployNewServer ? sqlDBResource.name : existingSqlDBResource.name
+output databaseName string = outputDatabaseName
 output databaseId string = deployNewServer ? sqlDBResource.id : existingSqlDBResource.id
-output identityConnectionString string = 'Server=tcp:${deployNewServer ? sqlServerResource.name : existingSqlServerResource.name}.database.windows.net,1433;Initial Catalog=${deployNewServer ? sqlDBResource.name : existingSqlDBResource.name};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication="Active Directory Default";'
+output identityConnectionString string = 'Server=tcp:${outputServerName}.database.windows.net,1433;Initial Catalog=${outputDatabaseName};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication="Active Directory Default";'
 //output serverPrincipalId string = sqlServerResource.identity.principalId
