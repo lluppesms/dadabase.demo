@@ -7,11 +7,8 @@
 // </summary>
 //-----------------------------------------------------------------------
 using JokeAnalyzer;
-using JokeAnalyzer.Models;
-using Microsoft.Extensions.Configuration;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 // Display Banner
 AnsiConsole.Write(new FigletText("Joke Analyzer").LeftJustified().Color(Color.Green));
@@ -20,7 +17,7 @@ AnsiConsole.MarkupLine("[yellow]Analyzing jokes with an AI models to create imag
 // Load configuration
 var configuration = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    // .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddUserSecrets<Program>(optional: true)
     .Build();
 

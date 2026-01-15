@@ -7,6 +7,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>JokeAnalyzer</RootNamespace>
     <NoWarn>SKEXP0010</NoWarn>
+    <UserSecretsId>cb60acd8-b161-4b5e-8282-5c6aac9d5934</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="appsettings.json">
+    <None Update="appsettings,development.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

@@ -1,8 +1,9 @@
 {
+  // Put these values in your user secrets file!
   "ConnectionStrings": {
     "DefaultConnection": "Server=localhost;Database=DadABase;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
   },
-  "MaxBatchSize": 10,
+  "MaxBatchSize": 1000,
   "ModelProvider": "AzureOpenAI",
   "LocalModel": {
     "Endpoint": "http://127.0.0.1:61445/v1",
