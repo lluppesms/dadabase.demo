@@ -21,7 +21,9 @@ namespace JokeAnalyzer;
 /// </remarks>
 /// <param name="dbContextOptions">Database context options.</param>
 /// <param name="chatCompletionService">Chat completion service for AI processing.</param>
-public class RecordProcessor(DbContextOptions<JokeDbContext> dbContextOptions, IChatCompletionService chatCompletionService)
+/// <param name="trackTokens">Whether to track and display token usage (for cloud models).</param>
+/// <param name="maxBatchSize">Maximum number of records to process (0 = no limit).</param>
+public class RecordProcessor(DbContextOptions<JokeDbContext> dbContextOptions, IChatCompletionService chatCompletionService, bool trackTokens = false, int maxBatchSize = 100)
 {
     /// <summary>
     /// Helper class to hold mutable category state during processing.
@@ -31,30 +33,59 @@ public class RecordProcessor(DbContextOptions<JokeDbContext> dbContextOptions, I
         public List<JokeCategory> ExistingCategories { get; set; } = [];
         public string CategoryNames { get; set; } = string.Empty;
     }
+
+    /// <summary>
+    /// Tracks token usage for cloud model calls.
+    /// </summary>
+    private class TokenUsage
+    {
+        public int PromptTokens { get; set; }
+        public int CompletionTokens { get; set; }
+        public int TotalTokens => PromptTokens + CompletionTokens;
+    }
+
     private readonly DbContextOptions<JokeDbContext> _dbContextOptions = dbContextOptions;
     private readonly IChatCompletionService _chatCompletionService = chatCompletionService;
+    private readonly bool _trackTokens = trackTokens;
+    private readonly int _maxBatchSize = maxBatchSize;
 
-    private const int MaxBatchSize = 100;
+    // Running totals for token tracking
+    private int _totalPromptTokens;
+    private int _totalCompletionTokens;
 
-    // Prompt template for image description generation
-    private const string ImageDescriptionPrompt =
-        "You are going to be told a funny joke or a humorous line or an insightful quote. " +
-        "It is your responsibility to describe that joke so that an artist can draw a picture of the mental image that this joke creates. " +
-        "Give clear instructions on how the scene should look and what objects should be included in the scene. " +
-        "Instruct the artist to draw it in a humorous cartoon format. " +
-        "Make sure the description does not ask for anything violent, sexual, or political so that it does not violate safety rules. " +
-        "Keep the scene description under 250 words or less.\n\n" +
-        "Joke: {0}\n\n" +
-        "Image Description:";
+    // Combined prompt template for image description and category evaluation
+    private const string CombinedAnalysisPrompt =
+        """
+        Analyze the following joke and provide two things:
 
-    // Prompt template for category evaluation
-    private const string CategoryPrompt =
-        "Given the following joke, identify the one or two most appropriate categories of jokes it belongs to. " +
-        "Choose from existing categories if they fit, or suggest a new category if needed. " +
-        "Return only the category names, separated by commas.\n\n" +
-        "Existing categories: {0}\n\n" +
-        "Joke: {1}\n\n" +
-        "Categories:";
+        1. IMAGE DESCRIPTION: Describe this joke so an artist can draw a picture of the mental image it creates.
+           - Give clear instructions on how the scene should look and what objects should be included.
+           - Draw it in a humorous cartoon format.
+           - Make sure the description does not ask for anything violent, sexual, or political.
+           - Keep the scene description under 250 words.
+
+        2. CATEGORIES: Identify the one, two, or three of the most appropriate categories this joke belongs to.
+           - Choose from existing categories if they fit, or suggest a new category if needed.
+           - Try not to put everything into the Dad category - only use that for jokes clearly referencing Dad
+           - If it is clearly of one type, only suggest one category. If it matches several categories, suggest two or three.
+           - Existing categories: {0}
+
+        Joke: {1}
+
+        Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
+        {{"imageDescription": "your description here", "categories": ["category1", "category2"]}}
+        """;
+
+    /// <summary>
+    /// Response model for combined joke analysis.
+    /// </summary>
+    private class JokeAnalysisResponse
+    {
+        public string ImageDescription { get; set; } = string.Empty;
+        public List<string> Categories { get; set; } = [];
+    }
+
+
 
     /// <summary>
     /// Processes all active jokes, generating image descriptions and assigning categories.
@@ -64,12 +95,14 @@ public class RecordProcessor(DbContextOptions<JokeDbContext> dbContextOptions, I
     {
         await using var context = new JokeDbContext(_dbContextOptions);
 
-        // Get active jokes that need image descriptions (limited to batch size)
-        var jokes = await context.Jokes
+        // Get active jokes that need image descriptions (limited to batch size if > 0)
+        var jokesQuery = context.Jokes
             .Where(j => j.ActiveInd == "Y" && (j.ImageTxt == null || j.ImageTxt == ""))
-            .OrderBy(j => j.JokeId)
-            .Take(MaxBatchSize)
-            .ToListAsync();
+            .OrderBy(j => j.JokeId);
+
+        var jokes = _maxBatchSize > 0
+            ? await jokesQuery.Take(_maxBatchSize).ToListAsync()
+            : await jokesQuery.ToListAsync();
 
         var totalJokes = jokes.Count;
         AnsiConsole.MarkupLine($"[cyan]Found {totalJokes} jokes to process[/]\n");
@@ -99,12 +132,13 @@ public class RecordProcessor(DbContextOptions<JokeDbContext> dbContextOptions, I
         await AnsiConsole.Progress()
             .StartAsync(async ctx =>
             {
-                var task = ctx.AddTask("[green]Processing joke[/]", maxValue: totalJokes);
+                var task = ctx.AddTask("[green]    Processing joke - Percent Complete: [/]", maxValue: totalJokes);
 
                 foreach (var joke in jokes)
                 {
                     processedCount++;
                     var jokeStopwatch = Stopwatch.StartNew();
+                    AnsiConsole.MarkupLine($"\n[cyan] --------------------------------------------------------------------------------[/]");
                     AnsiConsole.MarkupLine($"[cyan] {DateTime.Now:HH:mm:ss}: Processing record {processedCount} of {totalJokes}[/] - Joke ID: {joke.JokeId}");
                     AnsiConsole.MarkupLine($"  [grey]Joke: {Markup.Escape(joke.JokeTxt ?? string.Empty)}[/]");
 
@@ -122,7 +156,7 @@ public class RecordProcessor(DbContextOptions<JokeDbContext> dbContextOptions, I
                     finally
                     {
                         jokeStopwatch.Stop();
-                        AnsiConsole.MarkupLine($"  [blue]⏱ Processing time: {jokeStopwatch.Elapsed.TotalSeconds:F2} seconds[/]\n");
+                        AnsiConsole.MarkupLine($"  [magenta]⏱ Processing time: {jokeStopwatch.Elapsed.TotalSeconds:F2} seconds[/]\n");
                     }
 
                     task.Increment(1);
@@ -137,42 +171,37 @@ public class RecordProcessor(DbContextOptions<JokeDbContext> dbContextOptions, I
 
     private async Task ProcessSingleJokeAsync(JokeDbContext context, Joke joke, CategoryState categoryState)
     {
-        AnsiConsole.MarkupLine($"  [blue] Analyzing joke to create a mental image...[/]");
-        var imagePrompt = string.Format(ImageDescriptionPrompt, joke.JokeTxt);
-        var imageHistory = new ChatHistory();
-        imageHistory.AddUserMessage(imagePrompt);
+        AnsiConsole.MarkupLine($"  [blue]Analyzing joke (image + categories)...[/]");
 
-        var imageResponse = await _chatCompletionService.GetChatMessageContentAsync(
-            imageHistory,
-            new OpenAIPromptExecutionSettings { MaxTokens = 300, Temperature = 0.7 }
+        var combinedPrompt = string.Format(CombinedAnalysisPrompt, categoryState.CategoryNames, joke.JokeTxt);
+        var chatHistory = new ChatHistory();
+        chatHistory.AddUserMessage(combinedPrompt);
+
+        var response = await _chatCompletionService.GetChatMessageContentAsync(
+            chatHistory,
+            new OpenAIPromptExecutionSettings
+            {
+                ExtensionData = new Dictionary<string, object> { ["max_completion_tokens"] = 400 }
+            }
         );
 
-        joke.ImageTxt = imageResponse.Content?.Trim();
+        // Track and display tokens for combined analysis call
+        DisplayTokenUsage(response, "Combined Analysis");
+
+        // Parse the JSON response
+        var analysisResult = ParseAnalysisResponse(response.Content);
+
+        joke.ImageTxt = analysisResult.ImageDescription;
         joke.ChangeDateTime = DateTime.UtcNow;
         joke.ChangeUserName = "JokeAnalyzer";
 
         AnsiConsole.MarkupLine($"  [green]✓ Generated image description[/]");
-        AnsiConsole.MarkupLine($"  [gray]✓ {joke.ImageTxt}[/]");
+        AnsiConsole.MarkupLine($"  [gray]  {Markup.Escape(joke.ImageTxt ?? string.Empty)}[/]");
 
-        AnsiConsole.MarkupLine($"  [blue] Evaluating categories...[/]");
-        // Evaluate categories
-        var catPrompt = string.Format(CategoryPrompt, categoryState.CategoryNames, joke.JokeTxt);
-        var catHistory = new ChatHistory();
-        catHistory.AddUserMessage(catPrompt);
-
-        var categoryResponse = await _chatCompletionService.GetChatMessageContentAsync(
-            catHistory,
-            new OpenAIPromptExecutionSettings { MaxTokens = 100, Temperature = 0.5 }
-        );
-
-        var suggestedCategories = categoryResponse.Content?
-            .Split(',')
-            .Select(c => c.Trim())
-            .Where(c => !string.IsNullOrWhiteSpace(c))
-            .ToList() ?? [];
+        AnsiConsole.MarkupLine($"  [green]✓ Identified categories: {string.Join(", ", analysisResult.Categories)}[/]");
 
         // Process categories
-        foreach (var categoryName in suggestedCategories)
+        foreach (var categoryName in analysisResult.Categories)
         {
             await ProcessCategoryAsync(context, joke, categoryName, categoryState);
         }
@@ -180,10 +209,64 @@ public class RecordProcessor(DbContextOptions<JokeDbContext> dbContextOptions, I
         await context.SaveChangesAsync();
     }
 
+    private static JokeAnalysisResponse ParseAnalysisResponse(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return new JokeAnalysisResponse();
+        }
+
+        try
+        {
+            // Clean up the response - remove any markdown code blocks if present
+            var jsonContent = content.Trim();
+            if (jsonContent.StartsWith("```"))
+            {
+                var lines = jsonContent.Split('\n');
+                jsonContent = string.Join('\n', lines.Skip(1).TakeWhile(l => !l.StartsWith("```")));
+            }
+
+            var result = System.Text.Json.JsonSerializer.Deserialize<JokeAnalysisResponse>(
+                jsonContent,
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+
+            return result ?? new JokeAnalysisResponse();
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            AnsiConsole.MarkupLine($"  [yellow]⚠ Failed to parse JSON response: {Markup.Escape(ex.Message)}[/]");
+            AnsiConsole.MarkupLine($"  [gray]  Raw response: {Markup.Escape(content)}[/]");
+            return new JokeAnalysisResponse();
+        }
+    }
+
+    private void DisplayTokenUsage(Microsoft.SemanticKernel.ChatMessageContent response, string callDescription)
+    {
+        if (!_trackTokens) return;
+
+        var metadata = response.Metadata;
+        if (metadata != null && metadata.TryGetValue("Usage", out var usageObj))
+        {
+            // Azure OpenAI returns usage information in metadata
+            if (usageObj is OpenAI.Chat.ChatTokenUsage usage)
+            {
+                var promptTokens = usage.InputTokenCount;
+                var completionTokens = usage.OutputTokenCount;
+                var totalTokens = usage.TotalTokenCount;
+
+                _totalPromptTokens += promptTokens;
+                _totalCompletionTokens += completionTokens;
+
+                AnsiConsole.MarkupLine($"  [magenta]📊 {callDescription} tokens: {totalTokens} (prompt: {promptTokens}, completion: {completionTokens})[/]");
+            }
+        }
+    }
+
     private async Task ProcessCategoryAsync(JokeDbContext context, Joke joke, string categoryName, CategoryState categoryState)
     {
         // Check if category exists
-        AnsiConsole.MarkupLine($"  [cyan] Checking category {categoryName}...[/]");
+        AnsiConsole.MarkupLine($"  [cyan]  Checking category {categoryName}...[/]");
         var category = categoryState.ExistingCategories.FirstOrDefault(c =>
             c.JokeCategoryTxt.Equals(categoryName, StringComparison.OrdinalIgnoreCase));
 
@@ -222,11 +305,11 @@ public class RecordProcessor(DbContextOptions<JokeDbContext> dbContextOptions, I
                 CreateUserName = "JokeAnalyzer"
             };
             context.JokeJokeCategories.Add(jokeCategory);
-            AnsiConsole.MarkupLine($"  [green]✓ Assigned to category: {categoryName}[/]");
+            AnsiConsole.MarkupLine($"  [green]  ✓ Assigned to category: {categoryName}[/]");
         }
     }
 
-    private static void DisplaySummary(int totalJokes, int updatedCount, int errorCount, TimeSpan totalElapsed)
+    private void DisplaySummary(int totalJokes, int updatedCount, int errorCount, TimeSpan totalElapsed)
     {
         AnsiConsole.WriteLine();
         var summaryTable = new Table()
@@ -238,6 +321,14 @@ public class RecordProcessor(DbContextOptions<JokeDbContext> dbContextOptions, I
         summaryTable.AddRow($"[green]Successfully Processed:[/] {updatedCount}");
         summaryTable.AddRow($"[red]Errors:[/] {errorCount}");
         summaryTable.AddRow($"[blue]Total Processing Time:[/] {FormatElapsedTime(totalElapsed)}");
+
+        if (_trackTokens)
+        {
+            var totalTokens = _totalPromptTokens + _totalCompletionTokens;
+            summaryTable.AddRow($"[magenta]Total Tokens Used:[/] {totalTokens:N0}");
+            summaryTable.AddRow($"[magenta]  Prompt Tokens:[/] {_totalPromptTokens:N0}");
+            summaryTable.AddRow($"[magenta]  Completion Tokens:[/] {_totalCompletionTokens:N0}");
+        }
 
         AnsiConsole.Write(summaryTable);
     }

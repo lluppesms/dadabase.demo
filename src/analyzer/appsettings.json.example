@@ -2,8 +2,20 @@
   "ConnectionStrings": {
     "DefaultConnection": "Server=localhost;Database=DadABase;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
   },
-  "Phi4": {
-    "ModelId": "Phi-4-mini-reasoning-cuda-gpu:3",
-    "Endpoint": "http://127.0.0.1:61445/v1"
+  "MaxBatchSize": 10,
+  "ModelProvider": "AzureOpenAI",
+  "LocalModel": {
+    "Endpoint": "http://127.0.0.1:61445/v1",
+    "ModelName": "Phi-4-mini",
+    "ModelId": "Phi-4-mini-instruct-cuda-gpu:5"
+    //"ModelName": "Phi-4-mini-reasoning",
+    //"ModelId": "Phi-4-mini-reasoning-cuda-gpu:3"
+  },
+  "AzureOpenAI": {
+    "Endpoint": "https://your-resource.openai.azure.com/",
+    "ApiKey": "",
+    // gpt-4.1-mini seems to provide the best balance of performance vs cost (even better than gpt-5-mini for this task...)
+    "DeploymentName": "gpt-4.1-mini",
+    "ModelName": "gpt-4.1-mini"
   }
 }
