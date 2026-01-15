@@ -2,6 +2,8 @@
 
 A .NET 10 console application that processes jokes in batch using the Phi-4 local AI model. The application generates image descriptions for each joke and automatically categorizes them.
 
+Note: this works, but on my Surface laptop with an integrated GPU, it is quite slow. Each joke record is taking about 2 minutes to process. For a database with 150 jokes, that is about 5 hours of processing time. For larger databases, consider running this on a machine with a more powerful GPU, or processing smaller batches of jokes at a time.
+
 ## Overview
 
 This application:

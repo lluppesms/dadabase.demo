@@ -64,9 +64,9 @@ public class RecordProcessor(DbContextOptions<JokeDbContext> dbContextOptions, I
     {
         await using var context = new JokeDbContext(_dbContextOptions);
 
-        // Get all active jokes (limited to batch size)
+        // Get active jokes that need image descriptions (limited to batch size)
         var jokes = await context.Jokes
-            .Where(j => j.ActiveInd == "Y")
+            .Where(j => j.ActiveInd == "Y" && (j.ImageTxt == null || j.ImageTxt == ""))
             .OrderBy(j => j.JokeId)
             .Take(MaxBatchSize)
             .ToListAsync();
@@ -137,56 +137,47 @@ public class RecordProcessor(DbContextOptions<JokeDbContext> dbContextOptions, I
 
     private async Task ProcessSingleJokeAsync(JokeDbContext context, Joke joke, CategoryState categoryState)
     {
-        // Generate image description only if ImageTxt is empty
-        if (string.IsNullOrWhiteSpace(joke.ImageTxt))
+        AnsiConsole.MarkupLine($"  [blue] Analyzing joke to create a mental image...[/]");
+        var imagePrompt = string.Format(ImageDescriptionPrompt, joke.JokeTxt);
+        var imageHistory = new ChatHistory();
+        imageHistory.AddUserMessage(imagePrompt);
+
+        var imageResponse = await _chatCompletionService.GetChatMessageContentAsync(
+            imageHistory,
+            new OpenAIPromptExecutionSettings { MaxTokens = 300, Temperature = 0.7 }
+        );
+
+        joke.ImageTxt = imageResponse.Content?.Trim();
+        joke.ChangeDateTime = DateTime.UtcNow;
+        joke.ChangeUserName = "JokeAnalyzer";
+
+        AnsiConsole.MarkupLine($"  [green]✓ Generated image description[/]");
+        AnsiConsole.MarkupLine($"  [gray]✓ {joke.ImageTxt}[/]");
+
+        AnsiConsole.MarkupLine($"  [blue] Evaluating categories...[/]");
+        // Evaluate categories
+        var catPrompt = string.Format(CategoryPrompt, categoryState.CategoryNames, joke.JokeTxt);
+        var catHistory = new ChatHistory();
+        catHistory.AddUserMessage(catPrompt);
+
+        var categoryResponse = await _chatCompletionService.GetChatMessageContentAsync(
+            catHistory,
+            new OpenAIPromptExecutionSettings { MaxTokens = 100, Temperature = 0.5 }
+        );
+
+        var suggestedCategories = categoryResponse.Content?
+            .Split(',')
+            .Select(c => c.Trim())
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .ToList() ?? [];
+
+        // Process categories
+        foreach (var categoryName in suggestedCategories)
         {
-            AnsiConsole.MarkupLine($"  [blue] Analyzing joke to create a mental image...[/]");
-            var imagePrompt = string.Format(ImageDescriptionPrompt, joke.JokeTxt);
-            var imageHistory = new ChatHistory();
-            imageHistory.AddUserMessage(imagePrompt);
-
-            var imageResponse = await _chatCompletionService.GetChatMessageContentAsync(
-                imageHistory,
-                new OpenAIPromptExecutionSettings { MaxTokens = 300, Temperature = 0.7 }
-            );
-
-            joke.ImageTxt = imageResponse.Content?.Trim();
-            joke.ChangeDateTime = DateTime.UtcNow;
-            joke.ChangeUserName = "JokeAnalyzer";
-
-            AnsiConsole.MarkupLine($"  [green]✓ Generated image description[/]");
-            AnsiConsole.MarkupLine($"  [gray]✓ {joke.ImageTxt}[/]");
-
-            AnsiConsole.MarkupLine($"  [blue] Evaluating categories...[/]");
-            // Evaluate categories
-            var catPrompt = string.Format(CategoryPrompt, categoryState.CategoryNames, joke.JokeTxt);
-            var catHistory = new ChatHistory();
-            catHistory.AddUserMessage(catPrompt);
-
-            var categoryResponse = await _chatCompletionService.GetChatMessageContentAsync(
-                catHistory,
-                new OpenAIPromptExecutionSettings { MaxTokens = 100, Temperature = 0.5 }
-            );
-
-            var suggestedCategories = categoryResponse.Content?
-                .Split(',')
-                .Select(c => c.Trim())
-                .Where(c => !string.IsNullOrWhiteSpace(c))
-                .ToList() ?? [];
-
-            // Process categories
-            foreach (var categoryName in suggestedCategories)
-            {
-                await ProcessCategoryAsync(context, joke, categoryName, categoryState);
-            }
-            // Save changes
-            await context.SaveChangesAsync();
+            await ProcessCategoryAsync(context, joke, categoryName, categoryState);
         }
-        else
-        {
-            AnsiConsole.MarkupLine($"  [yellow]⊘ Image description already exists, skipping[/]");
-        }
-
+        // Save changes
+        await context.SaveChangesAsync();
     }
 
     private async Task ProcessCategoryAsync(JokeDbContext context, Joke joke, string categoryName, CategoryState categoryState)
