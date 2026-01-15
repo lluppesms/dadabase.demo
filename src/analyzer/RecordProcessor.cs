@@ -49,8 +49,8 @@ public class RecordProcessor(DbContextOptions<JokeDbContext> dbContextOptions, I
 
     // Prompt template for category evaluation
     private const string CategoryPrompt =
-        "Given the following joke, identify the two or three most appropriate categories it belongs to. " +
-        "Choose from existing categories if they fit, or suggest new categories if needed. " +
+        "Given the following joke, identify the one or two most appropriate categories of jokes it belongs to. " +
+        "Choose from existing categories if they fit, or suggest a new category if needed. " +
         "Return only the category names, separated by commas.\n\n" +
         "Existing categories: {0}\n\n" +
         "Joke: {1}\n\n" +
@@ -99,7 +99,7 @@ public class RecordProcessor(DbContextOptions<JokeDbContext> dbContextOptions, I
         await AnsiConsole.Progress()
             .StartAsync(async ctx =>
             {
-                var task = ctx.AddTask("[green]Processing jokes[/]", maxValue: totalJokes);
+                var task = ctx.AddTask("[green]Processing joke[/]", maxValue: totalJokes);
 
                 foreach (var joke in jokes)
                 {
@@ -155,7 +155,7 @@ public class RecordProcessor(DbContextOptions<JokeDbContext> dbContextOptions, I
             joke.ChangeUserName = "JokeAnalyzer";
 
             AnsiConsole.MarkupLine($"  [green]✓ Generated image description[/]");
-            AnsiConsole.MarkupLine($"  [lightgray]✓ {joke.ImageTxt}[/]");
+            AnsiConsole.MarkupLine($"  [gray]✓ {joke.ImageTxt}[/]");
 
             AnsiConsole.MarkupLine($"  [blue] Evaluating categories...[/]");
             // Evaluate categories

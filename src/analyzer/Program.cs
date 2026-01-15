@@ -15,7 +15,7 @@ using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 // Display Banner
 AnsiConsole.Write(new FigletText("Joke Analyzer").LeftJustified().Color(Color.Green));
-AnsiConsole.MarkupLine("[yellow]Batch processing jokes with Phi-4 local model[/]\n");
+AnsiConsole.MarkupLine("[yellow]Batch processing jokes with local SLM model[/]\n");
 
 // Load configuration
 var configuration = new ConfigurationBuilder()
@@ -33,8 +33,9 @@ if (string.IsNullOrEmpty(connectionString))
 
 var phi4Endpoint = configuration["Phi4:Endpoint"] ?? "http://localhost:1234/v1";
 var phi4ModelId = configuration["Phi4:ModelId"] ?? "phi-4";
+var phi4ModelName = configuration["Phi4:ModelName"] ?? "phi-4";
 
-AnsiConsole.MarkupLine($"[green]✓ Using {phi4ModelId} at {phi4Endpoint}\n[/]");
+AnsiConsole.MarkupLine($"[green]✓ Using {phi4ModelName} ({phi4ModelId}) at {phi4Endpoint}\n[/]");
 
 // Configure database
 var optionsBuilder = new DbContextOptionsBuilder<JokeDbContext>();
