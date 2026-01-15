@@ -5,6 +5,7 @@ A .NET 10 console application that processes jokes in batch using the Phi-4 loca
 ## Overview
 
 This application:
+
 - Reads jokes from the DadABase SQL database
 - Generates image descriptions for each joke using Phi-4
 - Automatically categorizes jokes based on their content
@@ -24,9 +25,43 @@ This application:
 ### Option 1: Using Microsoft Foundry Local (Recommended)
 
 1. **Install Microsoft Foundry Local**
-   - Visit: https://www.microsoft.com/en-us/microsoft-foundry/local
-   - Download and install Microsoft Foundry Local for your operating system
-   - Follow the installation wizard
+   - See: [Running Phi-4 locally with Microsoft Foundry Local: A step-by-step guide](https://techcommunity.microsoft.com/blog/educatordeveloperblog/running-phi-4-locally-with-microsoft-foundry-local-a-step-by-step-guide/4466304)
+   - Visit: [https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-local/get-started](https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-local/get-started)
+   - Download and install Microsoft Foundry Local for your operating system and follow the installation wizard
+
+   - For a Windows system command-line install:
+
+      ```bash
+      winget install Microsoft.FoundryLocal
+      foundry --version
+      foundry model download phi-4-mini-reasoning
+      foundry cache ls
+      foundry model run phi-4-mini-reasoning
+      foundry service start
+      ```
+
+      The service start will return a message like `Service is already running on http://127.0.0.1:61445/`
+
+      Use that dynamic port number to see the exact model names using this command:
+
+      ```bash
+      foundry cache list
+      ```
+
+      In the results from the cache list command, look for the model Id.  That will be the value that you need to put in your config file, along with the endpoint URL.  For example:
+
+      ```json
+         "Phi4": {
+           "ModelId": "Phi-4-mini-reasoning-cuda-gpu:3",
+           "Endpoint": "http://127.0.0.1:61445/v1"
+         }
+      ```
+
+      See [https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-local/reference/reference-cli?view=foundry-classic](https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-local/reference/reference-cli?view=foundry-classic) for more CLI commands.
+
+   - Thought: switch to phi-4-mini-reasoning model?
+   - [https://techcommunity.microsoft.com/blog/educatordeveloperblog/running-phi-4-locally-with-microsoft-foundry-local-a-step-by-step-guide/4466304](https://techcommunity.microsoft.com/blog/educatordeveloperblog/running-phi-4-locally-with-microsoft-foundry-local-a-step-by-step-guide/4466304)
+
 
 2. **Download Phi-4 Model**
    - Open Microsoft Foundry Local
