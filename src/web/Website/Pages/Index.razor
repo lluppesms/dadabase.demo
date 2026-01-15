@@ -36,7 +36,7 @@
                 else
                 {
                     @if (!string.IsNullOrEmpty(jokeImageUrl)) {
-                      <img src="@jokeImageUrl" class="joke-image" width="400" style="cursor: pointer;" @onclick="ShowImageDescriptionPopup" />
+                      <img src="@jokeImageUrl" class="joke-image" width="400" style="cursor: pointer;" @onclick="ShowImageDescriptionPopup" title="@jokeImageDescription" />
                     }
                     else if (!string.IsNullOrEmpty(jokeImageDescription))
                     {

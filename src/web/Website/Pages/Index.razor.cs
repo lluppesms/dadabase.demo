@@ -57,7 +57,7 @@ public partial class Index : ComponentBase
         myJoke = new();
         jokeLoading = true;
         StateHasChanged();
-        
+
         var timer = Stopwatch.StartNew();
         if (addDelay) { await Task.Delay(500).ConfigureAwait(false); } // I want to see the spinners for now...
         myJoke = JokeRepository.GetRandomJoke();
@@ -96,7 +96,7 @@ public partial class Index : ComponentBase
 
             // Skip to image generation
             (jokeImageUrl, var imgSuccessFromCache, var imgErrorFromCache) = await GenAIAgent.GenerateAnImage(jokeImageDescription);
-            jokeImageMessage = imgSuccessFromCache ? string.Empty : imgErrorFromCache;
+            jokeImageMessage = imgSuccessFromCache ? "The DadJoke AI tried to comprehend this joke and has done it's best to draw a mental picture for you!" : imgErrorFromCache;
             imageGenerated = imgSuccessFromCache;
             imageLoading = false;
             StateHasChanged();
@@ -110,7 +110,7 @@ public partial class Index : ComponentBase
 
         var scene = $"{myJoke.JokeTxt} ({myJoke.Categories})";
         (jokeImageDescription, var descSuccess, var descErrorMessage) = await GenAIAgent.GetJokeSceneDescription(scene);
-        
+
         if (!descSuccess)
         {
             jokeImageMessage = descErrorMessage;
@@ -131,7 +131,7 @@ public partial class Index : ComponentBase
         StateHasChanged();
 
         (jokeImageUrl, var imgSuccess, var imgErrorMessage) = await GenAIAgent.GenerateAnImage(jokeImageDescription);
-        jokeImageMessage = imgSuccess ? string.Empty : imgErrorMessage;
+        jokeImageMessage = imgSuccess ? "The DadJoke AI tried to comprehend this joke and has done it's best to draw a mental picture for you!" : imgErrorMessage;
         imageGenerated = imgSuccess;
         imageLoading = false;
         StateHasChanged();
