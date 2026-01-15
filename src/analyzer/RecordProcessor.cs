@@ -105,7 +105,7 @@ public class RecordProcessor(DbContextOptions<JokeDbContext> dbContextOptions, I
                 {
                     processedCount++;
                     var jokeStopwatch = Stopwatch.StartNew();
-                    AnsiConsole.MarkupLine($"[cyan][{DateTime.Now:HH:mm:ss}] Processing record {processedCount} of {totalJokes}[/] - Joke ID: {joke.JokeId}");
+                    AnsiConsole.MarkupLine($"[cyan] {DateTime.Now:HH:mm:ss}: Processing record {processedCount} of {totalJokes}[/] - Joke ID: {joke.JokeId}");
                     AnsiConsole.MarkupLine($"  [grey]Joke: {Markup.Escape(joke.JokeTxt ?? string.Empty)}[/]");
 
                     try
