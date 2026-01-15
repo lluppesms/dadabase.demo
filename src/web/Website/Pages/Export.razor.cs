@@ -15,10 +15,11 @@ public partial class Export : ComponentBase
 {
     [Inject] AppSettings Settings { get; set; }
     [Inject] IJSRuntime JsInterop { get; set; }
-    [Inject] NavigationManager NavigationManager { get; set; }
+    [Inject] IJokeRepository JokeRepository { get; set; }
 
     private string statusMessage = string.Empty;
     private string alertClass = "alert-info";
+    private bool isExporting = false;
 
     /// <summary>
     /// Initialization
@@ -41,24 +42,37 @@ public partial class Export : ComponentBase
     {
         try
         {
+            isExporting = true;
             statusMessage = "Generating export file...";
             alertClass = "alert-info";
             StateHasChanged();
 
-            // Build the API URL based on the current base URL
-            var baseUri = NavigationManager.BaseUri.TrimEnd('/');
-            var apiUrl = $"{baseUri}/api/export/sql";
-            await JsInterop.InvokeVoidAsync("downloadFile", apiUrl);
+            // Generate the SQL export content directly from the repository
+            var sqlContent = JokeRepository.ExportToSql("EXPORT_USER");
+            
+            // Create a stream from the SQL content
+            var byteArray = System.Text.Encoding.UTF8.GetBytes(sqlContent);
+            var stream = new MemoryStream(byteArray);
+            
+            // Generate filename with timestamp
+            var fileName = $"JokeExport_{DateTime.UtcNow:yyyyMMdd_HHmmss}.sql";
+            
+            // Use the existing downloadFileFromStream JavaScript function
+            using var streamRef = new DotNetStreamReference(stream: stream);
+            await JsInterop.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
 
-            statusMessage = "Export file download initiated successfully!";
+            statusMessage = $"Export file '{fileName}' downloaded successfully!";
             alertClass = "alert-success";
         }
         catch (Exception ex)
         {
-            statusMessage = $"Error initiating download: {ex.Message}";
+            statusMessage = $"Error generating export: {ex.Message}";
             alertClass = "alert-danger";
         }
-        
-        StateHasChanged();
+        finally
+        {
+            isExporting = false;
+            StateHasChanged();
+        }
     }
 }

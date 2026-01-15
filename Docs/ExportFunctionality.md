@@ -10,13 +10,14 @@ The export functionality allows users to download all jokes and categories from 
 2. Click the **Download SQL Export** button
 3. The SQL file will be downloaded with a timestamped filename (e.g., `JokeExport_20250115_150530.sql`)
 
-### Via API
-You can also download the export file directly via the API:
-```
-GET /api/export/sql
-```
-
 ## Technical Details
+
+### Implementation Approach
+The export functionality uses a direct repository call pattern, similar to the [travel.tracker](https://github.com/lluppesms/travel.tracker) application:
+- The `Export.razor` page directly injects and calls `IJokeRepository.ExportToSql()`
+- The generated SQL content is streamed to the browser using `DotNetStreamReference`
+- Uses the existing `downloadFileFromStream` JavaScript function for file downloads
+- No API endpoint is required
 
 ### File Format
 The exported SQL file includes:
@@ -66,7 +67,7 @@ The export **does not include** data from the `JokeRatings` table, as this is us
 
 ## Testing
 The export functionality includes comprehensive unit tests that verify:
-- Correct file type and naming
-- Valid SQL structure
+- Repository generates non-empty SQL content
+- Valid SQL structure with all required elements
 - Proper quote escaping
 - Support for multiple categories per joke
