@@ -62,6 +62,12 @@ public class Joke
     public string? Attribution { get; set; }
 
     /// <summary>
+    /// Image Description Text
+    /// </summary>
+    [Display(Name = "Image Description", Description = "This is the AI-generated image description field.", Prompt = "Enter Image Description")]
+    public string? ImageTxt { get; set; }
+
+    /// <summary>
     /// Active
     /// </summary>
     [JsonIgnore]
@@ -131,6 +137,7 @@ public class Joke
         JokeTxt = string.Empty;
         Categories = string.Empty;
         Attribution = string.Empty;
+        ImageTxt = string.Empty;
         SortOrderNbr = 50;
         ActiveInd = "Y";
         CreateUserName = "UNKNOWN";
@@ -148,6 +155,7 @@ public class Joke
         JokeTxt = string.Empty;
         Categories = string.Empty;
         Attribution = string.Empty;
+        ImageTxt = string.Empty;
         SortOrderNbr = 50;
         ActiveInd = "Y";
         CreateUserName = "UNKNOWN";
@@ -165,6 +173,7 @@ public class Joke
         JokeTxt = jokeTxt;
         Categories = string.Empty;
         Attribution = string.Empty;
+        ImageTxt = string.Empty;
         SortOrderNbr = 50;
         ActiveInd = "Y";
         CreateUserName = "UNKNOWN";
@@ -182,6 +191,7 @@ public class Joke
         JokeTxt = jokeTxt;
         Categories = categories;
         Attribution = string.Empty;
+        ImageTxt = string.Empty;
         SortOrderNbr = 50;
         ActiveInd = "Y";
         CreateUserName = "UNKNOWN";
@@ -198,6 +208,7 @@ public class Joke
         JokeId = 0;
         JokeTxt = jokeTxt;
         Categories = categories;
+        ImageTxt = imageTxt;
         Attribution = string.Empty;
         SortOrderNbr = 50;
         ActiveInd = "Y";
@@ -216,6 +227,7 @@ public class Joke
         JokeTxt = jokeTxt;
         Categories = categories;
         Attribution = attribution;
+        ImageTxt = imageTxt;
         SortOrderNbr = 50;
         ActiveInd = "Y";
         CreateUserName = "UNKNOWN";
