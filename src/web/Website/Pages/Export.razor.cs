@@ -48,18 +48,20 @@ public partial class Export : ComponentBase
             StateHasChanged();
 
             // Generate the SQL export content directly from the repository
-            var sqlContent = JokeRepository.ExportToSql("EXPORT_USER");
+            var sqlContent = JokeRepository.ExportToSql();
             
             // Create a stream from the SQL content
             var byteArray = System.Text.Encoding.UTF8.GetBytes(sqlContent);
-            var stream = new MemoryStream(byteArray);
             
             // Generate filename with timestamp
             var fileName = $"JokeExport_{DateTime.UtcNow:yyyyMMdd_HHmmss}.sql";
             
             // Use the existing downloadFileFromStream JavaScript function
-            using var streamRef = new DotNetStreamReference(stream: stream);
-            await JsInterop.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+            using (var stream = new MemoryStream(byteArray))
+            using (var streamRef = new DotNetStreamReference(stream: stream))
+            {
+                await JsInterop.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+            }
 
             statusMessage = $"Export file '{fileName}' downloaded successfully!";
             alertClass = "alert-success";
