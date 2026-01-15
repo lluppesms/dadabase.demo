@@ -226,6 +226,200 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     //}
 
     /// <summary>
+    /// Export all jokes and categories to SQL format
+    /// </summary>
+    /// <param name="requestingUserName">Requesting UserName</param>
+    /// <returns>SQL script content</returns>
+    public string ExportToSql(string requestingUserName = "ANON")
+    {
+        var sb = new System.Text.StringBuilder();
+        const int maxRowsPerInsert = 1000;
+
+        // Header
+        sb.AppendLine("------------------------------------------------------------------------------------------------------------------------");
+        sb.AppendLine("-- Exported Joke Data");
+        sb.AppendLine($"-- Export Date: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+        sb.AppendLine("------------------------------------------------------------------------------------------------------------------------");
+        sb.AppendLine("Declare @RemovePreviousJokes varchar(1) = 'Y'");
+        sb.AppendLine();
+        sb.AppendLine("-- Temp table for unique jokes");
+        sb.AppendLine("Declare @tmpJokes Table (");
+        sb.AppendLine("  JokeId int,");
+        sb.AppendLine("  Categories nvarchar(500),  -- For documentation/cross-reference only");
+        sb.AppendLine("  JokeTxt nvarchar(max),");
+        sb.AppendLine("  Attribution nvarchar(500),");
+        sb.AppendLine("  ImageTxt nvarchar(max)");
+        sb.AppendLine(")");
+        sb.AppendLine();
+        sb.AppendLine("-- Temp table for joke-category relationships");
+        sb.AppendLine("Declare @tmpJokeCategories Table (");
+        sb.AppendLine("  JokeId int,");
+        sb.AppendLine("  JokeCategoryTxt nvarchar(500)");
+        sb.AppendLine(")");
+        sb.AppendLine();
+        sb.AppendLine("------------------------------------------------------------------------------------------------------------------------");
+        sb.AppendLine("-- Insert Jokes (each joke appears once)");
+        sb.AppendLine("------------------------------------------------------------------------------------------------------------------------");
+
+        // Get all jokes with their categories
+        var jokesQuery = _context.Jokes
+            .FromSqlInterpolated($@"
+                SELECT j.JokeId, 
+                    STUFF((SELECT ', ' + c.JokeCategoryTxt
+                           FROM JokeJokeCategory jjc
+                           INNER JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId
+                           WHERE jjc.JokeId = j.JokeId
+                           ORDER BY c.JokeCategoryTxt
+                           FOR XML PATH('')), 1, 2, '') AS Categories,
+                    j.JokeTxt, j.ImageTxt, j.Rating, j.ActiveInd, j.Attribution, j.VoteCount, j.SortOrderNbr,
+                    j.CreateDateTime, j.CreateUserName, j.ChangeDateTime, j.ChangeUserName
+                FROM Joke j
+                WHERE j.ActiveInd = 'Y'
+                ORDER BY Categories, j.JokeTxt")
+            .AsEnumerable()
+            .ToList();
+
+        // Insert unique jokes into @tmpJokes (with 1000 row limit per INSERT)
+        var rowCount = 0;
+        var isFirst = true;
+        foreach (var joke in jokesQuery)
+        {
+            if (rowCount % maxRowsPerInsert == 0)
+            {
+                if (rowCount > 0)
+                {
+                    sb.AppendLine();
+                }
+                sb.AppendLine("INSERT INTO @tmpJokes (JokeId, Categories, JokeTxt, Attribution, ImageTxt) VALUES");
+                isFirst = true;
+            }
+
+            if (!isFirst)
+            {
+                sb.AppendLine(",");
+            }
+            isFirst = false;
+
+            var jokeTxt = EscapeSqlString(joke.JokeTxt ?? string.Empty).Trim();
+            var categories = joke.Categories != null ? $"'{EscapeSqlString(joke.Categories)}'".Trim() : "'Random'";
+            var attribution = joke.Attribution != null ? $"'{EscapeSqlString(joke.Attribution)}'".Trim() : "NULL";
+            var imageTxt = joke.ImageTxt != null ? $"'{EscapeSqlString(joke.ImageTxt)}'".Trim().Replace("\n", "") : "NULL";
+
+            sb.Append($" ({joke.JokeId}, {categories}, '{jokeTxt}', {attribution}, {imageTxt})");
+            rowCount++;
+        }
+
+        sb.AppendLine();
+        sb.AppendLine();
+        sb.AppendLine("------------------------------------------------------------------------------------------------------------------------");
+        sb.AppendLine("-- Insert Joke-Category relationships (one row per joke-category pair)");
+        sb.AppendLine("------------------------------------------------------------------------------------------------------------------------");
+
+        // Build joke-category relationships by splitting categories for each joke (with 1000 row limit per INSERT)
+        rowCount = 0;
+        isFirst = true;
+        foreach (var joke in jokesQuery)
+        {
+            var categories = (joke.Categories ?? "Unknown").Split(',').Select(c => c.Trim()).Distinct();
+
+            foreach (var category in categories)
+            {
+                if (rowCount % maxRowsPerInsert == 0)
+                {
+                    if (rowCount > 0)
+                    {
+                        sb.AppendLine();
+                    }
+                    sb.AppendLine("INSERT INTO @tmpJokeCategories (JokeId, JokeCategoryTxt) VALUES");
+                    isFirst = true;
+                }
+
+                if (!isFirst)
+                {
+                    sb.AppendLine(",");
+                }
+                isFirst = false;
+
+                var categoryTxt = category != null ? EscapeSqlString(category) : "'Random'";
+                sb.Append($" ({joke.JokeId}, '{categoryTxt}')");
+                rowCount++;
+            }
+        }
+
+        sb.AppendLine();
+        sb.AppendLine();
+        sb.AppendLine("------------------------------------------------------------------------------------------------------------------------");
+        sb.AppendLine("-- END Data Inserts");
+        sb.AppendLine("------------------------------------------------------------------------------------------------------------------------");
+        sb.AppendLine();
+        sb.AppendLine("IF @RemovePreviousJokes = 'Y'");
+        sb.AppendLine("BEGIN");
+        sb.AppendLine("  PRINT ''");
+        sb.AppendLine("  PRINT 'Removing previous set of jokes...'");
+        sb.AppendLine("  DELETE FROM JokeRating");
+        sb.AppendLine("  DELETE FROM JokeJokeCategory");
+        sb.AppendLine("  DELETE FROM JokeCategory");
+        sb.AppendLine("  DELETE FROM Joke");
+        sb.AppendLine("  DBCC CHECKIDENT('JokeRating', RESEED, 0)");
+        sb.AppendLine("  DBCC CHECKIDENT('JokeCategory', RESEED, 0)");
+        sb.AppendLine("  DBCC CHECKIDENT('Joke', RESEED, 0)");
+        sb.AppendLine("END");
+        sb.AppendLine();
+        sb.AppendLine("DECLARE @CategoryCount int");
+        sb.AppendLine("SELECT @CategoryCount = Count(DISTINCT JokeCategoryTxt) From @tmpJokeCategories");
+        sb.AppendLine("PRINT ''");
+        sb.AppendLine("PRINT 'Inserting ' + CAST(@CategoryCount as varchar) + ' fresh categories...'");
+        sb.AppendLine("INSERT INTO JokeCategory (JokeCategoryTxt) ");
+        sb.AppendLine("  SELECT DISTINCT JokeCategoryTxt From @tmpJokeCategories Where JokeCategoryTxt NOT IN (Select JokeCategoryTxt From JokeCategory)");
+        sb.AppendLine();
+        sb.AppendLine("DECLARE @JokeCount int");
+        sb.AppendLine("SELECT @JokeCount = Count(*) From @tmpJokes");
+        sb.AppendLine("PRINT ''");
+        sb.AppendLine("PRINT 'Inserting ' + CAST(@JokeCount as varchar) + ' fresh jokes...'");
+        sb.AppendLine("INSERT INTO Joke (JokeTxt, Attribution, ImageTxt, Rating, VoteCount) ");
+        sb.AppendLine("  SELECT j.JokeTxt, j.Attribution, j.ImageTxt, 0, 0");
+        sb.AppendLine("  FROM @tmpJokes j");
+        sb.AppendLine("  WHERE j.JokeTxt NOT IN (Select JokeTxt From Joke)");
+        sb.AppendLine("  ORDER BY j.Categories, j.JokeTxt");
+        sb.AppendLine();
+        sb.AppendLine("PRINT ''");
+        sb.AppendLine("PRINT 'Populating JokeJokeCategory junction table...'");
+        sb.AppendLine("INSERT INTO JokeJokeCategory (JokeId, JokeCategoryId)");
+        sb.AppendLine("  SELECT DISTINCT jk.JokeId, c.JokeCategoryId");
+        sb.AppendLine("  FROM Joke jk");
+        sb.AppendLine("  INNER JOIN @tmpJokes tj ON jk.JokeTxt = tj.JokeTxt");
+        sb.AppendLine("  INNER JOIN @tmpJokeCategories tjc ON tj.JokeId = tjc.JokeId");
+        sb.AppendLine("  INNER JOIN JokeCategory c ON tjc.JokeCategoryTxt = c.JokeCategoryTxt");
+        sb.AppendLine("  WHERE NOT EXISTS (");
+        sb.AppendLine("    SELECT 1 FROM JokeJokeCategory jjc ");
+        sb.AppendLine("    WHERE jjc.JokeId = jk.JokeId AND jjc.JokeCategoryId = c.JokeCategoryId");
+        sb.AppendLine("  )");
+        sb.AppendLine();
+        sb.AppendLine("PRINT ''");
+        sb.AppendLine("PRINT 'Displaying All Jokes...'");
+        sb.AppendLine("SELECT j.JokeId, ");
+        sb.AppendLine("  STUFF((SELECT ', ' + c.JokeCategoryTxt");
+        sb.AppendLine("         FROM JokeJokeCategory jjc");
+        sb.AppendLine("         INNER JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId");
+        sb.AppendLine("         WHERE jjc.JokeId = j.JokeId");
+        sb.AppendLine("         ORDER BY c.JokeCategoryTxt");
+        sb.AppendLine("         FOR XML PATH('')), 1, 2, '') AS Categories,");
+        sb.AppendLine("  j.JokeTxt, j.Attribution, j.ImageTxt, j.Rating, j.CreateDateTime ");
+        sb.AppendLine("FROM Joke j ");
+        sb.AppendLine("ORDER BY j.JokeId, Categories, j.JokeTxt");
+
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Escape SQL string literals (handle single quotes)
+    /// </summary>
+    private static string EscapeSqlString(string input)
+    {
+        return input?.Replace("'", "''") ?? string.Empty;
+    }
+
+    /// <summary>
     /// Dispose
     /// </summary>
     public void Dispose()

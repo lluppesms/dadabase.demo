@@ -1,0 +1,40 @@
+@page "/export"
+<PageTitle>Export Data</PageTitle>
+
+<div class="container" style="padding: 25px;">
+    <div class="card">
+        <div class="card-body">
+            <h1>Export Joke Data</h1>
+            <p>Export all jokes and categories from the database to a SQL file.</p>
+            <p>The exported SQL file will be in the same format as the InsertDefaultData.sql file and can be used to restore or transfer your joke collection.</p>
+            
+            @if (isExporting)
+            {
+                <div class="progress mb-3">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated"
+                         role="progressbar"
+                         style="width: 100%">
+                        Exporting...
+                    </div>
+                </div>
+            }
+
+            <div class="mt-4">
+                <button class="btn btn-primary" @onclick="DownloadExport" disabled="@isExporting">
+                    @if (isExporting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                    }
+                    <i class="fas fa-download"></i> Download SQL Export
+                </button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(statusMessage))
+            {
+                <div class="alert @alertClass mt-3" role="alert">
+                    @statusMessage
+                </div>
+            }
+        </div>
+    </div>
+</div>
