@@ -34,7 +34,7 @@ public class RecordProcessor(DbContextOptions<JokeDbContext> dbContextOptions, I
     private readonly DbContextOptions<JokeDbContext> _dbContextOptions = dbContextOptions;
     private readonly IChatCompletionService _chatCompletionService = chatCompletionService;
 
-    private const int MaxBatchSize = 10;
+    private const int MaxBatchSize = 100;
 
     // Prompt template for image description generation
     private const string ImageDescriptionPrompt =
@@ -105,7 +105,7 @@ public class RecordProcessor(DbContextOptions<JokeDbContext> dbContextOptions, I
                 {
                     processedCount++;
                     var jokeStopwatch = Stopwatch.StartNew();
-                    AnsiConsole.MarkupLine($"[cyan]Processing record {processedCount} of {totalJokes}[/] - Joke ID: {joke.JokeId}");
+                    AnsiConsole.MarkupLine($"[cyan][{DateTime.Now:HH:mm:ss}] Processing record {processedCount} of {totalJokes}[/] - Joke ID: {joke.JokeId}");
                     AnsiConsole.MarkupLine($"  [grey]Joke: {Markup.Escape(joke.JokeTxt ?? string.Empty)}[/]");
 
                     try
