@@ -63,6 +63,13 @@ public interface IJokeRepository
     bool UpdateImageTxt(int jokeId, string imageTxt, string requestingUserName = "ANON");
 
     /// <summary>
+    /// Export all jokes and categories to SQL format
+    /// </summary>
+    /// <param name="requestingUserName">Requesting UserName</param>
+    /// <returns>SQL script content</returns>
+    string ExportToSql(string requestingUserName = "ANON");
+
+    /// <summary>
     /// Disposal
     /// </summary>
     void Dispose();

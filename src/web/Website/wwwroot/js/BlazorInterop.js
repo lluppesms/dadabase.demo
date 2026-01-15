@@ -77,3 +77,12 @@ window.clipboardCopy = {
         }
     }
 }
+
+function downloadFile(url) {
+    const anchorElement = document.createElement('a');
+    anchorElement.href = url;
+    anchorElement.download = '';
+    anchorElement.click();
+    anchorElement.remove();
+}
+
