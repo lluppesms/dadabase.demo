@@ -57,7 +57,7 @@ public partial class Index : ComponentBase
         myJoke = new();
         jokeLoading = true;
         StateHasChanged();
-        
+
         var timer = Stopwatch.StartNew();
         if (addDelay) { await Task.Delay(500).ConfigureAwait(false); } // I want to see the spinners for now...
         myJoke = JokeRepository.GetRandomJoke();
@@ -86,6 +86,23 @@ public partial class Index : ComponentBase
             return;
         }
 
+        // Check if ImageTxt already exists - if so, skip LLM call
+        if (!string.IsNullOrEmpty(myJoke.ImageTxt))
+        {
+            jokeImageDescription = myJoke.ImageTxt;
+            jokeImageMessage = "🚀 Using existing description! Let me draw that for you! (gimme a sec...)";
+            imageLoading = true;
+            StateHasChanged();
+
+            // Skip to image generation
+            (jokeImageUrl, var imgSuccessFromCache, var imgErrorFromCache) = await GenAIAgent.GenerateAnImage(jokeImageDescription);
+            jokeImageMessage = imgSuccessFromCache ? "The DadJoke AI tried to comprehend this joke and has done it's best to draw a mental picture for you!" : imgErrorFromCache;
+            imageGenerated = imgSuccessFromCache;
+            imageLoading = false;
+            StateHasChanged();
+            return;
+        }
+
         // Step 1: Generate image description
         jokeImageMessage = "🚀 Generating a mental image of this scenario...";
         imageLoading = true;
@@ -93,7 +110,7 @@ public partial class Index : ComponentBase
 
         var scene = $"{myJoke.JokeTxt} ({myJoke.Categories})";
         (jokeImageDescription, var descSuccess, var descErrorMessage) = await GenAIAgent.GetJokeSceneDescription(scene);
-        
+
         if (!descSuccess)
         {
             jokeImageMessage = descErrorMessage;
@@ -102,12 +119,19 @@ public partial class Index : ComponentBase
             return;
         }
 
+        // Save the description to the database
+        var updateSuccess = JokeRepository.UpdateImageTxt(myJoke.JokeId, jokeImageDescription);
+        if (updateSuccess)
+        {
+            myJoke.ImageTxt = jokeImageDescription;
+        }
+
         // Step 2: Generate the actual image from the description
         jokeImageMessage = "🚀 OK - I've got an idea! Let me draw that for you! (gimme a sec...)";
         StateHasChanged();
 
         (jokeImageUrl, var imgSuccess, var imgErrorMessage) = await GenAIAgent.GenerateAnImage(jokeImageDescription);
-        jokeImageMessage = imgSuccess ? string.Empty : imgErrorMessage;
+        jokeImageMessage = imgSuccess ? "The DadJoke AI tried to comprehend this joke and has done it's best to draw a mental picture for you!" : imgErrorMessage;
         imageGenerated = imgSuccess;
         imageLoading = false;
         StateHasChanged();

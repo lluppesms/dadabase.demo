@@ -64,8 +64,7 @@ public class Joke
     /// <summary>
     /// Image Description Text
     /// </summary>
-    [Display(Name = "Image Text", Description = "This is the Image Description Text field.", Prompt = "Enter Image Description")]
-    [DataType(DataType.MultilineText)]
+    [Display(Name = "Image Description", Description = "This is the AI-generated image description field.", Prompt = "Enter Image Description")]
     public string? ImageTxt { get; set; }
 
     /// <summary>
@@ -209,6 +208,7 @@ public class Joke
         JokeId = 0;
         JokeTxt = jokeTxt;
         Categories = categories;
+        ImageTxt = imageTxt;
         Attribution = string.Empty;
         ImageTxt = imageTxt;
         SortOrderNbr = 50;

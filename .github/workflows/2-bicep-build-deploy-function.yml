@@ -4,7 +4,7 @@
 # FYI: You need to set up some secrets before running this workflows - see CreateGitHubSecrets.md for details.
 # ------------------------------------------------------------------------------------------------------------------------
 name: 2.bicep.build.deploy.function
-run-name: '2 - Deploy Bicep/Build & Deploy Function: ${{ inputs.bicepDeploymentMode }} using ENV ${{ inputs.deployEnvironment }} by @${{ github.actor }}'
+run-name: '2 - Deploy Bicep/Build & Deploy Function: ${{ inputs.bicepDeploymentMode }} using ENV ${{ inputs.deployEnvironment }} ${{vars.INSTANCE_NUMBER}} by @${{ github.actor }}'
 on: 
   workflow_dispatch:
     inputs:

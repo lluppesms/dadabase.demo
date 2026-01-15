@@ -101,6 +101,27 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
+    /// Update ImageTxt field for a specific joke
+    /// </summary>
+    /// <param name="jokeId">Joke ID</param>
+    /// <param name="imageTxt">Image description text</param>
+    /// <param name="requestingUserName">Requesting UserName</param>
+    /// <returns>Success</returns>
+    public bool UpdateImageTxt(int jokeId, string imageTxt, string requestingUserName = "ANON")
+    {
+        try
+        {
+            _context.Database.ExecuteSqlInterpolated($"EXEC [dbo].[usp_Joke_Update_ImageTxt] @jokeId = {jokeId}, @imageTxt = {imageTxt}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating ImageTxt for JokeId {jokeId}: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Get Joke Categories
     /// </summary>
     /// <returns>List of Category Names</returns>

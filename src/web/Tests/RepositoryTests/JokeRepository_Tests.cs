@@ -15,29 +15,15 @@ using DadABase.Data.Repositories;
 [ExcludeFromCodeCoverage]
 public class Joke_Repository_Tests : BaseTest
 {
-    private readonly JokeSQLRepository repo;
-    private readonly DadABaseDbContext context;
+    private readonly IJokeRepository repo;
 
     public Joke_Repository_Tests(ITestOutputHelper output)
     {
         Task.Run(() => SetupInitialize(output)).Wait();
 
-        // Create in-memory database for testing
-        var options = new DbContextOptionsBuilder<DadABaseDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-        
-        context = new DadABaseDbContext(options);
-        
-        // Seed some test data
-        context.Jokes.AddRange(
-            new Joke { JokeId = 1, JokeTxt = "Test joke 1", Categories = "Test", ActiveInd = "Y" },
-            new Joke { JokeId = 2, JokeTxt = "Test joke 2", Categories = "Test", ActiveInd = "Y" },
-            new Joke { JokeId = 3, JokeTxt = "Test joke 3", Categories = "Other", ActiveInd = "Y" }
-        );
-        context.SaveChanges();
-
-        repo = new JokeSQLRepository(context);
+        // Use JSON repository for testing (avoids SQL stored procedure dependencies)
+        var jsonFilePath = Path.Combine(AppContext.BaseDirectory, "Data", "Jokes.json");
+        repo = new JokeJsonRepository(jsonFilePath);
     }
 
     [Fact]

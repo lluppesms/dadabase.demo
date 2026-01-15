@@ -54,6 +54,15 @@ public interface IJokeRepository
     IQueryable<Joke> SearchJokes(string searchTxt, string jokeCategoryTxt, string requestingUserName = "ANON");
 
     /// <summary>
+    /// Update ImageTxt field for a specific joke
+    /// </summary>
+    /// <param name="jokeId">Joke ID</param>
+    /// <param name="imageTxt">Image description text</param>
+    /// <param name="requestingUserName">Requesting UserName</param>
+    /// <returns>Success</returns>
+    bool UpdateImageTxt(int jokeId, string imageTxt, string requestingUserName = "ANON");
+
+    /// <summary>
     /// Disposal
     /// </summary>
     void Dispose();
