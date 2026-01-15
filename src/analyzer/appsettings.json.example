@@ -1,0 +1,9 @@
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=DadABase;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
+  },
+  "Phi4": {
+    "ModelId": "Phi-4-mini-reasoning-cuda-gpu:3",
+    "Endpoint": "http://127.0.0.1:61445/v1"
+  }
+}

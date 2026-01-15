@@ -210,6 +210,7 @@ public class Joke
         Categories = categories;
         ImageTxt = imageTxt;
         Attribution = string.Empty;
+        ImageTxt = imageTxt;
         SortOrderNbr = 50;
         ActiveInd = "Y";
         CreateUserName = "UNKNOWN";
