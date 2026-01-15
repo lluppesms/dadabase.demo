@@ -26,6 +26,10 @@ on:
         options:
           - 'build-deploy'
           - 'build-only'
+      createDefaultData:
+        description: Create Default Data?
+        type: boolean
+        default: true
 
 # ------------------------------------------------------------------------------------------------------------------------
 jobs:
@@ -45,7 +49,7 @@ jobs:
     secrets: inherit
 
   # ----------------------------------------------------------------------------------------------------
-  # Deploy to DEV
+  # Deploy DACPAC
   # ----------------------------------------------------------------------------------------------------
   deploy:
     name: 'Deploy Database ${{vars.INSTANCE_NUMBER}}'
@@ -61,4 +65,22 @@ jobs:
       sqlServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.deployEnvironment }}'
       sqlDatabaseName: '${{ vars.SQL_DATABASE_NAME }}'
       loginAccountType: ${{ inputs.loginAccountType }}
+    secrets: inherit
+
+  # ----------------------------------------------------------------------------------------------------
+  # Deploy Default Data
+  # ----------------------------------------------------------------------------------------------------
+  run-sql:
+    name: Deploy default data
+    uses: ./.github/workflows/template-run-sql.yml
+    if: ${{ inputs.createDefaultData }}
+    permissions:
+      id-token: write  
+    with:
+      envCode: ${{ inputs.deployEnvironment }}
+      sqlFolderName: 'src/sql.database/Patch'
+      sqlFileName: 'InsertDefaultData.sql'
+      runInDatabase: '${{ vars.SQL_DATABASE_NAME }}'
+      sqlServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.deployEnvironment }}'
+      loginAccountType: 'SVC_PRINCIPAL'
     secrets: inherit
