@@ -34,17 +34,26 @@ on:
 # ------------------------------------------------------------------------------------------------------------------------
 jobs:
   # ----------------------------------------------------------------------------------------------------
+  # Load Project Configuration
+  # ----------------------------------------------------------------------------------------------------
+  load-config:
+    name: Load Project Config
+    uses: ./.github/workflows/template-load-config.yml
+    secrets: inherit
+
+  # ----------------------------------------------------------------------------------------------------
   # Build DACPAC
   # ----------------------------------------------------------------------------------------------------
   build:
     name: Build
     uses: ./.github/workflows/template-dacpac-build.yml
     if: ${{ inputs.dacpacAction == 'build-deploy' || inputs.dacpacAction == 'build-only' }}
+    needs: load-config
     with:
       envCode: ${{ inputs.deployEnvironment }}
-      appFolderName: '${{ vars.SQL_APP_PROJECT_FOLDER_NAME }}'
-      appSolutionName: '${{ vars.SQL_APP_SOLUTION_NAME }}'
-      appProjectName: '${{ vars.SQL_APP_PROJECT_NAME }}'
+      appFolderName: '${{ needs.load-config.outputs.sql_rootDirectory }}'
+      appSolutionName: '${{ needs.load-config.outputs.sql_solutionName }}'
+      appProjectName: '${{ needs.load-config.outputs.sql_projectName }}'
       listFilesAfterBuild: true
     secrets: inherit
 
@@ -53,7 +62,7 @@ jobs:
   # ----------------------------------------------------------------------------------------------------
   deploy:
     name: 'Deploy Database ${{vars.INSTANCE_NUMBER}}'
-    needs: build
+    needs: [load-config, build]
     uses: ./.github/workflows/template-dacpac-deploy.yml
     if: ${{ inputs.dacpacAction == 'build-deploy' }}
     permissions:
@@ -61,7 +70,7 @@ jobs:
     with:
       envCode: ${{ inputs.deployEnvironment }}
       artifactName: 'dacpac'
-      appProjectName: '${{ vars.SQL_APP_PROJECT_NAME }}'
+      appProjectName: '${{ needs.load-config.outputs.sql_projectName }}'
       sqlServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.deployEnvironment }}'
       sqlDatabaseName: '${{ vars.SQL_DATABASE_NAME }}'
       loginAccountType: ${{ inputs.loginAccountType }}
@@ -73,12 +82,13 @@ jobs:
   run-sql:
     name: Deploy default data
     uses: ./.github/workflows/template-run-sql.yml
+    needs: [load-config, deploy]
     if: ${{ inputs.createDefaultData }}
     permissions:
       id-token: write  
     with:
       envCode: ${{ inputs.deployEnvironment }}
-      sqlFolderName: 'src/sql.database/Patch'
+      sqlFolderName: '${{ needs.load-config.outputs.sql_rootDirectory }}/Patch'
       sqlFileName: 'InsertDefaultData.sql'
       runInDatabase: '${{ vars.SQL_DATABASE_NAME }}'
       sqlServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.deployEnvironment }}'

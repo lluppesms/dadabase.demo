@@ -1,0 +1,194 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Composite Action to Load All Project Configurations
+# Usage: 
+#   - uses: ./.github/actions/load-project-config
+#   
+# Outputs are prefixed with project name, e.g.:
+#   steps.config.outputs.web_rootDirectory
+#   steps.config.outputs.function_projectName
+# ------------------------------------------------------------------------------------------------------------------------
+name: 'Load config/projects.yml'
+description: 'Loads project configurations from .github/config/projects.yml'
+
+outputs:
+  # Web project
+  web_shortName:
+    description: 'Web project short name'
+    value: ${{ steps.load.outputs.web_shortName }}
+  web_rootDirectory:
+    description: 'Web project root directory'
+    value: ${{ steps.load.outputs.web_rootDirectory }}
+  web_projectName:
+    description: 'Web project name'
+    value: ${{ steps.load.outputs.web_projectName }}
+  web_testDirectory:
+    description: 'Web test directory'
+    value: ${{ steps.load.outputs.web_testDirectory }}
+  web_testProjectName:
+    description: 'Web test project name'
+    value: ${{ steps.load.outputs.web_testProjectName }}
+  
+  # Function project
+  function_shortName:
+    description: 'Function project short name'
+    value: ${{ steps.load.outputs.function_shortName }}
+  function_rootDirectory:
+    description: 'Function project root directory'
+    value: ${{ steps.load.outputs.function_rootDirectory }}
+  function_projectName:
+    description: 'Function project name'
+    value: ${{ steps.load.outputs.function_projectName }}
+  function_testDirectory:
+    description: 'Function test directory'
+    value: ${{ steps.load.outputs.function_testDirectory }}
+  function_testProjectName:
+    description: 'Function test project name'
+    value: ${{ steps.load.outputs.function_testProjectName }}
+
+  # Console project
+  console_shortName:
+    description: 'Console project short name'
+    value: ${{ steps.load.outputs.console_shortName }}
+  console_rootDirectory:
+    description: 'Console project root directory'
+    value: ${{ steps.load.outputs.console_rootDirectory }}
+  console_projectName:
+    description: 'Console project name'
+    value: ${{ steps.load.outputs.console_projectName }}
+  console_testDirectory:
+    description: 'Console test directory'
+    value: ${{ steps.load.outputs.console_testDirectory }}
+  console_testProjectName:
+    description: 'Console test project name'
+    value: ${{ steps.load.outputs.console_testProjectName }}
+
+  # MCP project
+  mcp_shortName:
+    description: 'MCP project short name'
+    value: ${{ steps.load.outputs.mcp_shortName }}
+  mcp_rootDirectory:
+    description: 'MCP project root directory'
+    value: ${{ steps.load.outputs.mcp_rootDirectory }}
+  mcp_projectName:
+    description: 'MCP project name'
+    value: ${{ steps.load.outputs.mcp_projectName }}
+  mcp_testDirectory:
+    description: 'MCP test directory'
+    value: ${{ steps.load.outputs.mcp_testDirectory }}
+  mcp_testProjectName:
+    description: 'MCP test project name'
+    value: ${{ steps.load.outputs.mcp_testProjectName }}
+
+  # MCP SSE project
+  mcpsse_shortName:
+    description: 'MCP SSE project short name'
+    value: ${{ steps.load.outputs.mcpsse_shortName }}
+  mcpsse_rootDirectory:
+    description: 'MCP SSE project root directory'
+    value: ${{ steps.load.outputs.mcpsse_rootDirectory }}
+  mcpsse_projectName:
+    description: 'MCP SSE project name'
+    value: ${{ steps.load.outputs.mcpsse_projectName }}
+  mcpsse_testDirectory:
+    description: 'MCP SSE test directory'
+    value: ${{ steps.load.outputs.mcpsse_testDirectory }}
+  mcpsse_testProjectName:
+    description: 'MCP SSE test project name'
+    value: ${{ steps.load.outputs.mcpsse_testProjectName }}
+
+  # Analyzer project
+  analyzer_shortName:
+    description: 'Analyzer project short name'
+    value: ${{ steps.load.outputs.analyzer_shortName }}
+  analyzer_rootDirectory:
+    description: 'Analyzer project root directory'
+    value: ${{ steps.load.outputs.analyzer_rootDirectory }}
+  analyzer_projectName:
+    description: 'Analyzer project name'
+    value: ${{ steps.load.outputs.analyzer_projectName }}
+  analyzer_testDirectory:
+    description: 'Analyzer test directory'
+    value: ${{ steps.load.outputs.analyzer_testDirectory }}
+  analyzer_testProjectName:
+    description: 'Analyzer test project name'
+    value: ${{ steps.load.outputs.analyzer_testProjectName }}
+
+  # SQL project
+  sql_shortName:
+    description: 'SQL project short name'
+    value: ${{ steps.load.outputs.sql_shortName }}
+  sql_rootDirectory:
+    description: 'SQL project root directory'
+    value: ${{ steps.load.outputs.sql_rootDirectory }}
+  sql_projectName:
+    description: 'SQL project name'
+    value: ${{ steps.load.outputs.sql_projectName }}
+  sql_solutionName:
+    description: 'SQL solution name'
+    value: ${{ steps.load.outputs.sql_solutionName }}
+  sql_testDirectory:
+    description: 'SQL test directory'
+    value: ${{ steps.load.outputs.sql_testDirectory }}
+  sql_testProjectName:
+    description: 'SQL test project name'
+    value: ${{ steps.load.outputs.sql_testProjectName }}
+
+  # List of all project keys
+  projectKeys:
+    description: 'Comma-separated list of all project keys'
+    value: ${{ steps.load.outputs.projectKeys }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Load all project configurations
+      id: load
+      shell: bash
+      run: |
+        CONFIG_FILE=".github/config/projects.yml"
+        
+        if [ ! -f "$CONFIG_FILE" ]; then
+          echo "::error::Configuration file not found: $CONFIG_FILE"
+          exit 1
+        fi
+        
+        echo "📦 Loading all project configurations from $CONFIG_FILE"
+        echo ""
+        
+        # Get all project keys
+        PROJECT_KEYS=$(yq '.projects | keys | .[]' "$CONFIG_FILE" | tr '\n' ',' | sed 's/,$//')
+        echo "projectKeys=$PROJECT_KEYS" >> $GITHUB_OUTPUT
+        echo "Found projects: $PROJECT_KEYS"
+        echo ""
+        
+        # Loop through each project and output its values
+        for PROJECT in $(yq '.projects | keys | .[]' "$CONFIG_FILE"); do
+          echo "── $PROJECT ──"
+          
+          SHORT_NAME=$(yq ".projects.${PROJECT}.shortName // \"\"" "$CONFIG_FILE")
+          ROOT_DIR=$(yq ".projects.${PROJECT}.rootDirectory // \"\"" "$CONFIG_FILE")
+          PROJECT_NAME=$(yq ".projects.${PROJECT}.projectName // \"\"" "$CONFIG_FILE")
+          SOLUTION_NAME=$(yq ".projects.${PROJECT}.solutionName // \"\"" "$CONFIG_FILE")
+          TEST_DIR=$(yq ".projects.${PROJECT}.testDirectory // \"\"" "$CONFIG_FILE")
+          TEST_PROJECT=$(yq ".projects.${PROJECT}.testProjectName // \"\"" "$CONFIG_FILE")
+          
+          # Output with project prefix
+          echo "${PROJECT}_shortName=$SHORT_NAME" >> $GITHUB_OUTPUT
+          echo "${PROJECT}_rootDirectory=$ROOT_DIR" >> $GITHUB_OUTPUT
+          echo "${PROJECT}_projectName=$PROJECT_NAME" >> $GITHUB_OUTPUT
+          echo "${PROJECT}_solutionName=$SOLUTION_NAME" >> $GITHUB_OUTPUT
+          echo "${PROJECT}_testDirectory=$TEST_DIR" >> $GITHUB_OUTPUT
+          echo "${PROJECT}_testProjectName=$TEST_PROJECT" >> $GITHUB_OUTPUT
+          
+          echo "   shortName: $SHORT_NAME"
+          echo "   rootDirectory: $ROOT_DIR"
+          echo "   projectName: $PROJECT_NAME"
+          if [ -n "$SOLUTION_NAME" ]; then
+            echo "   solutionName: $SOLUTION_NAME"
+          fi
+          echo "   testDirectory: $TEST_DIR"
+          echo "   testProjectName: $TEST_PROJECT"
+          echo ""
+        done
+        
+        echo "✅ All configurations loaded successfully"

@@ -4,6 +4,8 @@
 # You need to set up secrets in the GitHub Secrets Repository before running these workflows.
 #   See Docs\CreateGitHubSecrets\.md for details
 # ------------------------------------------------------------------------------------------------------------------------
+# You may also need to updates permissions for this template to work - see note below
+# ------------------------------------------------------------------------------------------------------------------------
 name: z_template_functionapp_build
 run-name: Build Function App
 on:
@@ -37,27 +39,44 @@ on:
 jobs:
   build:
     name: Build
+    # Note: Publish test results action only works on Linux build servers...
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.envCode }}
-
     env:
       CONFIGURATION: Release
-      DOTNET_CORE_VERSION: 8.0.x
+      DOTNET_CORE_VERSION: 10.0.x
       artifactName: functionapp
+      AZURE_WEBAPP_PACKAGE_PATH: ./output
 
+    # Note: Publish test results action needs permission to write a check
+    # You may have to change the default settings for the repo for this to work. You may get the error:
+    #   The nested job 'Build' is requesting 'checks: write, issues: read, pull-requests: read', but is only allowed 'checks: none, issues: none, pull-requests: none'.
+    # Go to Repo Settings -> Actions -> General -> Workflow permissions -> Check: Read and Write Permissions
+    permissions:
+      contents: write
+      issues: read
+      checks: write
+      pull-requests: read
+
+    # ------------------------------------------------------------------------------------------------------------------------
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Display Variables and Files
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+        JOB_CONTEXT: ${{ toJson(job) }}
       run: |-
-        echo "rootDirectory=${{ inputs.rootDirectory }}"
+        echo "inputs.rootDirectory=${{ inputs.rootDirectory }}"
         echo "projectName=${{ inputs.projectName }}"
         echo "testDirectory=${{ inputs.testDirectory }}"
         echo "testProjectName=${{ inputs.testProjectName }}"
         echo "listFilesAfterBuild=${{ inputs.listFilesAfterBuild }}"
         echo "testApplication=${{ inputs.testApplication }}"
+        echo "GITHUB_CONTEXT=$GITHUB_CONTEXT"
+        echo "JOB_CONTEXT=$JOB_CONTEXT"
 
         echo "---------------------------------"
         echo "##[group]All Variables:"
