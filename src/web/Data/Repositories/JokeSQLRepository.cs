@@ -420,6 +420,89 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
+    /// Update a joke
+    /// </summary>
+    /// <param name="joke">Joke to update</param>
+    /// <param name="requestingUserName">Requesting UserName</param>
+    /// <returns>Success</returns>
+    public bool UpdateJoke(Joke joke, string requestingUserName = "ANON")
+    {
+        try
+        {
+            var existingJoke = _context.Jokes.Find(joke.JokeId);
+            if (existingJoke == null)
+            {
+                return false;
+            }
+
+            existingJoke.JokeTxt = joke.JokeTxt;
+            existingJoke.Attribution = joke.Attribution;
+            existingJoke.ImageTxt = joke.ImageTxt;
+            existingJoke.ActiveInd = joke.ActiveInd;
+            existingJoke.SortOrderNbr = joke.SortOrderNbr;
+            existingJoke.ChangeDateTime = DateTime.UtcNow;
+            existingJoke.ChangeUserName = requestingUserName;
+
+            _context.SaveChanges();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating joke {joke.JokeId}: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Get all joke categories (entities, not just names)
+    /// </summary>
+    /// <param name="requestingUserName">Requesting UserName</param>
+    /// <returns>List of JokeCategory entities</returns>
+    public IQueryable<JokeCategory> GetAllCategories(string requestingUserName = "ANON")
+    {
+        return _context.JokeCategories
+            .Where(c => c.ActiveInd == "Y")
+            .OrderBy(c => c.JokeCategoryTxt);
+    }
+
+    /// <summary>
+    /// Update joke categories
+    /// </summary>
+    /// <param name="jokeId">Joke ID</param>
+    /// <param name="categoryIds">List of category IDs</param>
+    /// <param name="requestingUserName">Requesting UserName</param>
+    /// <returns>Success</returns>
+    public bool UpdateJokeCategories(int jokeId, List<int> categoryIds, string requestingUserName = "ANON")
+    {
+        try
+        {
+            // Remove existing categories
+            var existingCategories = _context.JokeJokeCategories.Where(jjc => jjc.JokeId == jokeId);
+            _context.JokeJokeCategories.RemoveRange(existingCategories);
+
+            // Add new categories
+            foreach (var categoryId in categoryIds)
+            {
+                _context.JokeJokeCategories.Add(new JokeJokeCategory
+                {
+                    JokeId = jokeId,
+                    JokeCategoryId = categoryId,
+                    CreateDateTime = DateTime.UtcNow,
+                    CreateUserName = requestingUserName
+                });
+            }
+
+            _context.SaveChanges();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating categories for joke {jokeId}: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Dispose
     /// </summary>
     public void Dispose()

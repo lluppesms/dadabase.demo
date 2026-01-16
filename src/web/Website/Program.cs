@@ -96,9 +96,6 @@ builder.Services.AddScoped<IBuildInfoService, BuildInfoService>();
 var authSettings = builder.Configuration.GetSection("AzureAD");
 var enableAuth = !string.IsNullOrEmpty(authSettings["TenantId"]);
 
-// for now - just make it all open - no auth...
-enableAuth = false;
-
 if (enableAuth)
 {
     // ----- Configure Authentication ---------------------------------------------------------------------

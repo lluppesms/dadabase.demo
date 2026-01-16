@@ -318,6 +318,45 @@ public class JokeJsonRepository : IJokeRepository
     }
 
     /// <summary>
+    /// Update a joke
+    /// </summary>
+    /// <param name="joke">Joke to update</param>
+    /// <param name="requestingUserName">Requesting UserName</param>
+    /// <returns>Success</returns>
+    public bool UpdateJoke(Joke joke, string requestingUserName = "ANON")
+    {
+        // Not supported for JSON-based repository
+        throw new NotSupportedException("UpdateJoke is not supported for JSON-based repository");
+    }
+
+    /// <summary>
+    /// Get all joke categories (entities, not just names)
+    /// </summary>
+    /// <param name="requestingUserName">Requesting UserName</param>
+    /// <returns>List of JokeCategory entities</returns>
+    public IQueryable<JokeCategory> GetAllCategories(string requestingUserName = "ANON")
+    {
+        // Convert category strings to JokeCategory entities
+        var categories = _jokeCategories
+            .Select((cat, index) => new JokeCategory(index + 1, cat))
+            .AsQueryable();
+        return categories;
+    }
+
+    /// <summary>
+    /// Update joke categories
+    /// </summary>
+    /// <param name="jokeId">Joke ID</param>
+    /// <param name="categoryIds">List of category IDs</param>
+    /// <param name="requestingUserName">Requesting UserName</param>
+    /// <returns>Success</returns>
+    public bool UpdateJokeCategories(int jokeId, List<int> categoryIds, string requestingUserName = "ANON")
+    {
+        // Not supported for JSON-based repository
+        throw new NotSupportedException("UpdateJokeCategories is not supported for JSON-based repository");
+    }
+
+    /// <summary>
     /// Disposal
     /// </summary>
     public void Dispose()
