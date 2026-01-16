@@ -147,7 +147,7 @@
                                 {
                                     <tr>
                                         <td>@joke.JokeId</td>
-                                        <td class="joke-text">@(joke.JokeTxt?.Substring(0, Math.Min(100, joke.JokeTxt?.Length ?? 0)))@(joke.JokeTxt?.Length > 100 ? "..." : "")</td>
+                                        <td class="joke-text">@(joke.JokeTxt != null ? (joke.JokeTxt.Length > 100 ? joke.JokeTxt.Substring(0, 100) + "..." : joke.JokeTxt) : "")</td>
                                         <td>@joke.Categories</td>
                                         <td>@joke.ActiveInd</td>
                                         <td>

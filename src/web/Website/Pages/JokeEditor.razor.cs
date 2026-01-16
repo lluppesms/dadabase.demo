@@ -34,9 +34,9 @@ public partial class JokeEditor : ComponentBase
     /// <summary>
     /// Initialization
     /// </summary>
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        await LoadData();
+        LoadData();
     }
 
     /// <summary>
@@ -56,17 +56,14 @@ public partial class JokeEditor : ComponentBase
     /// <summary>
     /// Load all jokes and categories
     /// </summary>
-    private async Task LoadData()
+    private void LoadData()
     {
         isLoading = true;
         StateHasChanged();
 
-        await Task.Run(() =>
-        {
-            allJokes = JokeRepository.ListAll("Y").ToList();
-            allCategories = JokeRepository.GetAllCategories().ToList();
-            filteredJokes = allJokes;
-        });
+        allJokes = JokeRepository.ListAll("Y").ToList();
+        allCategories = JokeRepository.GetAllCategories().ToList();
+        filteredJokes = allJokes;
 
         isLoading = false;
         StateHasChanged();
@@ -202,7 +199,7 @@ public partial class JokeEditor : ComponentBase
             }
 
             // Save joke
-            var success = await Task.Run(() => JokeRepository.UpdateJoke(editingJoke));
+            var success = JokeRepository.UpdateJoke(editingJoke);
             if (!success)
             {
                 editMessage = "Failed to update joke.";
@@ -213,7 +210,7 @@ public partial class JokeEditor : ComponentBase
             }
 
             // Update categories
-            success = await Task.Run(() => JokeRepository.UpdateJokeCategories(editingJoke.JokeId, selectedCategoryIds));
+            success = JokeRepository.UpdateJokeCategories(editingJoke.JokeId, selectedCategoryIds);
             if (!success)
             {
                 editMessage = "Joke updated, but failed to update categories.";
@@ -228,7 +225,7 @@ public partial class JokeEditor : ComponentBase
 
             // Reload data and return to list
             await Task.Delay(1500); // Show success message briefly
-            await LoadData();
+            LoadData();
             editingJoke = null;
             FilterJokes();
         }

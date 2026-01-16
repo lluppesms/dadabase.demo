@@ -22,7 +22,7 @@
     }
   },
   "AzureAD": {
-    "TenantId": "",
+    "TenantId": "your-tenant",
     "Instance": "https://login.microsoftonline.com/",
     "Domain": "yourdomain.onmicrosoft.com",
     "ClientId": "your-client-id",
