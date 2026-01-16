@@ -29,7 +29,9 @@ jobs:
       name: ${{ inputs.envCode }}
     env:
       artifactName: functionapp
-      generatedAppEnvName: "${{ inputs.envCode == 'prod' && format('{0}-{1}', vars.APP_NAME, inputs.functionType) || format('{0}-{1}-{2}-{3}', vars.APP_NAME, vars.INSTANCE_NUMBER, inputs.functionType, inputs.envCode) }}"
+      #generatedAppEnvName: "${{ inputs.envCode == 'prod' && format('{0}-{1}', vars.APP_NAME, inputs.functionType) || format('func-{0}{1}-{2}-{3}', vars.APP_NAME, vars.INSTANCE_NUMBER, inputs.functionType, inputs.envCode) }}"
+      generatedAppEnvName: "${{ format('func-{0}{1}-{2}-{3}', vars.APP_NAME, vars.INSTANCE_NUMBER, inputs.functionType, inputs.envCode) }}"
+      # Bicep: var functionAppName = toLower('${sanitizedAppInstanceNameWithDashes}-${resourceAbbreviations.functionApp}-${sanitizedEnvironment}')
 
     steps:
     - name: Checkout Code

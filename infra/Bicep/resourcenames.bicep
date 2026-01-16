@@ -25,8 +25,10 @@ var resourceAbbreviations = loadJsonContent('./data/resourceAbbreviations.json')
 // if there's an environment specific function name specified, use that, otherwise if it's azd -- 
 // other resource names can be changed if desired, but if using the "azd deploy" command it expects the
 // function name to be exactly "{appName}function" so don't change the functionAppName format if using azd
-var functionAppName     = environmentSpecificFunctionName != ''     ? environmentSpecificFunctionName     : (environmentCode == 'prod' ? toLower('${sanitizedAppNameWithDashes}-${resourceAbbreviations.functionApp}')     : toLower('${sanitizedAppInstanceNameWithDashes}-${resourceAbbreviations.functionApp}-${sanitizedEnvironment}'))
-var functionFlexAppName = environmentSpecificFlexFunctionName != '' ? environmentSpecificFlexFunctionName : (environmentCode == 'prod' ? toLower('${sanitizedAppNameWithDashes}-${resourceAbbreviations.functionFlexApp}') : toLower('${sanitizedAppInstanceNameWithDashes}-${resourceAbbreviations.functionFlexApp}-${sanitizedEnvironment}'))
+var functionAppName     = environmentSpecificFunctionName != ''     ? environmentSpecificFunctionName     : toLower('${sanitizedAppInstanceNameWithDashes}-${resourceAbbreviations.functionApp}-${sanitizedEnvironment}')
+var functionFlexAppName = environmentSpecificFlexFunctionName != '' ? environmentSpecificFlexFunctionName : toLower('${sanitizedAppInstanceNameWithDashes}-${resourceAbbreviations.functionFlexApp}-${sanitizedEnvironment}')
+// var functionAppName     = environmentSpecificFunctionName != ''     ? environmentSpecificFunctionName     : (environmentCode == 'prod' ? toLower('${sanitizedAppNameWithDashes}-${resourceAbbreviations.functionApp}')     : toLower('${sanitizedAppInstanceNameWithDashes}-${resourceAbbreviations.functionApp}-${sanitizedEnvironment}'))
+// var functionFlexAppName = environmentSpecificFlexFunctionName != '' ? environmentSpecificFlexFunctionName : (environmentCode == 'prod' ? toLower('${sanitizedAppNameWithDashes}-${resourceAbbreviations.functionFlexApp}') : toLower('${sanitizedAppInstanceNameWithDashes}-${resourceAbbreviations.functionFlexApp}-${sanitizedEnvironment}'))
 var webSiteName         = environmentCode == 'prod' ? toLower('${sanitizedAppNameWithDashes}') : toLower('${sanitizedAppInstanceNameWithDashes}-${sanitizedEnvironment}')
 var baseStorageName     = toLower('${sanitizedAppNameInstance}${sanitizedEnvironment}${resourceAbbreviations.storageAccountSuffix}')
 
