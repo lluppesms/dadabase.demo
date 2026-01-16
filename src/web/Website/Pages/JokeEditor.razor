@@ -103,7 +103,7 @@
                         </div>
                         <div class="col-md-3">
                             <label for="categoryFilter" class="form-label">Category</label>
-                            <select class="form-select" id="categoryFilter" @bind="categoryFilter" @onchange="FilterJokes">
+                            <select class="form-select" id="categoryFilter" @bind="categoryFilter" @bind:after="FilterJokes">
                                 <option value="">All Categories</option>
                                 @foreach (var category in allCategories)
                                 {
@@ -113,7 +113,7 @@
                         </div>
                         <div class="col-md-3">
                             <label for="sortBy" class="form-label">Sort By</label>
-                            <select class="form-select" id="sortBy" @bind="sortBy" @onchange="FilterJokes">
+                            <select class="form-select" id="sortBy" @bind="sortBy" @bind:after="FilterJokes">
                                 <option value="id">ID</option>
                                 <option value="text">Joke Text</option>
                                 <option value="category">Category</option>
@@ -121,7 +121,7 @@
                         </div>
                         <div class="col-md-2">
                             <label for="sortOrder" class="form-label">Order</label>
-                            <select class="form-select" id="sortOrder" @bind="sortOrder" @onchange="FilterJokes">
+                            <select class="form-select" id="sortOrder" @bind="sortOrder" @bind:after="FilterJokes">
                                 <option value="asc">Ascending</option>
                                 <option value="desc">Descending</option>
                             </select>
