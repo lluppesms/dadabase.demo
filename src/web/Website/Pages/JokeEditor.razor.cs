@@ -79,6 +79,12 @@ public partial class JokeEditor : ComponentBase
     {
         var query = allJokes.AsEnumerable();
 
+        // Filter by search text
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            query = query.Where(j => j.JokeTxt?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false);
+        }
+
         // Filter by category
         if (!string.IsNullOrWhiteSpace(categoryFilter))
         {
