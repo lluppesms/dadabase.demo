@@ -273,7 +273,7 @@ module flexFunctionResourcesModule 'modules/functions/functionresources.bicep' =
   name: 'flexFunctionResources${deploymentSuffix}'
   params: {
     functionInsightsName: resourceNames.outputs.functionApp.insightsName
-    functionStorageAccountName: resourceNames.outputs.functionApp.deploymentStorageContainerName
+    functionStorageAccountName: resourceNames.outputs.functionApp.storageName
     location: location
     commonTags: commonTags
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
