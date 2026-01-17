@@ -6,6 +6,8 @@
 // Joke Editor Page Code-Behind
 // </summary>
 //-----------------------------------------------------------------------
+using MudBlazor;
+
 namespace DadABase.Web.Pages;
 
 /// <summary>
@@ -26,10 +28,21 @@ public partial class JokeEditor : ComponentBase
     private bool isSaving = false;
     private string searchText = string.Empty;
     private string categoryFilter = string.Empty;
-    private string sortBy = "id";
-    private string sortOrder = "asc";
     private string editMessage = string.Empty;
     private string editAlertClass = "alert-info";
+
+    // MudDataGrid sorting and filtering
+    private Func<Joke, object> _sortByJokeText = x => x.JokeTxt;
+    private Func<Joke, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            return true;
+
+        if (x.JokeTxt?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+
+        return false;
+    };
 
     /// <summary>
     /// Initialization
@@ -76,34 +89,51 @@ public partial class JokeEditor : ComponentBase
     {
         var query = allJokes.AsEnumerable();
 
-        // Filter by search text
-        if (!string.IsNullOrWhiteSpace(searchText))
-        {
-            query = query.Where(j => j.JokeTxt?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false);
-        }
-
         // Filter by category
         if (!string.IsNullOrWhiteSpace(categoryFilter))
         {
             query = query.Where(j => j.Categories?.Contains(categoryFilter, StringComparison.OrdinalIgnoreCase) ?? false);
         }
 
-        // Sort
-        query = sortBy switch
-        {
-            "text" => sortOrder == "asc" 
-                ? query.OrderBy(j => j.JokeTxt) 
-                : query.OrderByDescending(j => j.JokeTxt),
-            "category" => sortOrder == "asc" 
-                ? query.OrderBy(j => j.Categories) 
-                : query.OrderByDescending(j => j.Categories),
-            _ => sortOrder == "asc" 
-                ? query.OrderBy(j => j.JokeId) 
-                : query.OrderByDescending(j => j.JokeId)
-        };
-
         filteredJokes = query.ToList();
         StateHasChanged();
+    }
+
+    /// <summary>
+    /// Get checked state for a category
+    /// </summary>
+    private bool GetCategoryChecked(int categoryId)
+    {
+        return selectedCategoryIds.Contains(categoryId);
+    }
+
+    /// <summary>
+    /// Toggle category selection for MudBlazor checkbox
+    /// </summary>
+    private void ToggleCategoryMud(int categoryId, bool isChecked)
+    {
+        if (isChecked && !selectedCategoryIds.Contains(categoryId))
+        {
+            selectedCategoryIds.Add(categoryId);
+        }
+        else if (!isChecked && selectedCategoryIds.Contains(categoryId))
+        {
+            selectedCategoryIds.Remove(categoryId);
+        }
+    }
+
+    /// <summary>
+    /// Get alert severity based on alert class
+    /// </summary>
+    private Severity GetAlertSeverity()
+    {
+        return editAlertClass switch
+        {
+            "alert-success" => Severity.Success,
+            "alert-warning" => Severity.Warning,
+            "alert-danger" => Severity.Error,
+            _ => Severity.Info
+        };
     }
 
     /// <summary>
@@ -144,22 +174,6 @@ public partial class JokeEditor : ComponentBase
             editMessage = string.Empty;
         }
         StateHasChanged();
-    }
-
-    /// <summary>
-    /// Toggle category selection
-    /// </summary>
-    private void ToggleCategory(int categoryId, ChangeEventArgs e)
-    {
-        var isChecked = (bool)e.Value;
-        if (isChecked && !selectedCategoryIds.Contains(categoryId))
-        {
-            selectedCategoryIds.Add(categoryId);
-        }
-        else if (!isChecked && selectedCategoryIds.Contains(categoryId))
-        {
-            selectedCategoryIds.Remove(categoryId);
-        }
     }
 
     /// <summary>
