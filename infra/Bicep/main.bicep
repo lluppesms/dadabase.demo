@@ -20,9 +20,6 @@ param webStorageSku string = 'Standard_LRS'
 param webApiKey string = ''
 
 param functionStorageSku string = 'Standard_LRS'
-// param functionAppSku string = 'B1' //  'Y1'
-// param functionAppSkuFamily string = 'B' // 'Y'
-// param functionAppSkuTier string = 'Dynamic'
 param environmentSpecificFunctionName string = ''
 
 param sqlDatabaseName string = 'dadabase'
@@ -110,7 +107,7 @@ module functionStorageModule './modules/storage/storageaccount.bicep' = {
   name: 'functionstorage${deploymentSuffix}'
   params: {
     storageSku: functionStorageSku
-    storageAccountName: resourceNames.outputs.functionStorageName
+    storageAccountName: resourceNames.outputs.functionApp.storageName
     location: location
     commonTags: commonTags
     allowNetworkAccess: 'Allow'

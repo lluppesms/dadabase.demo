@@ -26,12 +26,13 @@ var resourceAbbreviations = loadJsonContent('./data/resourceAbbreviations.json')
 // other resource names can be changed if desired, but if using the "azd deploy" command it expects the
 // function name to be exactly "{appName}function" so don't change the functionAppName format if using azd
 var webSiteName         = environmentCode == 'prod' ? toLower('${sanitizedAppNameWithDashes}') : toLower('${sanitizedAppInstanceNameWithDashes}-${sanitizedEnvironment}')
-var baseStorageName     = toLower('${sanitizedAppNameInstance}${sanitizedEnvironment}${resourceAbbreviations.storageAccountSuffix}')
+var baseStorageName     = toLower('${sanitizedAppNameInstance}${resourceAbbreviations.storageAccountSuffix}${sanitizedEnvironment}')
 
 output functionApp object = {
     appName: 'main'
     name: toLower('${sanitizedAppInstanceNameWithDashes}-${resourceAbbreviations.functionApp}-${sanitizedEnvironment}')
     servicePlanName: toLower('${sanitizedAppInstanceNameWithDashes}-${resourceAbbreviations.functionApp}-${resourceAbbreviations.appServicePlanSuffix}-${sanitizedEnvironment}')
+    storageName: take('${baseStorageName}${functionStorageNameSuffix}', 24)
     deploymentStorageContainerName: toLower('app-package-${sanitizedAppInstanceNameWithDashes}-${resourceAbbreviations.functionApp}')
     insightsName: '${sanitizedAppInstanceNameWithDashes}-${resourceAbbreviations.functionApp}-${resourceAbbreviations.appInsightsSuffix}-${sanitizedEnvironment}'
 }
@@ -48,5 +49,3 @@ output userAssignedIdentityName string   = toLower('${sanitizedAppNameInstance}-
 // Key Vaults and Storage Accounts can only be 24 characters long
 output keyVaultName string               = take('${sanitizedAppNameInstance}${resourceAbbreviations.keyVaultAbbreviation}${sanitizedEnvironment}', 24)
 output storageAccountName string         = take('${sanitizedAppNameInstance}${resourceAbbreviations.storageAccountSuffix}${sanitizedEnvironment}', 24)
-output functionStorageName string        = take('${baseStorageName}${functionStorageNameSuffix}', 24)
-output functionFlexStorageName string    = take('${baseStorageName}${functionFlexStorageNameSuffix}', 24)
