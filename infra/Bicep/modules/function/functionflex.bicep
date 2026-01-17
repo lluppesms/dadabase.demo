@@ -28,8 +28,6 @@ param maximumInstanceCount int = 50
 param instanceMemoryMB int = 2048
 
 param addRoleAssignments bool = true
-param appInsightsName string
-param storageAccountName string
 param keyVaultName string
 
 param location string = resourceGroup().location
@@ -145,7 +143,7 @@ module functionRoleAssignments '../iam/roleassignments.bicep' = if (addRoleAssig
     identityPrincipalId: functionAppResource.outputs.systemAssignedMIPrincipalId
     principalType: 'ServicePrincipal'
     // appInsightsName: appInsightsName
-    storageAccountName: storageAccountName
+    storageAccountName: functionStorageAccountName
     keyVaultName: keyVaultName
   }
 }
