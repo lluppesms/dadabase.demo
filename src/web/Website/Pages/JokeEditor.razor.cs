@@ -31,18 +31,8 @@ public partial class JokeEditor : ComponentBase
     private string editMessage = string.Empty;
     private string editAlertClass = "alert-info";
 
-    // MudDataGrid sorting and filtering
+    // MudDataGrid sorting
     private Func<Joke, object> _sortByJokeText = x => x.JokeTxt;
-    private Func<Joke, bool> _quickFilter => x =>
-    {
-        if (string.IsNullOrWhiteSpace(searchText))
-            return true;
-
-        if (x.JokeTxt?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true)
-            return true;
-
-        return false;
-    };
 
     /// <summary>
     /// Initialization
