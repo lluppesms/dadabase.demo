@@ -265,51 +265,51 @@ module webSiteAppSettingsModule './modules/webapp/websiteappsettings.bicep' = {
   }
 }
 
-// --------------------------------------------------------------------------------
-// Function Flex Consumption - Shared Infrastructure (App Service Plan, App Insights, Storage)
-// This is deployed once and shared by all function apps
-// --------------------------------------------------------------------------------
-module flexFunctionResourcesModule 'modules/functions/functionresources.bicep' = {
-  name: 'flexFunctionResources${deploymentSuffix}'
-  params: {
-    functionInsightsName: resourceNames.outputs.functionApp.insightsName
-    functionStorageAccountName: resourceNames.outputs.functionApp.storageName
-    location: location
-    commonTags: commonTags
-    workspaceId: logAnalyticsWorkspaceModule.outputs.id
-  }
-}
+// // --------------------------------------------------------------------------------
+// // Function Flex Consumption - Shared Infrastructure (App Service Plan, App Insights, Storage)
+// // This is deployed once and shared by all function apps
+// // --------------------------------------------------------------------------------
+// module flexFunctionResourcesModule 'modules/functions/functionresources.bicep' = {
+//   name: 'flexFunctionResources${deploymentSuffix}'
+//   params: {
+//     functionInsightsName: resourceNames.outputs.functionApp.insightsName
+//     functionStorageAccountName: resourceNames.outputs.functionApp.storageName
+//     location: location
+//     commonTags: commonTags
+//     workspaceId: logAnalyticsWorkspaceModule.outputs.id
+//   }
+// }
 
-//--------------------------------------------------------------------------------
-module functionModule './modules/function/functionflex.bicep' = {
-  name: 'function${deploymentSuffix}'
-  params: {
-    functionAppName: resourceNames.outputs.functionApp.name
-    functionAppServicePlanName: resourceNames.outputs.functionApp.servicePlanName
-    deploymentStorageContainerName: resourceNames.outputs.functionApp.deploymentStorageContainerName
-    functionInsightsName: flexFunctionResourcesModule.outputs.appInsightsName
-    functionStorageAccountName: flexFunctionResourcesModule.outputs.storageAccountName
-    // appInsightsName: flexFunctionResourcesModule.outputs.appInsightsName
-    // storageAccountName: flexFunctionResourcesModule.outputs.storageAccountName
-    addRoleAssignments: addRoleAssignments
-    keyVaultName: keyVaultModule.outputs.name
-    location: location
-    commonTags: commonTags
-    deploymentSuffix: deploymentSuffix
-    customAppSettings: {
-      OpenApi__HideSwaggerUI: 'false'
-      OpenApi__HideDocument: 'false'
-      OpenApi__DocTitle: 'Isolated .NET10 Functions Demo APIs'
-      OpenApi__DocDescription: 'This repo is an example of how to use Isolated .NET10 Azure Functions'
-      // OpenAI settings
-      OpenAI__Chat__DeploymentName: azureOpenAIChatDeploymentName
-      OpenAI__Chat__Endpoint: azureOpenAIChatEndpoint
-      // OpenAI__Chat__ApiKey: '@Microsoft.KeyVault(VaultName=${keyVaultModule.outputs.name};SecretName=${keyVaultSecretOpenAI.outputs.secretName})'
-      OpenAI__Chat__ModelName: azureOpenAIImageDeploymentName
-      OpenAI__Chat__Temperature: azureOpenAIChatTemperature
-    }
-  }
-}
+// //--------------------------------------------------------------------------------
+// module functionModule './modules/function/functionflex.bicep' = {
+//   name: 'function${deploymentSuffix}'
+//   params: {
+//     functionAppName: resourceNames.outputs.functionApp.name
+//     functionAppServicePlanName: resourceNames.outputs.functionApp.servicePlanName
+//     deploymentStorageContainerName: resourceNames.outputs.functionApp.deploymentStorageContainerName
+//     functionInsightsName: flexFunctionResourcesModule.outputs.appInsightsName
+//     functionStorageAccountName: flexFunctionResourcesModule.outputs.storageAccountName
+//     // appInsightsName: flexFunctionResourcesModule.outputs.appInsightsName
+//     // storageAccountName: flexFunctionResourcesModule.outputs.storageAccountName
+//     addRoleAssignments: addRoleAssignments
+//     keyVaultName: keyVaultModule.outputs.name
+//     location: location
+//     commonTags: commonTags
+//     deploymentSuffix: deploymentSuffix
+//     customAppSettings: {
+//       OpenApi__HideSwaggerUI: 'false'
+//       OpenApi__HideDocument: 'false'
+//       OpenApi__DocTitle: 'Isolated .NET10 Functions Demo APIs'
+//       OpenApi__DocDescription: 'This repo is an example of how to use Isolated .NET10 Azure Functions'
+//       // OpenAI settings
+//       OpenAI__Chat__DeploymentName: azureOpenAIChatDeploymentName
+//       OpenAI__Chat__Endpoint: azureOpenAIChatEndpoint
+//       // OpenAI__Chat__ApiKey: '@Microsoft.KeyVault(VaultName=${keyVaultModule.outputs.name};SecretName=${keyVaultSecretOpenAI.outputs.secretName})'
+//       OpenAI__Chat__ModelName: azureOpenAIImageDeploymentName
+//       OpenAI__Chat__Temperature: azureOpenAIChatTemperature
+//     }
+//   }
+// }
 
 // --------------------------------------------------------------------------------
 output SUBSCRIPTION_ID string = subscription().subscriptionId
