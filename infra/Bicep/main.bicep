@@ -291,9 +291,9 @@ module functionModule './modules/function/functionflex.bicep' = {
     functionAppServicePlanName: resourceNames.outputs.functionApp.servicePlanName
     deploymentStorageContainerName: resourceNames.outputs.functionApp.deploymentStorageContainerName
     functionInsightsName: flexFunctionResourcesModule.outputs.appInsightsName
-    appInsightsName: flexFunctionResourcesModule.outputs.appInsightsName
     functionStorageAccountName: flexFunctionResourcesModule.outputs.storageAccountName
-    storageAccountName: flexFunctionResourcesModule.outputs.storageAccountName
+    // appInsightsName: flexFunctionResourcesModule.outputs.appInsightsName
+    // storageAccountName: flexFunctionResourcesModule.outputs.storageAccountName
     addRoleAssignments: addRoleAssignments
     keyVaultName: keyVaultModule.outputs.name
     location: location
