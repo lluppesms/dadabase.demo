@@ -315,5 +315,5 @@ module webSiteAppSettingsModule './modules/webapp/websiteappsettings.bicep' = {
 output SUBSCRIPTION_ID string = subscription().subscriptionId
 output RESOURCE_GROUP_NAME string = resourceGroupName
 output WEB_HOST_NAME string = webSiteModule.outputs.hostName
-output FUNCTION_HOST_NAME string = functionModule.outputs.hostname
+//output FUNCTION_HOST_NAME string = functionModule.outputs.hostname
 
