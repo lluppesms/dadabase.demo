@@ -9,7 +9,7 @@
 using Azure.Core;
 using Azure.Identity;
 
-namespace DadABase.Helpers;
+namespace DadABase.Data.Helpers;
 
 /// <summary>
 /// Utilities
@@ -56,6 +56,36 @@ public class Utilities
             message += " " + ex.InnerException.InnerException.InnerException.Message;
         }
         return message;
+    }
+
+    /// <summary>
+    /// Sanitize connection string
+    /// </summary>
+    public static string GetSanitizedConnectionString(string connection)
+    {
+        //// "DeviceConnectionString": "HostName=iothub123.azure-devices.net;DeviceId=test1;SharedAccessKey=E5Z6******=",
+        //// "SQLConnectionString": "Server=myServerAddress;Database=myDataBase;User Id=myUsername;Password=myPassword";
+        string noKey;
+        if (string.IsNullOrEmpty(connection)) return string.Empty;
+        var keyPos = connection.IndexOf("key=", StringComparison.OrdinalIgnoreCase);
+        if (keyPos > 0)
+        {
+            noKey = string.Concat(connection.AsSpan(0, keyPos + 4), "...");
+            return noKey;
+        }
+        keyPos = connection.IndexOf("pwd=", StringComparison.OrdinalIgnoreCase);
+        if (keyPos > 0)
+        {
+            noKey = string.Concat(connection.AsSpan(0, keyPos + 4), "...");
+            return noKey;
+        }
+        keyPos = connection.IndexOf("password=", StringComparison.OrdinalIgnoreCase);
+        if (keyPos > 0)
+        {
+            noKey = string.Concat(connection.AsSpan(0, keyPos + 9), "...");
+            return noKey;
+        }
+        return connection;
     }
 
     /// <summary>
@@ -178,66 +208,6 @@ public class Utilities
             return DateTime.SpecifyKind(dateTime.DateTime, DateTimeKind.Local);
         else
             return dateTime.DateTime;
-    }
-
-    /// <summary>
-    /// Show Sweet Prompt
-    /// </summary>
-    public static async Task<bool> QueryUserPrompt(SweetAlertService swal, SweetAlertOptions options)
-    {
-        var confirm = await swal.FireAsync(options).ConfigureAwait(false);
-        return confirm.IsConfirmed;
-    }
-
-    /// <summary>
-    /// Show Sweet Prompt
-    /// </summary>
-    public static async Task<bool> QueryUserPrompt(SweetAlertService swal, string title, string html, string confirmButtonTxt, string cancelButtonTxt = "Cancel", bool focusCancel = true)
-    {
-        return await QueryUserPrompt(swal, new SweetAlertOptions
-        {
-            Title = title,
-            Html = html,
-            ShowCancelButton = true,
-            ConfirmButtonText = confirmButtonTxt,
-            CancelButtonText = cancelButtonTxt,
-            FocusCancel = focusCancel
-            //Icon = SweetAlertIcon.Warning,
-        });
-    }
-
-    /// <summary>
-    /// Show Popup HTML Message
-    /// </summary>
-    public static async Task PromptUserHtml(SweetAlertService swal, string title, string html, string confirmButtonTxt = "OK")
-    {
-        await QueryUserPrompt(swal, new SweetAlertOptions
-        {
-            Title = title,
-            Html = html,
-            ShowCancelButton = false,
-            ConfirmButtonText = confirmButtonTxt
-        });
-    }
-
-    /// <summary>
-    /// Return connection string without user credentials
-    /// </summary>
-    /// <param name="connection">Connection string</param>
-    /// <returns>Clean connection string</returns>
-    public static string SanitizeConnection(string connection)
-    {
-        var cleanConection = string.Empty;
-        if (!string.IsNullOrEmpty(connection))
-        {
-            cleanConection = connection;
-            var uid = cleanConection.IndexOf("User Id", StringComparison.InvariantCultureIgnoreCase);
-            if (uid > 0)
-            {
-                cleanConection = cleanConection[..(uid + 8)] + "...";
-            }
-        }
-        return cleanConection;
     }
 
     /// <summary>

@@ -67,8 +67,8 @@ public class AIHelper : IAIHelper
         }
         catch (Exception ex)
         {
-            var errorMessage = $"Error during description generation: {ex.Message}";
-            Console.WriteLine(errorMessage);
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error during description generation: {msg}");
             return (imageDescription, false, "Could not generate an image description - see log for details!");
         }
     }
@@ -135,15 +135,16 @@ public class AIHelper : IAIHelper
         }
         catch (Exception ex)
         {
-            var errorMessage = $"Error during image generation: {ex.Message} Prompt: {imageDescription}";
+            var msg = Utilities.GetExceptionMessage(ex);
+            var errorMessage = $"Error during image generation: {msg} Prompt: {imageDescription}";
             Console.WriteLine(errorMessage);
 
             var sorryMessage = "Sorry - I can't even imagine drawing that picture...!  Try again with a different joke!";
-            if (ex.Message.Contains("safety system", StringComparison.CurrentCultureIgnoreCase))
+            if (msg.Contains("safety system", StringComparison.CurrentCultureIgnoreCase))
             {
                 sorryMessage += " (safety violation)";
             }
-            if (ex.Message.Contains("content filter", StringComparison.CurrentCultureIgnoreCase))
+            if (msg.Contains("content filter", StringComparison.CurrentCultureIgnoreCase))
             {
                 sorryMessage += " (content filter violation)";
             }
@@ -209,7 +210,8 @@ public class AIHelper : IAIHelper
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error checking blob existence for JokeId {jokeId}: {ex.Message}");
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error checking blob existence for JokeId {jokeId}: {msg}");
         }
 
         return string.Empty;
@@ -246,7 +248,8 @@ public class AIHelper : IAIHelper
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error saving image to blob storage for JokeId {jokeId}: {ex.Message}");
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error saving image to blob storage for JokeId {jokeId}: {msg}");
             return string.Empty;
         }
     }
@@ -313,8 +316,8 @@ public class AIHelper : IAIHelper
         }
         catch (Exception ex)
         {
-            var errorMessage = ex.Message;
-            Console.WriteLine($"Error initializing Joke Agent: {errorMessage}");
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error initializing Joke Agent: {msg}");
             return false;
         }
     }
@@ -350,8 +353,8 @@ public class AIHelper : IAIHelper
         }
         catch (Exception ex)
         {
-            var errorMessage = ex.Message;
-            Console.WriteLine($"Error initializing Image Agent: {errorMessage}");
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error initializing Image Agent: {msg}");
             return false;
         }
     }

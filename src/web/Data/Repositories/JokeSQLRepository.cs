@@ -116,7 +116,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error updating ImageTxt for JokeId {jokeId}: {ex.Message}");
+            Console.WriteLine($"Error updating ImageTxt for JokeId {jokeId}: {Utilities.GetExceptionMessage(ex)}");
             return false;
         }
     }
@@ -449,7 +449,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error updating joke {joke.JokeId}: {ex.Message}");
+            Console.WriteLine($"Error updating joke {joke.JokeId}: {Utilities.GetExceptionMessage(ex)}");
             return false;
         }
     }
@@ -498,7 +498,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Error updating categories for joke {jokeId}: {ex.Message}");
+                        Console.WriteLine($"Error updating categories for joke {jokeId}: {Utilities.GetExceptionMessage(ex)}");
                         return false;
                     }
                 }
@@ -535,7 +535,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error adding joke: {ex.Message}");
+            Console.WriteLine($"Error adding joke: {Utilities.GetExceptionMessage(ex)}");
             return -1;
         }
     }

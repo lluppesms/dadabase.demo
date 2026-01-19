@@ -68,7 +68,7 @@ public partial class Export : ComponentBase
         }
         catch (Exception ex)
         {
-            statusMessage = $"Error generating export: {ex.Message}";
+            statusMessage = $"Error generating export: {Helpers.Utilities.GetExceptionMessage(ex)}";
             alertClass = "alert-danger";
         }
         finally
