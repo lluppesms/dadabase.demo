@@ -128,7 +128,8 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     public IQueryable<string> GetJokeCategories(string requestingUserName)
     {
         return _context.JokeCategories
-            .Select(c => c.JokeCategoryTxt)
+            .Where(c => c.JokeCategoryTxt != null)
+            .Select(c => c.JokeCategoryTxt!)
             .OrderBy(c => c);
     }
 
@@ -438,7 +439,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
             existingJoke.JokeTxt = joke.JokeTxt;
             existingJoke.Attribution = joke.Attribution;
             existingJoke.ImageTxt = joke.ImageTxt;
-            existingJoke.ActiveInd = joke.ActiveInd;
+            existingJoke.ActiveInd = "Y";
             existingJoke.SortOrderNbr = joke.SortOrderNbr;
             existingJoke.ChangeDateTime = DateTime.UtcNow;
             existingJoke.ChangeUserName = requestingUserName;
@@ -493,12 +494,49 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
             }
 
             _context.SaveChanges();
-            return true;
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error updating categories for joke {jokeId}: {ex.Message}");
+                        return false;
+                    }
+                }
+
+
+    /// <summary>
+    /// Add a new joke
+    /// </summary>
+    /// <param name="joke">Joke to add</param>
+    /// <param name="requestingUserName">Requesting UserName</param>
+    /// <returns>The ID of the newly created joke, or -1 if failed</returns>
+    public int AddJoke(Joke joke, string requestingUserName = "ANON")
+    {
+        try
+        {
+            var now = DateTime.UtcNow;
+
+            // Use raw SQL to insert the joke and return the new ID
+            // This avoids the Categories column issue (Categories is a computed property, not a real column)
+            var result = _context.Jokes
+                .FromSqlInterpolated($@"
+                    INSERT INTO Joke (JokeTxt, Attribution, ImageTxt, ActiveInd, SortOrderNbr, Rating, VoteCount,
+                                      CreateDateTime, CreateUserName, ChangeDateTime, ChangeUserName)
+                    OUTPUT INSERTED.JokeId, INSERTED.JokeTxt, INSERTED.Attribution, INSERTED.ImageTxt, 
+                           INSERTED.ActiveInd, INSERTED.SortOrderNbr, INSERTED.Rating, INSERTED.VoteCount,
+                           INSERTED.CreateDateTime, INSERTED.CreateUserName, INSERTED.ChangeDateTime, INSERTED.ChangeUserName,
+                           NULL AS Categories
+                    VALUES ({joke.JokeTxt}, {joke.Attribution}, {joke.ImageTxt}, 'Y', {joke.SortOrderNbr}, 0, 0,
+                            {now}, {requestingUserName}, {now}, {requestingUserName})")
+                .AsEnumerable()
+                .FirstOrDefault();
+
+            return result?.JokeId ?? -1;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error updating categories for joke {jokeId}: {ex.Message}");
-            return false;
+            Console.WriteLine($"Error adding joke: {ex.Message}");
+            return -1;
         }
     }
 

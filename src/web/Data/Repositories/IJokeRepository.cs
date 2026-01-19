@@ -88,13 +88,21 @@ public interface IJokeRepository
     /// Update joke categories
     /// </summary>
     /// <param name="jokeId">Joke ID</param>
-    /// <param name="categoryIds">List of category IDs</param>
-    /// <param name="requestingUserName">Requesting UserName</param>
-    /// <returns>Success</returns>
-    bool UpdateJokeCategories(int jokeId, List<int> categoryIds, string requestingUserName = "ANON");
+        /// <param name="categoryIds">List of category IDs</param>
+        /// <param name="requestingUserName">Requesting UserName</param>
+        /// <returns>Success</returns>
+        bool UpdateJokeCategories(int jokeId, List<int> categoryIds, string requestingUserName = "ANON");
 
-    /// <summary>
-    /// Disposal
-    /// </summary>
-    void Dispose();
-}
+        /// <summary>
+        /// Add a new joke
+        /// </summary>
+        /// <param name="joke">Joke to add</param>
+        /// <param name="requestingUserName">Requesting UserName</param>
+        /// <returns>The ID of the newly created joke, or -1 if failed</returns>
+        int AddJoke(Joke joke, string requestingUserName = "ANON");
+
+        /// <summary>
+        /// Disposal
+        /// </summary>
+        void Dispose();
+    }

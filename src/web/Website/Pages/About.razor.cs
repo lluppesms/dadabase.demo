@@ -16,8 +16,14 @@ public partial class About : ComponentBase
     [Inject] IJSRuntime JsInterop { get; set; }
     [Inject] IConfiguration Config { get; set; }
 
+    /// <summary>
+    /// Database type
+    /// </summary>
     public string DatabaseType { get; set; }
 
+    /// <summary>
+    /// Initializer
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();

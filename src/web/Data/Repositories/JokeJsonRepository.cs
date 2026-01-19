@@ -99,7 +99,7 @@ public class JokeJsonRepository : IJokeRepository
     /// <returns>Records</returns>
     public IQueryable<Joke> SearchJokes(string searchTxt = "", string jokeCategoryTxt = "", string requestingUserName = "ANON")
     {
-        List<string> jokeCategoryList = null;
+        List<string>? jokeCategoryList = null;
         jokeCategoryTxt = jokeCategoryTxt.Equals("All", StringComparison.OrdinalIgnoreCase) ? string.Empty : jokeCategoryTxt;
 
         if (!string.IsNullOrEmpty(jokeCategoryTxt))
@@ -348,19 +348,31 @@ public class JokeJsonRepository : IJokeRepository
     /// </summary>
     /// <param name="jokeId">Joke ID</param>
     /// <param name="categoryIds">List of category IDs</param>
-    /// <param name="requestingUserName">Requesting UserName</param>
-    /// <returns>Success</returns>
-    public bool UpdateJokeCategories(int jokeId, List<int> categoryIds, string requestingUserName = "ANON")
-    {
-        // Not supported for JSON-based repository
-        throw new NotSupportedException("UpdateJokeCategories is not supported for JSON-based repository");
-    }
+        /// <param name="requestingUserName">Requesting UserName</param>
+        /// <returns>Success</returns>
+        public bool UpdateJokeCategories(int jokeId, List<int> categoryIds, string requestingUserName = "ANON")
+        {
+            // Not supported for JSON-based repository
+            throw new NotSupportedException("UpdateJokeCategories is not supported for JSON-based repository");
+        }
 
-    /// <summary>
-    /// Disposal
-    /// </summary>
-    public void Dispose()
-    {
-        // No resources to dispose for JSON-based repository
+        /// <summary>
+        /// Add a new joke
+        /// </summary>
+        /// <param name="joke">Joke to add</param>
+        /// <param name="requestingUserName">Requesting UserName</param>
+        /// <returns>The ID of the newly created joke, or -1 if failed</returns>
+        public int AddJoke(Joke joke, string requestingUserName = "ANON")
+        {
+            // Not supported for JSON-based repository
+            throw new NotSupportedException("AddJoke is not supported for JSON-based repository");
+        }
+
+        /// <summary>
+        /// Disposal
+        /// </summary>
+        public void Dispose()
+        {
+            // No resources to dispose for JSON-based repository
+        }
     }
-}

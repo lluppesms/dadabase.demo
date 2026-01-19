@@ -17,15 +17,19 @@ public partial class JokeEditor : ComponentBase
 {
     [Inject] IJokeRepository JokeRepository { get; set; }
     [Inject] IJSRuntime JsInterop { get; set; }
+    [Inject] HttpContextAccessor Context { get; set; }
 
     private List<Joke> allJokes;
     private IEnumerable<Joke> filteredJokes;
     private List<JokeCategory> allCategories;
     private Joke editingJoke;
     private IEnumerable<int> selectedCategoryIds = new HashSet<int>();
+    private string currentUserName = string.Empty;
+    private int userTimezoneOffsetMinutes = 0;
 
     private bool isLoading = true;
     private bool isSaving = false;
+    private bool isAddingNew = false;
     private string searchText = string.Empty;
     private string categoryFilter = string.Empty;
     private string editMessage = string.Empty;
@@ -33,6 +37,17 @@ public partial class JokeEditor : ComponentBase
 
     // MudDataGrid sorting
     private Func<Joke, object> _sortByJokeText = x => x.JokeTxt;
+
+    /// <summary>
+    /// Convert UTC DateTime to user's local time
+    /// </summary>
+    private string FormatLocalDateTime(DateTime utcDateTime)
+    {
+        // JavaScript getTimezoneOffset() returns positive for behind UTC, negative for ahead
+        // So we subtract the offset to get local time
+        var localDateTime = utcDateTime.AddMinutes(-userTimezoneOffsetMinutes);
+        return localDateTime.ToString("yyyy-MM-dd hh:mm tt");
+    }
 
     /// <summary>
     /// Initialization
@@ -52,6 +67,11 @@ public partial class JokeEditor : ComponentBase
         if (firstRender)
         {
             await JsInterop.InvokeVoidAsync("syncHeaderTitle");
+            var userIdentity = Context.HttpContext?.User;
+            currentUserName = userIdentity?.Identity?.Name ?? "UNKNOWN";
+
+            // Get user's timezone offset (returns minutes, negative for ahead of UTC)
+            userTimezoneOffsetMinutes = await JsInterop.InvokeAsync<int>("eval", "new Date().getTimezoneOffset()");
             StateHasChanged();
         }
     }
@@ -118,21 +138,42 @@ public partial class JokeEditor : ComponentBase
     {
         return editAlertClass switch
         {
-            "alert-success" => Severity.Success,
-            "alert-warning" => Severity.Warning,
-            "alert-danger" => Severity.Error,
-            _ => Severity.Info
-        };
-    }
+                "alert-success" => Severity.Success,
+                "alert-warning" => Severity.Warning,
+                "alert-danger" => Severity.Error,
+                _ => Severity.Info
+            };
+        }
 
-    /// <summary>
-    /// Start editing a joke
-    /// </summary>
-    private void EditJoke(int jokeId)
-    {
-        var joke = JokeRepository.GetOne(jokeId);
-        if (joke != null)
+        /// <summary>
+        /// Start adding a new joke
+        /// </summary>
+        private void AddNewJoke()
         {
+            isAddingNew = true;
+            editingJoke = new Joke
+            {
+                JokeId = 0,
+                JokeTxt = string.Empty,
+                Attribution = string.Empty,
+                ImageTxt = string.Empty,
+                ActiveInd = "Y",
+                SortOrderNbr = 50
+            };
+            selectedCategoryIds = new HashSet<int>();
+            editMessage = string.Empty;
+            StateHasChanged();
+        }
+
+        /// <summary>
+        /// Start editing a joke
+        /// </summary>
+        private void EditJoke(int jokeId)
+        {
+            isAddingNew = false;
+            var joke = JokeRepository.GetOne(jokeId);
+            if (joke != null)
+            {
             editingJoke = new Joke
             {
                 JokeId = joke.JokeId,
@@ -141,7 +182,11 @@ public partial class JokeEditor : ComponentBase
                 ImageTxt = joke.ImageTxt,
                 ActiveInd = joke.ActiveInd,
                 SortOrderNbr = joke.SortOrderNbr,
-                Categories = joke.Categories
+                Categories = joke.Categories,
+                CreateUserName = joke.CreateUserName,
+                CreateDateTime = joke.CreateDateTime,
+                ChangeUserName = joke.ChangeUserName,
+                ChangeDateTime = joke.ChangeDateTime
             };
 
             // Parse categories to get selected category IDs
@@ -151,7 +196,7 @@ public partial class JokeEditor : ComponentBase
                 var categoryNames = joke.Categories.Split(',').Select(c => c.Trim());
                 foreach (var categoryName in categoryNames)
                 {
-                    var category = allCategories.FirstOrDefault(c => 
+                    var category = allCategories.FirstOrDefault(c =>
                         c.JokeCategoryTxt.Equals(categoryName, StringComparison.OrdinalIgnoreCase));
                     if (category != null)
                     {
@@ -193,7 +238,7 @@ public partial class JokeEditor : ComponentBase
                 return;
             }
 
-            if (selectedCategoryIds.Count == 0)
+            if (selectedCategoryIds.Count() == 0)
             {
                 editMessage = "At least one category must be selected.";
                 editAlertClass = "alert-danger";
@@ -202,35 +247,59 @@ public partial class JokeEditor : ComponentBase
                 return;
             }
 
-            // Save joke
-            var success = JokeRepository.UpdateJoke(editingJoke);
-            if (!success)
+            // Save joke (add or update)
+            editingJoke.ActiveInd = "Y";
+            int jokeId;
+            bool success;
+
+            if (isAddingNew)
             {
-                editMessage = "Failed to update joke.";
-                editAlertClass = "alert-danger";
-                isSaving = false;
-                StateHasChanged();
-                return;
+                // Add new joke
+                jokeId = JokeRepository.AddJoke(editingJoke, currentUserName);
+                if (jokeId < 0)
+                {
+                    editMessage = "Failed to add joke.";
+                    editAlertClass = "alert-danger";
+                    isSaving = false;
+                    StateHasChanged();
+                    return;
+                }
+                success = true;
+            }
+            else
+            {
+                // Update existing joke
+                jokeId = editingJoke.JokeId;
+                success = JokeRepository.UpdateJoke(editingJoke, currentUserName);
+                if (!success)
+                {
+                    editMessage = "Failed to update joke.";
+                    editAlertClass = "alert-danger";
+                    isSaving = false;
+                    StateHasChanged();
+                    return;
+                }
             }
 
             // Update categories
-            success = JokeRepository.UpdateJokeCategories(editingJoke.JokeId, selectedCategoryIds);
+            success = JokeRepository.UpdateJokeCategories(jokeId, selectedCategoryIds.ToList(), currentUserName);
             if (!success)
             {
-                editMessage = "Joke updated, but failed to update categories.";
+                editMessage = isAddingNew ? "Joke added, but failed to update categories." : "Joke updated, but failed to update categories.";
                 editAlertClass = "alert-warning";
                 isSaving = false;
                 StateHasChanged();
                 return;
             }
 
-            editMessage = "Joke updated successfully!";
+            editMessage = isAddingNew ? "Joke added successfully!" : "Joke updated successfully!";
             editAlertClass = "alert-success";
 
             // Reload data and return to list
             await Task.Delay(1500); // Show success message briefly
             LoadData();
             editingJoke = null;
+            isAddingNew = false;
             FilterJokes();
         }
         catch (Exception ex)
@@ -246,13 +315,14 @@ public partial class JokeEditor : ComponentBase
     }
 
     /// <summary>
-    /// Cancel editing
-    /// </summary>
-    private void CancelEdit()
-    {
-        editingJoke = null;
-        editMessage = string.Empty;
-        selectedCategoryIds.Clear();
-        StateHasChanged();
+        /// Cancel editing
+        /// </summary>
+        private void CancelEdit()
+        {
+            editingJoke = null;
+            editMessage = string.Empty;
+            isAddingNew = false;
+            selectedCategoryIds = new HashSet<int>();
+            StateHasChanged();
+        }
     }
-}

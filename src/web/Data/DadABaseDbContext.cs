@@ -41,20 +41,20 @@ public class DadABaseDbContext(DbContextOptions<DadABaseDbContext> options) : Db
     public DbSet<JokeJokeCategory> JokeJokeCategories { get; set; }
 
     /// <summary>
-    /// On Model Creating
-    /// </summary>
-    /// <param name="modelBuilder">Model Builder</param>
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        base.OnModelCreating(modelBuilder);
+        /// On Model Creating
+        /// </summary>
+        /// <param name="modelBuilder">Model Builder</param>
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
 
-        // Configure decimal precision for Rating property to match SQL column decimal(3,1)
-        modelBuilder.Entity<Joke>()
-            .Property(j => j.Rating)
-            .HasPrecision(3, 1);
+            // Configure decimal precision for Rating property to match SQL column decimal(3,1)
+            modelBuilder.Entity<Joke>()
+                .Property(j => j.Rating)
+                .HasPrecision(3, 1);
 
-        // Configure composite key for JokeJokeCategory
-        modelBuilder.Entity<JokeJokeCategory>()
-            .HasKey(jjc => new { jjc.JokeId, jjc.JokeCategoryId });
+            // Configure composite key for JokeJokeCategory
+            modelBuilder.Entity<JokeJokeCategory>()
+                .HasKey(jjc => new { jjc.JokeId, jjc.JokeCategoryId });
+        }
     }
-}

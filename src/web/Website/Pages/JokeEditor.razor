@@ -19,7 +19,7 @@
         {
             <!-- Edit Form -->
             <MudPaper Elevation="1" Class="pa-4">
-                <MudText Typo="Typo.h5" Class="mb-4">Edit Joke #@editingJoke.JokeId</MudText>
+                <MudText Typo="Typo.h5" Class="mb-4">@(isAddingNew ? "Add New Joke" : $"Edit Joke #{editingJoke.JokeId}")</MudText>
                 
                 <MudTextField @bind-Value="editingJoke.JokeTxt" 
                               Label="Joke Text" 
@@ -51,13 +51,21 @@
                     }
                 </MudSelect>
 
-                <MudSelect @bind-Value="editingJoke.ActiveInd" 
-                           Label="Active" 
-                           Variant="Variant.Outlined" 
-                           Class="mb-4">
-                    <MudSelectItem Value="@("Y")">Yes</MudSelectItem>
-                    <MudSelectItem Value="@("N")">No</MudSelectItem>
-                </MudSelect>
+                @if (!isAddingNew)
+                {
+                    <MudPaper Class="pa-3 mb-4" Outlined="true">
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Created By</MudText>
+                                <MudText Typo="Typo.body2">@editingJoke.CreateUserName on @FormatLocalDateTime(editingJoke.CreateDateTime)</MudText>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Last Changed By</MudText>
+                                <MudText Typo="Typo.body2">@editingJoke.ChangeUserName on @FormatLocalDateTime(editingJoke.ChangeDateTime)</MudText>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                }
 
                 <MudStack Row="true" Spacing="2" Class="mb-3">
                     <MudButton Variant="Variant.Filled" 
@@ -65,11 +73,11 @@
                                OnClick="SaveJoke" 
                                Disabled="@isSaving">
                         @if (isSaving)
-                        {
-                            <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
-                        }
-                        Save Changes
-                    </MudButton>
+                            {
+                                <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
+                            }
+                            @(isAddingNew ? "Add Joke" : "Save Changes")
+                        </MudButton>
                     <MudButton Variant="Variant.Outlined" 
                                Color="Color.Secondary" 
                                OnClick="CancelEdit" 
@@ -87,6 +95,14 @@
         else
         {
             <!-- List View -->
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Success" 
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="AddNewJoke">
+                    Add New Joke
+                </MudButton>
+            </MudStack>
             <MudStack Spacing="3" Class="mb-4">
                 <MudGrid>
                     <MudItem xs="12" md="6">
@@ -133,7 +149,7 @@
                         </CellTemplate>
                     </TemplateColumn>
                     <PropertyColumn Property="x => x.Categories" Title="Categories" />
-                    <PropertyColumn Property="x => x.ActiveInd" Title="Active" />
+                    <PropertyColumn Property="x => x.Attribution" Title="Attribution" />
                     <TemplateColumn Title="Actions" Sortable="false">
                         <CellTemplate>
                             <MudButton Variant="Variant.Filled" 
