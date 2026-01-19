@@ -24,8 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.envCode }}
+
     env:
-      artifactName: webapp  
+      artifactName: webapp
       generatedAppEnvName: "${{ inputs.envCode == 'prod' && format('{0}', vars.APP_NAME) || format('{0}{1}-{2}', vars.APP_NAME, vars.INSTANCE_NUMBER, inputs.envCode) }}"
 
     steps:

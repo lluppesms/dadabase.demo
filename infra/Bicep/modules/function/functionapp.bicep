@@ -5,6 +5,9 @@
 param functionAppName string
 param functionAppServicePlanName string
 param functionInsightsName string
+param sharedAppServicePlanName string
+// param sharedAppInsightsInstrumentationKey string
+// param sharedAppInsightsConnectionString string
 param functionStorageAccountName string
 
 param location string = resourceGroup().location
@@ -20,13 +23,13 @@ param functionHostKind string = 'linux'
 param functionAppSku string = 'Y1'
 param functionAppSkuFamily string = 'Y'
 param functionAppSkuTier string = 'Dynamic'
-param linuxFxVersion string = 'DOTNET-ISOLATED|8.0'
+param linuxFxVersion string = 'DOTNET-ISOLATED|10.0'
 
 param functionsWorkerRuntime string = 'DOTNET-ISOLATED'
 param functionsExtensionVersion string = '~4'
 param nodeDefaultVersion string = '8.11.1'
 param use32BitProcess string = 'false'
-param netFrameworkVersion string = 'v4.0'
+param netFrameworkVersion string = 'v10.0'
 param usePlaceholderDotNetIsolated string = '1'
 
 param workerSizeId int = 0
@@ -43,6 +46,7 @@ var templateTag = { TemplateFile: '~functionapp.bicep' }
 var azdTag = { 'azd-service-name': 'function' }
 var tags = union(commonTags, templateTag)
 var functionTags = union(commonTags, templateTag, azdTag)
+var useExistingServicePlan = !empty(sharedAppServicePlanName)
 var useKeyVaultConnection = false
 
 // --------------------------------------------------------------------------------
@@ -65,7 +69,12 @@ resource appInsightsResource 'Microsoft.Insights/components@2020-02-02-preview' 
   }
 }
 
-resource appServiceResource 'Microsoft.Web/serverfarms@2021-03-01' = {
+// Use the existing shared App Service Plan
+resource sharedAppServiceResource 'Microsoft.Web/serverfarms@2024-11-01' existing = if (useExistingServicePlan) {
+  name: sharedAppServicePlanName
+}
+
+resource appServiceResource 'Microsoft.Web/serverfarms@2024-11-01' =  if (!useExistingServicePlan) {
   name: functionAppServicePlanName
   location: location
   kind: functionHostKind
@@ -91,20 +100,18 @@ resource appServiceResource 'Microsoft.Web/serverfarms@2021-03-01' = {
   }
 }
 
-resource functionAppResource 'Microsoft.Web/sites@2023-01-01' = {
+resource functionAppResource 'Microsoft.Web/sites@2024-11-01' = {
   name: functionAppName
   location: location
   kind: functionKind
   tags: functionTags
   identity: {
-    //disable-next-line BCP036
     type: 'SystemAssigned, UserAssigned'
-    //disable-next-line BCP036
     userAssignedIdentities: { '${managedIdentityId}': {} }
   }
   properties: {
     enabled: true
-    serverFarmId: appServiceResource.id
+    serverFarmId: (useExistingServicePlan ? sharedAppServiceResource.id : appServiceResource.id)
     reserved: true
     isXenon: false
     hyperV: false
@@ -115,7 +122,7 @@ resource functionAppResource 'Microsoft.Web/sites@2023-01-01' = {
       numberOfWorkers: numberOfWorkers
       linuxFxVersion: linuxFxVersion
       acrUseManagedIdentityCreds: false
-      alwaysOn: false
+      alwaysOn: true
       http20Enabled: false
       functionAppScaleLimit: 200
       minimumElasticInstanceCount: 0
@@ -190,11 +197,11 @@ resource functionAppResource 'Microsoft.Web/sites@2023-01-01' = {
     redundancyMode: 'None'
     publicNetworkAccess: publicNetworkAccess
     storageAccountRequired: true
-    keyVaultReferenceIdentity: managedIdentityId // 'SystemAssigned'
+    keyVaultReferenceIdentity: 'SystemAssigned'
   }
 }
 
-resource functionAppConfig 'Microsoft.Web/sites/config@2023-01-01' = {
+resource functionAppConfig 'Microsoft.Web/sites/config@2024-11-01' = {
   parent: functionAppResource
   name: 'web'
   properties: {
@@ -210,7 +217,7 @@ resource functionAppConfig 'Microsoft.Web/sites/config@2023-01-01' = {
     scmType: 'None'
     use32BitWorkerProcess: false
     webSocketsEnabled: false
-    alwaysOn: false
+    alwaysOn: true
     managedPipelineMode: 'Integrated'
     virtualApplications: [
       {
@@ -264,7 +271,7 @@ resource functionAppConfig 'Microsoft.Web/sites/config@2023-01-01' = {
   }
 }
 
-resource functionAppBinding 'Microsoft.Web/sites/hostNameBindings@2018-11-01' = {
+resource functionAppBinding 'Microsoft.Web/sites/hostNameBindings@2024-11-01' = {
     name: '${functionAppResource.name}.azurewebsites.net'
     parent: functionAppResource
     properties: {
@@ -321,3 +328,8 @@ output name string = functionAppName
 output insightsName string = functionInsightsName
 output insightsKey string = appInsightsResource.properties.InstrumentationKey
 output storageAccountName string = functionStorageAccountName
+output functionAppUMIPrincipalId string = managedIdentityPrincipalId
+output functionAppPrincipalId string = functionAppResource.identity.principalId
+
+// @secure() 
+// output functionMasterKey string = functionAppResource.listKeys().functionKeys.default

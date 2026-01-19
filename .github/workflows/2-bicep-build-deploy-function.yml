@@ -67,6 +67,13 @@ permissions:
 
 # ------------------------------------------------------------------------------------------------------------------------
 jobs:
+  # ------------------------------------------------------------------------------------------------------------------------
+  load-config:
+    name: Load Project Config
+    uses: ./.github/workflows/template-load-config.yml
+    secrets: inherit
+
+  # ------------------------------------------------------------------------------------------------------------------------
   scan-code:
     name: Scan Source Code
     uses: ./.github/workflows/template-scan-code.yml
@@ -97,14 +104,14 @@ jobs:
     name: Build Function App
     uses: ./.github/workflows/template-function-app-build.yml
     if: inputs.runBuild || inputs.runDeploy
-    needs: create-infra
+    needs: [load-config, create-infra]
     secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}
-      rootDirectory: '${{ vars.FUNCTION_APP_PROJECT_FOLDER_NAME }}'
-      projectName: '${{ vars.FUNCTION_APP_PROJECT_NAME }}'
-      testDirectory: '${{ vars.FUNCTION_APP_TEST_FOLDER_NAME }}'
-      testProjectName: '${{ vars.FUNCTION_APP_TEST_PROJECT_NAME }}'
+      rootDirectory: '${{ needs.load-config.outputs.function_rootDirectory }}'
+      projectName: '${{ needs.load-config.outputs.function_projectName }}'
+      testDirectory: '${{ needs.load-config.outputs.function_testDirectory }}'
+      testProjectName: '${{ needs.load-config.outputs.function_testProjectName }}'
       testApplication: true
       listFilesAfterBuild: true
 

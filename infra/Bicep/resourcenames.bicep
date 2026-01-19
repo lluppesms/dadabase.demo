@@ -25,10 +25,17 @@ var resourceAbbreviations = loadJsonContent('./data/resourceAbbreviations.json')
 // if there's an environment specific function name specified, use that, otherwise if it's azd -- 
 // other resource names can be changed if desired, but if using the "azd deploy" command it expects the
 // function name to be exactly "{appName}function" so don't change the functionAppName format if using azd
-var functionAppName     = environmentSpecificFunctionName != ''     ? environmentSpecificFunctionName     : (environmentCode == 'prod' ? toLower('${sanitizedAppNameWithDashes}-${resourceAbbreviations.functionApp}')     : toLower('${sanitizedAppInstanceNameWithDashes}-${resourceAbbreviations.functionApp}-${sanitizedEnvironment}'))
-var functionFlexAppName = environmentSpecificFlexFunctionName != '' ? environmentSpecificFlexFunctionName : (environmentCode == 'prod' ? toLower('${sanitizedAppNameWithDashes}-${resourceAbbreviations.functionFlexApp}') : toLower('${sanitizedAppInstanceNameWithDashes}-${resourceAbbreviations.functionFlexApp}-${sanitizedEnvironment}'))
 var webSiteName         = environmentCode == 'prod' ? toLower('${sanitizedAppNameWithDashes}') : toLower('${sanitizedAppInstanceNameWithDashes}-${sanitizedEnvironment}')
-var baseStorageName     = toLower('${sanitizedAppNameInstance}${sanitizedEnvironment}${resourceAbbreviations.storageAccountSuffix}')
+var baseStorageName     = toLower('${sanitizedAppNameInstance}${resourceAbbreviations.storageAccountSuffix}${sanitizedEnvironment}')
+
+output functionApp object = {
+    appName: 'main'
+    name: toLower('${sanitizedAppInstanceNameWithDashes}-${resourceAbbreviations.functionApp}-${sanitizedEnvironment}')
+    servicePlanName: toLower('${sanitizedAppInstanceNameWithDashes}-${resourceAbbreviations.functionApp}-${resourceAbbreviations.appServicePlanSuffix}-${sanitizedEnvironment}')
+    storageName: take('${baseStorageName}${functionStorageNameSuffix}', 24)
+    deploymentStorageContainerName: toLower('app-package-${sanitizedAppInstanceNameWithDashes}-${resourceAbbreviations.functionApp}')
+    insightsName: '${sanitizedAppInstanceNameWithDashes}-${resourceAbbreviations.functionApp}-${resourceAbbreviations.appInsightsSuffix}-${sanitizedEnvironment}'
+}
 
 // --------------------------------------------------------------------------------
 output logAnalyticsWorkspaceName string  = toLower('${sanitizedAppInstanceNameWithDashes}-${sanitizedEnvironment}-${resourceAbbreviations.logWorkspaceSuffix}')
@@ -37,18 +44,8 @@ output webSiteAppServicePlanName string  = '${webSiteName}-${resourceAbbreviatio
 output webSiteAppInsightsName string     = '${webSiteName}-${resourceAbbreviations.appInsightsSuffix}'
 output sqlServerName string              = toLower('${sanitizedAppNameInstance}${resourceAbbreviations.sqlAbbreviation}${sanitizedEnvironment}')
 
-output functionAppName string            = functionAppName
-output functionAppServicePlanName string = '${functionAppName}-${resourceAbbreviations.appServicePlanSuffix}'
-output functionInsightsName string       = '${functionAppName}-${resourceAbbreviations.appInsightsSuffix}'
-
-output functionFlexAppName string        = functionFlexAppName
-output functionFlexAppServicePlanName string = '${functionFlexAppName}-${resourceAbbreviations.appServicePlanSuffix}'
-output functionFlexInsightsName string   = '${functionFlexAppName}-${resourceAbbreviations.appInsightsSuffix}'
-
 output userAssignedIdentityName string   = toLower('${sanitizedAppNameInstance}-app-${resourceAbbreviations.managedIdentity}')
 
 // Key Vaults and Storage Accounts can only be 24 characters long
 output keyVaultName string               = take('${sanitizedAppNameInstance}${resourceAbbreviations.keyVaultAbbreviation}${sanitizedEnvironment}', 24)
 output storageAccountName string         = take('${sanitizedAppNameInstance}${resourceAbbreviations.storageAccountSuffix}${sanitizedEnvironment}', 24)
-output functionStorageName string        = take('${baseStorageName}${functionStorageNameSuffix}', 24)
-output functionFlexStorageName string    = take('${baseStorageName}${functionFlexStorageNameSuffix}', 24)

@@ -1,0 +1,217 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# GHA Reusable Workflow to Load All Project Configurations
+# ------------------------------------------------------------------------------------------------------------------------
+# Usage in calling workflow:
+#   jobs:
+#     load-config:
+#       uses: ./.github/workflows/template-load-config.yml
+#     
+#     build-web:
+#       needs: load-config
+#       uses: ./.github/workflows/template-webapp-build.yml
+#       with:
+#         rootDirectory: ${{ needs.load-config.outputs.web_rootDirectory }}
+#         projectName: ${{ needs.load-config.outputs.web_projectName }}
+#
+#     build-function:
+#       needs: load-config
+#       uses: ./.github/workflows/template-function-app-build.yml
+#       with:
+#         rootDirectory: ${{ needs.load-config.outputs.function_rootDirectory }}
+#         projectName: ${{ needs.load-config.outputs.function_projectName }}
+# ------------------------------------------------------------------------------------------------------------------------
+name: z_template_load_config
+run-name: Load Project Config
+
+on:
+  workflow_call:
+    outputs:
+      # Web project
+      web_shortName:
+        description: 'Web project short name'
+        value: ${{ jobs.load.outputs.web_shortName }}
+      web_rootDirectory:
+        description: 'Web project root directory'
+        value: ${{ jobs.load.outputs.web_rootDirectory }}
+      web_projectName:
+        description: 'Web project name'
+        value: ${{ jobs.load.outputs.web_projectName }}
+      web_testDirectory:
+        description: 'Web test directory'
+        value: ${{ jobs.load.outputs.web_testDirectory }}
+      web_testProjectName:
+        description: 'Web test project name'
+        value: ${{ jobs.load.outputs.web_testProjectName }}
+      
+      # Function project
+      function_shortName:
+        description: 'Function project short name'
+        value: ${{ jobs.load.outputs.function_shortName }}
+      function_rootDirectory:
+        description: 'Function project root directory'
+        value: ${{ jobs.load.outputs.function_rootDirectory }}
+      function_projectName:
+        description: 'Function project name'
+        value: ${{ jobs.load.outputs.function_projectName }}
+      function_testDirectory:
+        description: 'Function test directory'
+        value: ${{ jobs.load.outputs.function_testDirectory }}
+      function_testProjectName:
+        description: 'Function test project name'
+        value: ${{ jobs.load.outputs.function_testProjectName }}
+
+      # Console project
+      console_shortName:
+        description: 'Console project short name'
+        value: ${{ jobs.load.outputs.console_shortName }}
+      console_rootDirectory:
+        description: 'Console project root directory'
+        value: ${{ jobs.load.outputs.console_rootDirectory }}
+      console_projectName:
+        description: 'Console project name'
+        value: ${{ jobs.load.outputs.console_projectName }}
+      console_testDirectory:
+        description: 'Console test directory'
+        value: ${{ jobs.load.outputs.console_testDirectory }}
+      console_testProjectName:
+        description: 'Console test project name'
+        value: ${{ jobs.load.outputs.console_testProjectName }}
+
+      # MCP project
+      mcp_shortName:
+        description: 'MCP project short name'
+        value: ${{ jobs.load.outputs.mcp_shortName }}
+      mcp_rootDirectory:
+        description: 'MCP project root directory'
+        value: ${{ jobs.load.outputs.mcp_rootDirectory }}
+      mcp_projectName:
+        description: 'MCP project name'
+        value: ${{ jobs.load.outputs.mcp_projectName }}
+      mcp_testDirectory:
+        description: 'MCP test directory'
+        value: ${{ jobs.load.outputs.mcp_testDirectory }}
+      mcp_testProjectName:
+        description: 'MCP test project name'
+        value: ${{ jobs.load.outputs.mcp_testProjectName }}
+
+      # MCP SSE project
+      mcpsse_shortName:
+        description: 'MCP SSE project short name'
+        value: ${{ jobs.load.outputs.mcpsse_shortName }}
+      mcpsse_rootDirectory:
+        description: 'MCP SSE project root directory'
+        value: ${{ jobs.load.outputs.mcpsse_rootDirectory }}
+      mcpsse_projectName:
+        description: 'MCP SSE project name'
+        value: ${{ jobs.load.outputs.mcpsse_projectName }}
+      mcpsse_testDirectory:
+        description: 'MCP SSE test directory'
+        value: ${{ jobs.load.outputs.mcpsse_testDirectory }}
+      mcpsse_testProjectName:
+        description: 'MCP SSE test project name'
+        value: ${{ jobs.load.outputs.mcpsse_testProjectName }}
+
+      # Analyzer project
+      analyzer_shortName:
+        description: 'Analyzer project short name'
+        value: ${{ jobs.load.outputs.analyzer_shortName }}
+      analyzer_rootDirectory:
+        description: 'Analyzer project root directory'
+        value: ${{ jobs.load.outputs.analyzer_rootDirectory }}
+      analyzer_projectName:
+        description: 'Analyzer project name'
+        value: ${{ jobs.load.outputs.analyzer_projectName }}
+      analyzer_testDirectory:
+        description: 'Analyzer test directory'
+        value: ${{ jobs.load.outputs.analyzer_testDirectory }}
+      analyzer_testProjectName:
+        description: 'Analyzer test project name'
+        value: ${{ jobs.load.outputs.analyzer_testProjectName }}
+
+      # SQL project
+      sql_shortName:
+        description: 'SQL project short name'
+        value: ${{ jobs.load.outputs.sql_shortName }}
+      sql_rootDirectory:
+        description: 'SQL project root directory'
+        value: ${{ jobs.load.outputs.sql_rootDirectory }}
+      sql_projectName:
+        description: 'SQL project name'
+        value: ${{ jobs.load.outputs.sql_projectName }}
+      sql_solutionName:
+        description: 'SQL solution name'
+        value: ${{ jobs.load.outputs.sql_solutionName }}
+      sql_testDirectory:
+        description: 'SQL test directory'
+        value: ${{ jobs.load.outputs.sql_testDirectory }}
+      sql_testProjectName:
+        description: 'SQL test project name'
+        value: ${{ jobs.load.outputs.sql_testProjectName }}
+
+      # Meta
+      projectKeys:
+        description: 'Comma-separated list of all project keys'
+        value: ${{ jobs.load.outputs.projectKeys }}
+
+jobs:
+  load:
+    name: Load Project Config Settings
+    runs-on: ubuntu-latest
+    outputs:
+      # Web
+      web_shortName: ${{ steps.config.outputs.web_shortName }}
+      web_rootDirectory: ${{ steps.config.outputs.web_rootDirectory }}
+      web_projectName: ${{ steps.config.outputs.web_projectName }}
+      web_testDirectory: ${{ steps.config.outputs.web_testDirectory }}
+      web_testProjectName: ${{ steps.config.outputs.web_testProjectName }}
+      # Function
+      function_shortName: ${{ steps.config.outputs.function_shortName }}
+      function_rootDirectory: ${{ steps.config.outputs.function_rootDirectory }}
+      function_projectName: ${{ steps.config.outputs.function_projectName }}
+      function_testDirectory: ${{ steps.config.outputs.function_testDirectory }}
+      function_testProjectName: ${{ steps.config.outputs.function_testProjectName }}
+      # Console
+      console_shortName: ${{ steps.config.outputs.console_shortName }}
+      console_rootDirectory: ${{ steps.config.outputs.console_rootDirectory }}
+      console_projectName: ${{ steps.config.outputs.console_projectName }}
+      console_testDirectory: ${{ steps.config.outputs.console_testDirectory }}
+      console_testProjectName: ${{ steps.config.outputs.console_testProjectName }}
+      # MCP
+      mcp_shortName: ${{ steps.config.outputs.mcp_shortName }}
+      mcp_rootDirectory: ${{ steps.config.outputs.mcp_rootDirectory }}
+      mcp_projectName: ${{ steps.config.outputs.mcp_projectName }}
+      mcp_testDirectory: ${{ steps.config.outputs.mcp_testDirectory }}
+      mcp_testProjectName: ${{ steps.config.outputs.mcp_testProjectName }}
+      # MCP SSE
+      mcpsse_shortName: ${{ steps.config.outputs.mcpsse_shortName }}
+      mcpsse_rootDirectory: ${{ steps.config.outputs.mcpsse_rootDirectory }}
+      mcpsse_projectName: ${{ steps.config.outputs.mcpsse_projectName }}
+      mcpsse_testDirectory: ${{ steps.config.outputs.mcpsse_testDirectory }}
+      mcpsse_testProjectName: ${{ steps.config.outputs.mcpsse_testProjectName }}
+      # Analyzer
+      analyzer_shortName: ${{ steps.config.outputs.analyzer_shortName }}
+      analyzer_rootDirectory: ${{ steps.config.outputs.analyzer_rootDirectory }}
+      analyzer_projectName: ${{ steps.config.outputs.analyzer_projectName }}
+      analyzer_testDirectory: ${{ steps.config.outputs.analyzer_testDirectory }}
+      analyzer_testProjectName: ${{ steps.config.outputs.analyzer_testProjectName }}
+      # SQL
+      sql_shortName: ${{ steps.config.outputs.sql_shortName }}
+      sql_rootDirectory: ${{ steps.config.outputs.sql_rootDirectory }}
+      sql_projectName: ${{ steps.config.outputs.sql_projectName }}
+      sql_solutionName: ${{ steps.config.outputs.sql_solutionName }}
+      sql_testDirectory: ${{ steps.config.outputs.sql_testDirectory }}
+      sql_testProjectName: ${{ steps.config.outputs.sql_testProjectName }}
+      # Meta
+      projectKeys: ${{ steps.config.outputs.projectKeys }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/config
+            .github/actions
+
+      - name: Load all project configurations
+        id: config
+        uses: ./.github/actions/load-project-config

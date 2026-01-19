@@ -1,0 +1,73 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Project Configuration for GitHub Actions
+# These values are used across multiple workflows to keep paths consistent
+# ------------------------------------------------------------------------------------------------------------------------
+# Usage in calling workflow:
+#   jobs:
+#     load-config:
+#       uses: ./.github/workflows/template-load-config.yml
+#     build:
+#       needs: load-config
+#       uses: ./.github/workflows/template-webapp-build.yml
+#       with:
+#         rootDirectory: ${{ needs.load-config.outputs.web_rootDirectory }}
+#         projectName: ${{ needs.load-config.outputs.web_projectName }}
+# ------------------------------------------------------------------------------------------------------------------------
+
+projects:
+  # Web Application (Blazor)
+  web:
+    shortName: 'web'
+    rootDirectory: 'src/web/Website'
+    projectName: 'DadABase.Web'
+    testDirectory: 'src/web/Tests'
+    testProjectName: 'DadABase.Tests'
+
+  # Azure Function App
+  function:
+    shortName: 'func'
+    rootDirectory: 'src/function/Function'
+    projectName: 'DadABase.Function'
+    testDirectory: 'src/function/Tests'
+    testProjectName: 'DadABase.Function.Tests'
+
+  # Console Application
+  console:
+    shortName: 'console'
+    rootDirectory: 'src/console'
+    projectName: 'dadabase.net10.console'
+    testDirectory: ''
+    testProjectName: ''
+
+  # MCP (Model Context Protocol) Server
+  mcp:
+    shortName: 'mcp'
+    rootDirectory: 'src/mcp/DadJokeMCP'
+    projectName: 'DadJokeMCP'
+    testDirectory: ''
+    testProjectName: ''
+
+  # MCP SSE Server
+  mcpsse:
+    shortName: 'mcpsse'
+    rootDirectory: 'src/mcp/DadJokeMCPSSE'
+    projectName: 'DadJokeMCPSSE'
+    testDirectory: ''
+    testProjectName: ''
+
+  # Joke Analyzer
+  analyzer:
+    shortName: 'analyzer'
+    rootDirectory: 'src/analyzer'
+    projectName: 'JokeAnalyzer'
+    testDirectory: ''
+    testProjectName: ''
+
+  # SQL Database Project
+  sql:
+    shortName: 'sql'
+    rootDirectory: 'src/sql.database'
+    projectName: 'sql.database'
+    solutionName: 'sql.database'
+    testDirectory: ''
+    testProjectName: ''
