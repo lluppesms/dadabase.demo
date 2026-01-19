@@ -100,6 +100,7 @@ module storageModule './modules/storage/storageaccount.bicep' = {
     storageAccountName: resourceNames.outputs.storageAccountName
     location: location
     commonTags: commonTags
+    containerNames: ['input', 'output', 'joke-images']
   }
 }
 
@@ -256,6 +257,7 @@ module webSiteAppSettingsModule './modules/webapp/websiteappsettings.bicep' = {
       AppSettings__AzureOpenAI__Image__Endpoint: azureOpenAIImageEndpoint
       AppSettings__AzureOpenAI__Image__DeploymentName: azureOpenAIImageDeploymentName
       AppSettings__AzureOpenAI__Image__ApiKey: azureOpenAIImageApiKey
+      AppSettings__BlobStorageAccountName: storageModule.outputs.name
       AzureAD__Instance: adInstance
       AzureAD__Domain: adDomain
       AzureAD__TenantId: adTenantId

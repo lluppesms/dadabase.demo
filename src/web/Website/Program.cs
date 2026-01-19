@@ -1,3 +1,4 @@
+using Azure.Identity;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using DadABase.Web.Models.Application;
 using DadABase.Data;
@@ -88,6 +89,9 @@ else
     var jsonFilePath = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Data/Jokes.json");
     builder.Services.AddSingleton<IJokeRepository>(sp => new JokeJsonRepository(jsonFilePath));
 }
+
+// Register Azure credential for Managed Identity
+builder.Services.AddSingleton(sp => new DefaultAzureCredential());
 
 builder.Services.AddSingleton<IAIHelper, AIHelper>();
 builder.Services.AddScoped<IBuildInfoService, BuildInfoService>();

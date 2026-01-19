@@ -5,6 +5,7 @@
     "SuperUserLastName": "",
     "SuperUserFirstName": "",
     "ApiKey": "",
+    "BlobStorageAccountName": "",
     "AzureOpenAI": {
       "Chat": {
         "Endpoint": "https://your-project-resource.cognitiveservices.azure.com/",

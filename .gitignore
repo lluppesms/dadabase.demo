@@ -380,8 +380,3 @@ src/analyzer/appsettings.development.json
 
 # Backup files
 *.bak
-
-# Ignore generated joke images but keep the directory structure
-src/web/Website/wwwroot/images/jokes/*.png
-src/web/Website/wwwroot/images/jokes/*.jpg
-src/web/Website/wwwroot/images/jokes/*.jpeg

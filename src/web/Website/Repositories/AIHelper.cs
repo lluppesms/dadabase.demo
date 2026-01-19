@@ -1,4 +1,5 @@
 ﻿using Azure.AI.OpenAI;
+using Azure.Identity;
 using Microsoft.Agents.AI;
 using OpenAI;
 using OpenAI.Chat;
@@ -27,7 +28,9 @@ public class AIHelper : IAIHelper
     private ImageClient imageGenerator = null;
 
     private readonly string vsTenantId = string.Empty;
-    private readonly IWebHostEnvironment environment;
+    private readonly string blobStorageAccountName = string.Empty;
+    private readonly string blobContainerName = "joke-images";
+    private readonly DefaultAzureCredential azureCredential;
     #endregion
 
     private const string JokeImageGeneratorPrompt =
@@ -85,14 +88,14 @@ public class AIHelper : IAIHelper
                 return (string.Empty, false, "AI Image Keys not found!");
             }
 
-            // Check if image already exists
+            // Check if image already exists in blob storage
             if (jokeId > 0)
             {
-                var existingImagePath = GetJokeImagePath(jokeId);
-                if (!string.IsNullOrEmpty(existingImagePath))
+                var existingImageUrl = await GetJokeImageUrlAsync(jokeId);
+                if (!string.IsNullOrEmpty(existingImageUrl))
                 {
-                    Console.WriteLine($"Image already exists for JokeId {jokeId}: {existingImagePath}");
-                    return (existingImagePath, true, string.Empty);
+                    Console.WriteLine($"Image already exists for JokeId {jokeId}: {existingImageUrl}");
+                    return (existingImageUrl, true, string.Empty);
                 }
             }
 
@@ -111,14 +114,14 @@ public class AIHelper : IAIHelper
             // gpt-image-1 models return base64 encoded image bytes
             var imageBytes = image.ImageBytes.ToArray();
 
-            // Save to file if jokeId is provided
+            // Save to Azure Blob Storage if jokeId is provided
             if (jokeId > 0)
             {
-                var imagePath = SaveImageToFile(imageBytes, jokeId);
-                if (!string.IsNullOrEmpty(imagePath))
+                var imageBlobUrl = await SaveImageToBlobAsync(imageBytes, jokeId);
+                if (!string.IsNullOrEmpty(imageBlobUrl))
                 {
-                    Console.WriteLine($"Saved image to {imagePath} ({imageBytes.Length} bytes)");
-                    return (imagePath, true, string.Empty);
+                    Console.WriteLine($"Saved image to blob storage ({imageBytes.Length} bytes)");
+                    return (imageBlobUrl, true, string.Empty);
                 }
             }
 
@@ -148,32 +151,101 @@ public class AIHelper : IAIHelper
     }
 
     /// <summary>
-    /// Get the image file path for a joke if it exists
+    /// Get the image URL for a joke if it exists in blob storage
     /// </summary>
     /// <param name="jokeId">Joke ID</param>
-    /// <returns>Image file path if exists, empty string otherwise</returns>
+    /// <returns>Image URL if exists, empty string otherwise</returns>
     public string GetJokeImagePath(int jokeId)
     {
         if (jokeId <= 0) return string.Empty;
 
-        var fileName = $"{jokeId}.png";
-        var webRootPath = environment.WebRootPath;
-        var imageFolderPath = Path.Combine(webRootPath, "images", "jokes");
-        var fullPath = Path.Combine(imageFolderPath, fileName);
+        // This is now a synchronous wrapper for the async method
+        // In a real scenario, we'd make this async too
+        return GetJokeImageUrlAsync(jokeId).GetAwaiter().GetResult();
+    }
 
-        if (File.Exists(fullPath))
+    /// <summary>
+    /// Get the image URL for a joke if it exists in blob storage (async)
+    /// </summary>
+    /// <param name="jokeId">Joke ID</param>
+    /// <returns>Image URL if exists, empty string otherwise</returns>
+    private async Task<string> GetJokeImageUrlAsync(int jokeId)
+    {
+        if (jokeId <= 0 || string.IsNullOrEmpty(blobStorageAccountName))
         {
-            return $"/images/jokes/{fileName}";
+            return string.Empty;
+        }
+
+        try
+        {
+            var blobServiceClient = new Azure.Storage.Blobs.BlobServiceClient(
+                new Uri($"https://{blobStorageAccountName}.blob.core.windows.net"),
+                azureCredential);
+
+            var containerClient = blobServiceClient.GetBlobContainerClient(blobContainerName);
+            
+            var blobName = $"{jokeId}.png";
+            var blobClient = containerClient.GetBlobClient(blobName);
+
+            if (await blobClient.ExistsAsync())
+            {
+                return blobClient.Uri.ToString();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error checking blob existence for JokeId {jokeId}: {ex.Message}");
         }
 
         return string.Empty;
+    }
+
+    /// <summary>
+    /// Save image bytes to Azure Blob Storage
+    /// </summary>
+    /// <param name="imageBytes">Image bytes</param>
+    /// <param name="jokeId">Joke ID</param>
+    /// <returns>Blob URL of the saved image or empty string if failed</returns>
+    private async Task<string> SaveImageToBlobAsync(byte[] imageBytes, int jokeId)
+    {
+        if (string.IsNullOrEmpty(blobStorageAccountName))
+        {
+            Console.WriteLine("Blob storage account name not configured");
+            return string.Empty;
+        }
+
+        try
+        {
+            var blobServiceClient = new Azure.Storage.Blobs.BlobServiceClient(
+                new Uri($"https://{blobStorageAccountName}.blob.core.windows.net"),
+                azureCredential);
+
+            var containerClient = blobServiceClient.GetBlobContainerClient(blobContainerName);
+            
+            // Create container if it doesn't exist
+            await containerClient.CreateIfNotExistsAsync(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
+
+            var blobName = $"{jokeId}.png";
+            var blobClient = containerClient.GetBlobClient(blobName);
+
+            using var stream = new MemoryStream(imageBytes);
+            await blobClient.UploadAsync(stream, overwrite: true);
+
+            Console.WriteLine($"Uploaded blob: {blobClient.Uri}");
+            return blobClient.Uri.ToString();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving image to blob storage for JokeId {jokeId}: {ex.Message}");
+            return string.Empty;
+        }
     }
 
     #region Helper Methods
     /// <summary>
     /// Initialization
     /// </summary>
-    public AIHelper(IConfiguration config, IWebHostEnvironment env)
+    public AIHelper(IConfiguration config, DefaultAzureCredential credential)
     {
         openaiEndpointUrl = config["AppSettings:AzureOpenAI:Chat:Endpoint"];
         openaiEndpoint = !string.IsNullOrEmpty(openaiEndpointUrl) ? new(config["AppSettings:AzureOpenAI:Chat:Endpoint"]) : null;
@@ -185,8 +257,9 @@ public class AIHelper : IAIHelper
         openaiImageDeploymentName = config["AppSettings:AzureOpenAI:Image:DeploymentName"];
         openaiImageApiKey = config["AppSettings:AzureOpenAI:Image:ApiKey"];
 
+        blobStorageAccountName = config["AppSettings:BlobStorageAccountName"];
         vsTenantId = config["VisualStudioTenantId"];
-        environment = env;
+        azureCredential = credential;
     }
 
     /// <summary>
@@ -270,38 +343,6 @@ public class AIHelper : IAIHelper
             var errorMessage = ex.Message;
             Console.WriteLine($"Error initializing Image Agent: {errorMessage}");
             return false;
-        }
-    }
-
-    /// <summary>
-    /// Save image bytes to a file
-    /// </summary>
-    /// <param name="imageBytes">Image bytes</param>
-    /// <param name="jokeId">Joke ID</param>
-    /// <returns>Web path to the saved image or empty string if failed</returns>
-    private string SaveImageToFile(byte[] imageBytes, int jokeId)
-    {
-        try
-        {
-            var fileName = $"{jokeId}.png";
-            var webRootPath = environment.WebRootPath;
-            var imageFolderPath = Path.Combine(webRootPath, "images", "jokes");
-
-            // Ensure directory exists
-            if (!Directory.Exists(imageFolderPath))
-            {
-                Directory.CreateDirectory(imageFolderPath);
-            }
-
-            var fullPath = Path.Combine(imageFolderPath, fileName);
-            File.WriteAllBytes(fullPath, imageBytes);
-
-            return $"/images/jokes/{fileName}";
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error saving image for JokeId {jokeId}: {ex.Message}");
-            return string.Empty;
         }
     }
     #endregion
