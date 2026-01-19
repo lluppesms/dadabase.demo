@@ -377,3 +377,6 @@ src/function/deploy.zip
 src/web/docker-readme-dev.md
 src/analyzer/appsettings.json
 src/analyzer/appsettings.development.json
+
+# Backup files
+*.bak

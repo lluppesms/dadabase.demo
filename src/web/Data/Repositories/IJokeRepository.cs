@@ -70,7 +70,39 @@ public interface IJokeRepository
     string ExportToSql(string requestingUserName = "ANON");
 
     /// <summary>
-    /// Disposal
+    /// Update a joke
     /// </summary>
-    void Dispose();
-}
+    /// <param name="joke">Joke to update</param>
+    /// <param name="requestingUserName">Requesting UserName</param>
+    /// <returns>Success</returns>
+    bool UpdateJoke(Joke joke, string requestingUserName = "ANON");
+
+    /// <summary>
+    /// Get all joke categories (entities, not just names)
+    /// </summary>
+    /// <param name="requestingUserName">Requesting UserName</param>
+    /// <returns>List of JokeCategory entities</returns>
+    IQueryable<JokeCategory> GetAllCategories(string requestingUserName = "ANON");
+
+    /// <summary>
+    /// Update joke categories
+    /// </summary>
+    /// <param name="jokeId">Joke ID</param>
+        /// <param name="categoryIds">List of category IDs</param>
+        /// <param name="requestingUserName">Requesting UserName</param>
+        /// <returns>Success</returns>
+        bool UpdateJokeCategories(int jokeId, List<int> categoryIds, string requestingUserName = "ANON");
+
+        /// <summary>
+        /// Add a new joke
+        /// </summary>
+        /// <param name="joke">Joke to add</param>
+        /// <param name="requestingUserName">Requesting UserName</param>
+        /// <returns>The ID of the newly created joke, or -1 if failed</returns>
+        int AddJoke(Joke joke, string requestingUserName = "ANON");
+
+        /// <summary>
+        /// Disposal
+        /// </summary>
+        void Dispose();
+    }

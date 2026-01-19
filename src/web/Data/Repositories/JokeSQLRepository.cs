@@ -128,7 +128,8 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     public IQueryable<string> GetJokeCategories(string requestingUserName)
     {
         return _context.JokeCategories
-            .Select(c => c.JokeCategoryTxt)
+            .Where(c => c.JokeCategoryTxt != null)
+            .Select(c => c.JokeCategoryTxt!)
             .OrderBy(c => c);
     }
 
@@ -417,6 +418,126 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     private static string EscapeSqlString(string input)
     {
         return input?.Replace("'", "''") ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Update a joke
+    /// </summary>
+    /// <param name="joke">Joke to update</param>
+    /// <param name="requestingUserName">Requesting UserName</param>
+    /// <returns>Success</returns>
+    public bool UpdateJoke(Joke joke, string requestingUserName = "ANON")
+    {
+        try
+        {
+            var existingJoke = _context.Jokes.Find(joke.JokeId);
+            if (existingJoke == null)
+            {
+                return false;
+            }
+
+            existingJoke.JokeTxt = joke.JokeTxt;
+            existingJoke.Attribution = joke.Attribution;
+            existingJoke.ImageTxt = joke.ImageTxt;
+            existingJoke.ActiveInd = "Y";
+            existingJoke.SortOrderNbr = joke.SortOrderNbr;
+            existingJoke.ChangeDateTime = DateTime.UtcNow;
+            existingJoke.ChangeUserName = requestingUserName;
+
+            _context.SaveChanges();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating joke {joke.JokeId}: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Get all joke categories (entities, not just names)
+    /// </summary>
+    /// <param name="requestingUserName">Requesting UserName</param>
+    /// <returns>List of JokeCategory entities</returns>
+    public IQueryable<JokeCategory> GetAllCategories(string requestingUserName = "ANON")
+    {
+        return _context.JokeCategories
+            .Where(c => c.ActiveInd == "Y")
+            .OrderBy(c => c.JokeCategoryTxt);
+    }
+
+    /// <summary>
+    /// Update joke categories
+    /// </summary>
+    /// <param name="jokeId">Joke ID</param>
+    /// <param name="categoryIds">List of category IDs</param>
+    /// <param name="requestingUserName">Requesting UserName</param>
+    /// <returns>Success</returns>
+    public bool UpdateJokeCategories(int jokeId, List<int> categoryIds, string requestingUserName = "ANON")
+    {
+        try
+        {
+            // Remove existing categories
+            var existingCategories = _context.JokeJokeCategories.Where(jjc => jjc.JokeId == jokeId);
+            _context.JokeJokeCategories.RemoveRange(existingCategories);
+
+            // Add new categories
+            foreach (var categoryId in categoryIds)
+            {
+                _context.JokeJokeCategories.Add(new JokeJokeCategory
+                {
+                    JokeId = jokeId,
+                    JokeCategoryId = categoryId,
+                    CreateDateTime = DateTime.UtcNow,
+                    CreateUserName = requestingUserName
+                });
+            }
+
+            _context.SaveChanges();
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error updating categories for joke {jokeId}: {ex.Message}");
+                        return false;
+                    }
+                }
+
+
+    /// <summary>
+    /// Add a new joke
+    /// </summary>
+    /// <param name="joke">Joke to add</param>
+    /// <param name="requestingUserName">Requesting UserName</param>
+    /// <returns>The ID of the newly created joke, or -1 if failed</returns>
+    public int AddJoke(Joke joke, string requestingUserName = "ANON")
+    {
+        try
+        {
+            var now = DateTime.UtcNow;
+
+            // Use raw SQL to insert the joke and return the new ID
+            // This avoids the Categories column issue (Categories is a computed property, not a real column)
+            var result = _context.Jokes
+                .FromSqlInterpolated($@"
+                    INSERT INTO Joke (JokeTxt, Attribution, ImageTxt, ActiveInd, SortOrderNbr, Rating, VoteCount,
+                                      CreateDateTime, CreateUserName, ChangeDateTime, ChangeUserName)
+                    OUTPUT INSERTED.JokeId, INSERTED.JokeTxt, INSERTED.Attribution, INSERTED.ImageTxt, 
+                           INSERTED.ActiveInd, INSERTED.SortOrderNbr, INSERTED.Rating, INSERTED.VoteCount,
+                           INSERTED.CreateDateTime, INSERTED.CreateUserName, INSERTED.ChangeDateTime, INSERTED.ChangeUserName,
+                           NULL AS Categories
+                    VALUES ({joke.JokeTxt}, {joke.Attribution}, {joke.ImageTxt}, 'Y', {joke.SortOrderNbr}, 0, 0,
+                            {now}, {requestingUserName}, {now}, {requestingUserName})")
+                .AsEnumerable()
+                .FirstOrDefault();
+
+            return result?.JokeId ?? -1;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error adding joke: {ex.Message}");
+            return -1;
+        }
     }
 
     /// <summary>

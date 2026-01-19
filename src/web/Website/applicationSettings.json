@@ -1,7 +1,7 @@
 {
   "AppSettings": {
     "NOTSET-USE-JSON-DefaultConnection": "",
-    "DefaultConnection": "Server=localhost;Database=DadABase;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true",
+    "DefaultConnection": "",
     "SuperUserLastName": "",
     "SuperUserFirstName": "",
     "ApiKey": "",
@@ -22,7 +22,7 @@
     }
   },
   "AzureAD": {
-    "TenantId": "your-tenant",
+    "TenantId": "",
     "Instance": "https://login.microsoftonline.com/",
     "Domain": "yourdomain.onmicrosoft.com",
     "ClientId": "your-client-id",

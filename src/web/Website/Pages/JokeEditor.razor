@@ -1,0 +1,175 @@
+@page "/jokeeditor"
+@attribute [Authorize(Roles = "Admin")]
+@using MudBlazor
+<PageTitle>Joke Editor</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-4">
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudText Typo="Typo.h4" GutterBottom="true">Joke Editor</MudText>
+        <MudText Typo="Typo.body1" Class="mb-4">Manage and edit jokes in the database.</MudText>
+
+        @if (isLoading)
+        {
+            <div class="d-flex flex-column align-center my-5">
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                <MudText Typo="Typo.body2" Class="mt-2">Loading jokes...</MudText>
+            </div>
+        }
+        else if (editingJoke != null)
+        {
+            <!-- Edit Form -->
+            <MudPaper Elevation="1" Class="pa-4">
+                <MudText Typo="Typo.h5" Class="mb-4">@(isAddingNew ? "Add New Joke" : $"Edit Joke #{editingJoke.JokeId}")</MudText>
+                
+                <MudTextField @bind-Value="editingJoke.JokeTxt" 
+                              Label="Joke Text" 
+                              Variant="Variant.Outlined" 
+                              Lines="4" 
+                              Class="mb-4" />
+
+                <MudTextField @bind-Value="editingJoke.Attribution" 
+                              Label="Attribution" 
+                              Variant="Variant.Outlined" 
+                              Class="mb-4" />
+
+                <MudTextField @bind-Value="editingJoke.ImageTxt" 
+                              Label="Image Description" 
+                              Variant="Variant.Outlined" 
+                              Lines="2" 
+                              Class="mb-4" />
+
+                <MudSelect T="int" 
+                              Label="Categories" 
+                              Variant="Variant.Outlined"
+                              MultiSelection="true"
+                              @bind-SelectedValues="selectedCategoryIds"
+                              MultiSelectionTextFunc="@(new Func<List<string>, string>(GetSelectedCategoriesText))"
+                              Class="mb-4">
+                    @foreach (var category in allCategories)
+                    {
+                        <MudSelectItem T="int" Value="@category.JokeCategoryId">@category.JokeCategoryTxt</MudSelectItem>
+                    }
+                </MudSelect>
+
+                @if (!isAddingNew)
+                {
+                    <MudPaper Class="pa-3 mb-4" Outlined="true">
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Created By</MudText>
+                                <MudText Typo="Typo.body2">@editingJoke.CreateUserName on @FormatLocalDateTime(editingJoke.CreateDateTime)</MudText>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Last Changed By</MudText>
+                                <MudText Typo="Typo.body2">@editingJoke.ChangeUserName on @FormatLocalDateTime(editingJoke.ChangeDateTime)</MudText>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                }
+
+                <MudStack Row="true" Spacing="2" Class="mb-3">
+                    <MudButton Variant="Variant.Filled" 
+                               Color="Color.Primary" 
+                               OnClick="SaveJoke" 
+                               Disabled="@isSaving">
+                        @if (isSaving)
+                            {
+                                <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
+                            }
+                            @(isAddingNew ? "Add Joke" : "Save Changes")
+                        </MudButton>
+                    <MudButton Variant="Variant.Outlined" 
+                               Color="Color.Secondary" 
+                               OnClick="CancelEdit" 
+                               Disabled="@isSaving">
+                        Cancel
+                    </MudButton>
+                </MudStack>
+
+                @if (!string.IsNullOrEmpty(editMessage))
+                {
+                    <MudAlert Severity="@GetAlertSeverity()" Class="mt-3">@editMessage</MudAlert>
+                }
+            </MudPaper>
+        }
+        else
+        {
+            <!-- List View -->
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Success" 
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="AddNewJoke">
+                    Add New Joke
+                </MudButton>
+            </MudStack>
+            <MudStack Spacing="3" Class="mb-4">
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="searchText" 
+                                      Label="Search" 
+                                      Placeholder="Search jokes..." 
+                                      Variant="Variant.Outlined"
+                                      Immediate="true"
+                                      DebounceInterval="300"
+                                      OnDebounceIntervalElapsed="FilterJokes"
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Filled.Search" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect Value="categoryFilter" 
+                                   Label="Category" 
+                                   Variant="Variant.Outlined"
+                                   ValueChanged="@((string val) => { categoryFilter = val; FilterJokes(); })">
+                            <MudSelectItem Value="@("")">All Categories</MudSelectItem>
+                            @foreach (var category in allCategories)
+                            {
+                                <MudSelectItem Value="@category.JokeCategoryTxt">@category.JokeCategoryTxt</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+            </MudStack>
+
+            <MudDataGrid T="Joke" 
+                         Items="@filteredJokes" 
+                         Striped="true" 
+                         Hover="true"
+                         SortMode="SortMode.Multiple"
+                         Filterable="false"
+                         Dense="true"
+                         Class="mb-4">
+                <Columns>
+                    <PropertyColumn Property="x => x.JokeId" Title="ID" />
+                    <TemplateColumn Title="Joke" Sortable="true" SortBy="@_sortByJokeText">
+                        <CellTemplate>
+                            <MudText Typo="Typo.body2">
+                                @(context.Item.JokeTxt != null ? (context.Item.JokeTxt.Length > 100 ? context.Item.JokeTxt.Substring(0, 100) + "..." : context.Item.JokeTxt) : "")
+                            </MudText>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.Categories" Title="Categories" />
+                    <PropertyColumn Property="x => x.Attribution" Title="Attribution" />
+                    <TemplateColumn Title="Actions" Sortable="false">
+                        <CellTemplate>
+                            <MudButton Variant="Variant.Filled" 
+                                       Color="Color.Primary" 
+                                       Size="Size.Small" 
+                                       StartIcon="@Icons.Material.Filled.Edit"
+                                       OnClick="@(() => EditJoke(context.Item.JokeId))">
+                                Edit
+                            </MudButton>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <PagerContent>
+                    <MudDataGridPager T="Joke" />
+                </PagerContent>
+            </MudDataGrid>
+
+            <MudText Typo="Typo.body2">
+                Total Jokes: @(filteredJokes?.Count() ?? 0) of @(allJokes?.Count() ?? 0)
+            </MudText>
+        }
+    </MudPaper>
+</MudContainer>
