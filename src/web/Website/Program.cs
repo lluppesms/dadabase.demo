@@ -101,13 +101,12 @@ if (enableAuth)
     // ----- Configure Authentication ---------------------------------------------------------------------
     builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
       .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAD"));
-    //builder.Services.AddControllersWithViews()
-    //  .AddMicrosoftIdentityUI();
+    builder.Services.AddControllersWithViews()
+      .AddMicrosoftIdentityUI();
     // ----- Configure Authorization ----------------------------------------------------------------------
-    builder.Services.AddAuthorization(options =>
-    {
-        options.FallbackPolicy = options.DefaultPolicy;
-    });
+    // Note: No FallbackPolicy is set, so pages are accessible anonymously by default.
+    // Use [Authorize] attribute on pages/components that require authentication.
+    builder.Services.AddAuthorization();
     // Add isAdmin claim and admin role membership attribute
     builder.Services.AddTransient<IClaimsTransformation, MyClaimsTransformation>();
 }
