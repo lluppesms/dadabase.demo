@@ -116,7 +116,8 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error updating ImageTxt for JokeId {jokeId}: {Utilities.GetExceptionMessage(ex)}");
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error updating ImageTxt for JokeId {jokeId}: {msg}");
             return false;
         }
     }
@@ -449,7 +450,8 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error updating joke {joke.JokeId}: {Utilities.GetExceptionMessage(ex)}");
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error updating joke {joke.JokeId}: {msg}");
             return false;
         }
     }
@@ -494,15 +496,15 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
             }
 
             _context.SaveChanges();
-                        return true;
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error updating categories for joke {jokeId}: {Utilities.GetExceptionMessage(ex)}");
-                        return false;
-                    }
-                }
-
+            return true;
+        }
+        catch (Exception ex)
+        {
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error updating categories for joke {jokeId}: {msg}");
+            return false;
+        }
+    }
 
     /// <summary>
     /// Add a new joke
@@ -535,7 +537,8 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error adding joke: {Utilities.GetExceptionMessage(ex)}");
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error adding joke: {msg}");
             return -1;
         }
     }
