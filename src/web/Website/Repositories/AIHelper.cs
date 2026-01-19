@@ -1,5 +1,6 @@
 ﻿using Azure.AI.OpenAI;
 using Azure.Identity;
+using Azure.Storage.Blobs;
 using Microsoft.Agents.AI;
 using OpenAI;
 using OpenAI.Chat;
@@ -159,9 +160,26 @@ public class AIHelper : IAIHelper
     {
         if (jokeId <= 0) return string.Empty;
 
-        // This is now a synchronous wrapper for the async method
-        // In a real scenario, we'd make this async too
-        return GetJokeImageUrlAsync(jokeId).GetAwaiter().GetResult();
+        // Use Task.Run to avoid blocking the synchronization context
+        return Task.Run(async () => await GetJokeImageUrlAsync(jokeId)).GetAwaiter().GetResult();
+    }
+
+    /// <summary>
+    /// Get a BlobContainerClient for the joke images container
+    /// </summary>
+    /// <returns>BlobContainerClient or null if not configured</returns>
+    private BlobContainerClient GetBlobContainerClient()
+    {
+        if (string.IsNullOrEmpty(blobStorageAccountName))
+        {
+            return null;
+        }
+
+        var blobServiceClient = new BlobServiceClient(
+            new Uri($"https://{blobStorageAccountName}.blob.core.windows.net"),
+            azureCredential);
+
+        return blobServiceClient.GetBlobContainerClient(blobContainerName);
     }
 
     /// <summary>
@@ -171,19 +189,19 @@ public class AIHelper : IAIHelper
     /// <returns>Image URL if exists, empty string otherwise</returns>
     private async Task<string> GetJokeImageUrlAsync(int jokeId)
     {
-        if (jokeId <= 0 || string.IsNullOrEmpty(blobStorageAccountName))
+        if (jokeId <= 0)
         {
             return string.Empty;
         }
 
         try
         {
-            var blobServiceClient = new Azure.Storage.Blobs.BlobServiceClient(
-                new Uri($"https://{blobStorageAccountName}.blob.core.windows.net"),
-                azureCredential);
+            var containerClient = GetBlobContainerClient();
+            if (containerClient == null)
+            {
+                return string.Empty;
+            }
 
-            var containerClient = blobServiceClient.GetBlobContainerClient(blobContainerName);
-            
             var blobName = $"{jokeId}.png";
             var blobClient = containerClient.GetBlobClient(blobName);
 
@@ -208,20 +226,15 @@ public class AIHelper : IAIHelper
     /// <returns>Blob URL of the saved image or empty string if failed</returns>
     private async Task<string> SaveImageToBlobAsync(byte[] imageBytes, int jokeId)
     {
-        if (string.IsNullOrEmpty(blobStorageAccountName))
-        {
-            Console.WriteLine("Blob storage account name not configured");
-            return string.Empty;
-        }
-
         try
         {
-            var blobServiceClient = new Azure.Storage.Blobs.BlobServiceClient(
-                new Uri($"https://{blobStorageAccountName}.blob.core.windows.net"),
-                azureCredential);
+            var containerClient = GetBlobContainerClient();
+            if (containerClient == null)
+            {
+                Console.WriteLine("Blob storage account name not configured");
+                return string.Empty;
+            }
 
-            var containerClient = blobServiceClient.GetBlobContainerClient(blobContainerName);
-            
             // Create container if it doesn't exist
             await containerClient.CreateIfNotExistsAsync(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
 
