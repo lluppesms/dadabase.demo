@@ -62,10 +62,10 @@
     <Content Update="applicationSettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="Data\Jokes.json">
+    <Content Update="wwwroot\buildinfo.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\buildinfo.json">
+    <Content Update="Data\Jokes.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
