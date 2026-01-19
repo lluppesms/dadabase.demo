@@ -22,7 +22,7 @@ public partial class JokeEditor : ComponentBase
     private IEnumerable<Joke> filteredJokes;
     private List<JokeCategory> allCategories;
     private Joke editingJoke;
-    private List<int> selectedCategoryIds = new();
+    private IEnumerable<int> selectedCategoryIds = new HashSet<int>();
 
     private bool isLoading = true;
     private bool isSaving = false;
@@ -96,26 +96,19 @@ public partial class JokeEditor : ComponentBase
     }
 
     /// <summary>
-    /// Get checked state for a category
+    /// Get display text for selected categories in multi-select
     /// </summary>
-    private bool GetCategoryChecked(int categoryId)
+    private string GetSelectedCategoriesText(List<string> selectedValues)
     {
-        return selectedCategoryIds.Contains(categoryId);
-    }
+        var selectedIds = selectedCategoryIds.ToList();
+        if (selectedIds.Count == 0)
+            return "Select categories...";
 
-    /// <summary>
-    /// Toggle category selection for MudBlazor checkbox
-    /// </summary>
-    private void ToggleCategoryMud(int categoryId, bool isChecked)
-    {
-        if (isChecked && !selectedCategoryIds.Contains(categoryId))
-        {
-            selectedCategoryIds.Add(categoryId);
-        }
-        else if (!isChecked && selectedCategoryIds.Contains(categoryId))
-        {
-            selectedCategoryIds.Remove(categoryId);
-        }
+        var selectedNames = allCategories
+            .Where(c => selectedIds.Contains(c.JokeCategoryId))
+            .Select(c => c.JokeCategoryTxt);
+
+        return string.Join(", ", selectedNames);
     }
 
     /// <summary>
@@ -152,7 +145,7 @@ public partial class JokeEditor : ComponentBase
             };
 
             // Parse categories to get selected category IDs
-            selectedCategoryIds = new List<int>();
+            var categoryIds = new HashSet<int>();
             if (!string.IsNullOrEmpty(joke.Categories))
             {
                 var categoryNames = joke.Categories.Split(',').Select(c => c.Trim());
@@ -162,10 +155,11 @@ public partial class JokeEditor : ComponentBase
                         c.JokeCategoryTxt.Equals(categoryName, StringComparison.OrdinalIgnoreCase));
                     if (category != null)
                     {
-                        selectedCategoryIds.Add(category.JokeCategoryId);
+                        categoryIds.Add(category.JokeCategoryId);
                     }
                 }
             }
+            selectedCategoryIds = categoryIds;
 
             editMessage = string.Empty;
         }

@@ -1,16 +1,35 @@
 ﻿@page "/admin"
 <PageTitle>Admin</PageTitle>
 
-<div style="padding: 25px;">
-    <h1>Admin Page</h1>
-    <p>You are logged in as: @userName</p>
+<div class="container" style="padding: 25px;">
+    <div class="card mb-4">
+        <div class="card-body">
+            <h1>Admin Menu</h1>
+            <p>You are logged in as: @userName</p>
 
-    <AuthorizeView Roles="Admin">
-        <p>You are in the the Admin role!</p>
-        <ul>
-            <li>Data Source: @Settings.DataSource</li>
-            <li>Build Info: @buildInfo</li>
-            <li>API Key: @apiKeyInfo</li>
-        </ul>
-    </AuthorizeView>
+            <AuthorizeView Roles="Admin">
+                <h4 class="mt-4 mb-3">Admin Tools</h4>
+                <div class="d-flex flex-wrap gap-3 mb-4">
+                    <a href="JokeEditor" class="btn btn-primary">
+                        <i class="fas fa-edit me-2"></i>Joke Editor
+                    </a>
+                    <a href="Export" class="btn btn-primary">
+                        <i class="fas fa-download me-2"></i>Export Data
+                    </a>
+                    <a href="swagger" class="btn btn-primary" target="_blank">
+                        <i class="fas fa-code me-2"></i>Swagger API
+                    </a>
+                </div>
+
+                <h4 class="mt-4 mb-3">System Information</h4>
+                <ul>
+                    <li>Data Source: @dataSource</li>
+                    @* <li><span class="build-number" title="@FormatBuildDate(buildInfo.BuildDate)">@buildInfo.BuildNumber</span></li> *@
+                    <li>API Key: @apiKeyInfo</li>
+                    <li>AI Chat: @aiChatInfo</li>
+                    <li>AI Image: @aiImageInfo</li>
+                </ul>
+            </AuthorizeView>
+        </div>
+    </div>
 </div>

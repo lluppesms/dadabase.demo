@@ -38,16 +38,18 @@
                               Lines="2" 
                               Class="mb-4" />
 
-                <MudText Typo="Typo.subtitle1" Class="mb-2">Categories</MudText>
-                <MudPaper Class="pa-3 mb-4" Outlined="true">
+                <MudSelect T="int" 
+                              Label="Categories" 
+                              Variant="Variant.Outlined"
+                              MultiSelection="true"
+                              @bind-SelectedValues="selectedCategoryIds"
+                              MultiSelectionTextFunc="@(new Func<List<string>, string>(GetSelectedCategoriesText))"
+                              Class="mb-4">
                     @foreach (var category in allCategories)
                     {
-                        <MudCheckBox Value="@GetCategoryChecked(category.JokeCategoryId)"
-                                     ValueChanged="@((bool val) => ToggleCategoryMud(category.JokeCategoryId, val))"
-                                     Label="@category.JokeCategoryTxt" 
-                                     Color="Color.Primary" />
+                        <MudSelectItem T="int" Value="@category.JokeCategoryId">@category.JokeCategoryTxt</MudSelectItem>
                     }
-                </MudPaper>
+                </MudSelect>
 
                 <MudSelect @bind-Value="editingJoke.ActiveInd" 
                            Label="Active" 
