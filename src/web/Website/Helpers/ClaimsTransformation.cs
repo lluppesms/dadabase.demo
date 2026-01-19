@@ -23,13 +23,10 @@ public class MyClaimsTransformation : IClaimsTransformation
         if (principal != null && principal.Identity != null)
         {
             claimsIdentity = new ClaimsIdentity(principal.Identity);
-
             // <hack> Yes... this is a hack, but it works for this simple example. This should be replaced by actual Active Directory roles. </hack>
             var isAdmin =
-                !string.IsNullOrEmpty(Data.Constants.SuperUserFirstName) &&
-                !string.IsNullOrEmpty(Data.Constants.SuperUserLastName) &&
-                claimsIdentity.Name.Contains(Data.Constants.SuperUserFirstName, StringComparison.InvariantCultureIgnoreCase) &&
-                claimsIdentity.Name.Contains(Data.Constants.SuperUserLastName, StringComparison.InvariantCultureIgnoreCase);
+                !string.IsNullOrEmpty(Data.Constants.AdminUserList) &&
+                Data.Constants.AdminUserList.Contains(claimsIdentity.Name, StringComparison.InvariantCultureIgnoreCase);
 
             if (isAdmin && !principal.IsInRole(Data.Constants.Security.AdminRoleName))
             {

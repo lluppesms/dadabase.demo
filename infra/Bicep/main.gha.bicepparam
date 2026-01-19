@@ -8,6 +8,7 @@ param environmentCode = '#{ENVCODE}#'
 param location = '#{RESOURCE_GROUP_LOCATION}#'
 param instanceNumber = '#{INSTANCE_NUMBER}#'
 
+param adminUserList = '#{ADMIN_USER_LIST}#'
 param adInstance = '#{LOGIN_INSTANCEENDPOINT}#'
 param adDomain = '#{LOGIN_DOMAIN}#'
 param adTenantId = '#{LOGIN_TENANTID}#'

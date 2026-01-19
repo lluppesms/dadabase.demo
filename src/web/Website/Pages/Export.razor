@@ -1,5 +1,5 @@
 @page "/export"
-@attribute [Authorize]
+@attribute [Authorize(Roles = "Admin")]
 <PageTitle>Export Data</PageTitle>
 
 <div class="container" style="padding: 25px;">
@@ -8,7 +8,7 @@
             <h1>Export Joke Data</h1>
             <p>Export all jokes and categories from the database to a SQL file.</p>
             <p>The exported SQL file will be in the same format as the InsertDefaultData.sql file and can be used to restore or transfer your joke collection.</p>
-            
+
             @if (isExporting)
             {
                 <div class="progress mb-3">

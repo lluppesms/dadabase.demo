@@ -67,7 +67,7 @@ public class ConfigController : BaseAPIController
             Console.WriteLine($"AppSettings.ApiKey={AppSettingsValues.ApiKey}");
             Console.WriteLine($"AppSettings.DefaultConnection={Utilities.SanitizeConnection(AppSettingsValues.DefaultConnection)}");
             Console.WriteLine($"AppSettings.EnvironmentName={AppSettingsValues.EnvironmentName}");
-            Console.WriteLine($"AppSettings.SuperUser={AppSettingsValues.SuperUserFirstName} {AppSettingsValues.SuperUserLastName}");
+            Console.WriteLine($"AppSettings.AdminList={AppSettingsValues.AdminUserList}");
             Console.WriteLine($"AppSettings.VisualStudioTenantId={AppSettingsValues.VisualStudioTenantId}");
         }
         catch (Exception ex)

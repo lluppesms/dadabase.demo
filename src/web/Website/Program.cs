@@ -20,7 +20,10 @@ builder.Configuration
   .AddUserSecrets(System.Reflection.Assembly.GetExecutingAssembly(), true);
 var appSettings = builder.Configuration.GetSection("AppSettings");
 builder.Services.Configure<AppSettings>(appSettings);
-var settings = builder.Configuration.GetSection(nameof(AppSettings)).Get<AppSettings>();
+var settings = appSettings.Get<AppSettings>();
+
+// set the application title from the app settings
+DadABase.Data.Constants.Initialize(settings);
 
 // Add Azure Key Vault if configured
 var keyVaultName = builder.Configuration["KeyVaultName"];
@@ -51,9 +54,6 @@ builder.Services.AddSingleton<DefaultAzureCredential>(provider =>
     }
     return creds;
 });
-
-// set the application title from the app settings
-DadABase.Data.Constants.Initialize(settings);
 
 // Add telemetry
 if (!string.IsNullOrEmpty(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]))
@@ -89,9 +89,6 @@ else
     var jsonFilePath = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Data/Jokes.json");
     builder.Services.AddSingleton<IJokeRepository>(sp => new JokeJsonRepository(jsonFilePath));
 }
-
-// Register Azure credential for Managed Identity
-builder.Services.AddSingleton(sp => new DefaultAzureCredential());
 
 builder.Services.AddSingleton<IAIHelper, AIHelper>();
 builder.Services.AddScoped<IBuildInfoService, BuildInfoService>();
