@@ -56,8 +56,7 @@ gh variable set SQLADMIN_LOGIN_USERID -b 'youruser@yourdomain.com'
 gh variable set SQLADMIN_LOGIN_USERSID -b 'yoursid'
 gh variable set SQLADMIN_LOGIN_TENANTID -b 'yourtennant'
 
-gh variable set SUPERUSER_FIRSTNAME -b 'YourFirstName'
-gh variable set SUPERUSER_LASTNAME -b 'YourLastName'
+gh variable set ADMIN_USER_LIST -b 'user1@domain.com,user2@domain.com'
 ```
 
 ---

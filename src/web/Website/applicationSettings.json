@@ -1,10 +1,16 @@
 {
-  "AppSettings": {
-    "NOTSET-USE-JSON-DefaultConnection": "",
-    "DefaultConnection": "",
-    "SuperUserLastName": "",
-    "SuperUserFirstName": "",
-    "ApiKey": "",
+"AppSettings": {
+  "AppVersion": "1.0.0",
+  "AppTitle": "The Dad-A-Base",
+  "AppDescription": "An ASP.NET Core Web API for storing Dad Jokes",
+  "EnvironmentName": "Development",
+  "DataSource": "JSON",
+  "EnableSwagger": true,
+
+  "NOTSET-USE-JSON-DefaultConnection": "",
+  "DefaultConnection": "",
+  "AdminUserList": "",
+  "ApiKey": "",
     "AzureOpenAI": {
       "Chat": {
         "Endpoint": "https://your-project-resource.cognitiveservices.azure.com/",

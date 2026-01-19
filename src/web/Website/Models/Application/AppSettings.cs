@@ -40,14 +40,9 @@ public class AppSettings
     public string UserName { get; set; }
 
     /// <summary>
-    /// Super User First Name
+    /// CSV List of Admin User Account Names
     /// </summary>
-    public string SuperUserFirstName { get; set; }
-
-    /// <summary>
-    /// Super User Last Name
-    /// </summary>
-    public string SuperUserLastName { get; set; }
+    public string AdminUserList { get; set; }
 
     /// <summary>
     /// Application Insights Key

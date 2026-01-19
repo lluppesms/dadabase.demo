@@ -21,8 +21,7 @@ public static class Constants
     public static void Initialize(AppSettings appSettings)
     {
         ApplicationTitle = appSettings.AppTitle;
-        SuperUserFirstName = appSettings.SuperUserFirstName;
-        SuperUserLastName = appSettings.SuperUserLastName;
+        AdminUserList = appSettings.AdminUserList;
     }
 
     /// <summary>
@@ -35,14 +34,9 @@ public static class Constants
     // See MyClaimsTransformation.TransformAsync() for more details.
 
     /// <summary>
-    /// Super User First Name
+    /// CSV List of Admin User Account Names
     /// </summary>
-    public static string SuperUserFirstName { get; private set; }
-
-    /// <summary>
-    /// Super User Last Name
-    /// </summary>
-    public static string SuperUserLastName { get; private set; }
+    public static string AdminUserList { get; set; }
 
     /// <summary>
     /// Root Path

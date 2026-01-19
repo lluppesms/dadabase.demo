@@ -40,8 +40,7 @@ param adTenantId string = ''
 param adClientId string = ''
 param adCallbackPath string = '/signin-oidc'
 
-param superUserFirstName string = ''
-param superUserLastName string = ''
+param adminUserList string = ''
 
 param appDataSource string = 'JSON'
 param appSwaggerEnabled string = 'true'
@@ -250,8 +249,7 @@ module webSiteAppSettingsModule './modules/webapp/websiteappsettings.bicep' = {
       AppSettings__EnableSwagger: appSwaggerEnabled
       AppSettings__DataSource: appDataSource
       AppSettings__ApiKey: webApiKey
-      AppSettings_SuperUserFirstName: superUserFirstName
-      AppSettings_SuperUserLastName: superUserLastName
+      AppSettings_AdminUserList: adminUserList
       AppSettings__AzureOpenAI__Chat__Endpoint: azureOpenAIChatEndpoint
       AppSettings__AzureOpenAI__Chat__DeploymentName: azureOpenAIChatDeploymentName
       AppSettings__AzureOpenAI__Chat__ApiKey: azureOpenAIChatApiKey
