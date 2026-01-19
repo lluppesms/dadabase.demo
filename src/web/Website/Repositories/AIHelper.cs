@@ -175,10 +175,7 @@ public class AIHelper : IAIHelper
             return null;
         }
 
-        var blobServiceClient = new BlobServiceClient(
-            new Uri($"https://{blobStorageAccountName}.blob.core.windows.net"),
-            azureCredential);
-
+        var blobServiceClient = new BlobServiceClient(new Uri($"https://{blobStorageAccountName}.blob.core.windows.net"), azureCredential);
         return blobServiceClient.GetBlobContainerClient(blobContainerName);
     }
 
