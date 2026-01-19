@@ -24,6 +24,14 @@ public interface IAIHelper
     /// Generate an image using AI
     /// </summary>
     /// <param name="imageDescription">Image description</param>
+    /// <param name="jokeId">Joke ID for saving the image</param>
     /// <returns>Tuple with image URL, success flag, and message</returns>
-    Task<(string, bool, string)> GenerateAnImage(string imageDescription);
+    Task<(string, bool, string)> GenerateAnImage(string imageDescription, int jokeId = 0);
+
+    /// <summary>
+    /// Get the image file path for a joke
+    /// </summary>
+    /// <param name="jokeId">Joke ID</param>
+    /// <returns>Image file path if exists, empty string otherwise</returns>
+    string GetJokeImagePath(int jokeId);
 }

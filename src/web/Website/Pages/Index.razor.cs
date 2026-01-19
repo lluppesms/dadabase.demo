@@ -76,6 +76,16 @@ public partial class Index : ComponentBase
         jokeImageMessage = string.Empty;
         jokeImageUrl = string.Empty;
         jokeImageDescription = string.Empty;
+
+        // Check if an image already exists for this joke
+        var existingImagePath = GenAIAgent.GetJokeImagePath(myJoke.JokeId);
+        if (!string.IsNullOrEmpty(existingImagePath))
+        {
+            jokeImageUrl = existingImagePath;
+            jokeImageDescription = myJoke.ImageTxt ?? string.Empty;
+            imageGenerated = true;
+        }
+
         StateHasChanged();
     }
     private async Task GenerateAIImage()
@@ -94,8 +104,8 @@ public partial class Index : ComponentBase
             imageLoading = true;
             StateHasChanged();
 
-            // Skip to image generation
-            (jokeImageUrl, var imgSuccessFromCache, var imgErrorFromCache) = await GenAIAgent.GenerateAnImage(jokeImageDescription);
+            // Skip to image generation with jokeId
+            (jokeImageUrl, var imgSuccessFromCache, var imgErrorFromCache) = await GenAIAgent.GenerateAnImage(jokeImageDescription, myJoke.JokeId);
             jokeImageMessage = imgSuccessFromCache ? "The DadJoke AI tried to comprehend this joke and has done it's best to draw a mental picture for you!" : imgErrorFromCache;
             imageGenerated = imgSuccessFromCache;
             imageLoading = false;
@@ -126,11 +136,11 @@ public partial class Index : ComponentBase
             myJoke.ImageTxt = jokeImageDescription;
         }
 
-        // Step 2: Generate the actual image from the description
+        // Step 2: Generate the actual image from the description with jokeId
         jokeImageMessage = "🚀 OK - I've got an idea! Let me draw that for you! (gimme a sec...)";
         StateHasChanged();
 
-        (jokeImageUrl, var imgSuccess, var imgErrorMessage) = await GenAIAgent.GenerateAnImage(jokeImageDescription);
+        (jokeImageUrl, var imgSuccess, var imgErrorMessage) = await GenAIAgent.GenerateAnImage(jokeImageDescription, myJoke.JokeId);
         jokeImageMessage = imgSuccess ? "The DadJoke AI tried to comprehend this joke and has done it's best to draw a mental picture for you!" : imgErrorMessage;
         imageGenerated = imgSuccess;
         imageLoading = false;

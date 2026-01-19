@@ -27,6 +27,7 @@ public class AIHelper : IAIHelper
     private ImageClient imageGenerator = null;
 
     private readonly string vsTenantId = string.Empty;
+    private readonly IWebHostEnvironment environment;
     #endregion
 
     private const string JokeImageGeneratorPrompt =
@@ -71,8 +72,10 @@ public class AIHelper : IAIHelper
     /// <summary>
     /// Give this a description and get back a generated image as a base64 data URL
     /// </summary>
+    /// <param name="imageDescription">Image description</param>
+    /// <param name="jokeId">Joke ID for saving the image</param>
     /// <returns></returns>
-    public async Task<(string, bool, string)> GenerateAnImage(string imageDescription)
+    public async Task<(string, bool, string)> GenerateAnImage(string imageDescription, int jokeId = 0)
     {
         var imageDataUrl = string.Empty;
         try
@@ -80,6 +83,17 @@ public class AIHelper : IAIHelper
             if (!InitializeImageGenerator())
             {
                 return (string.Empty, false, "AI Image Keys not found!");
+            }
+
+            // Check if image already exists
+            if (jokeId > 0)
+            {
+                var existingImagePath = GetJokeImagePath(jokeId);
+                if (!string.IsNullOrEmpty(existingImagePath))
+                {
+                    Console.WriteLine($"Image already exists for JokeId {jokeId}: {existingImagePath}");
+                    return (existingImagePath, true, string.Empty);
+                }
             }
 
             // gpt-image-1 parameters:
@@ -96,6 +110,19 @@ public class AIHelper : IAIHelper
 
             // gpt-image-1 models return base64 encoded image bytes
             var imageBytes = image.ImageBytes.ToArray();
+
+            // Save to file if jokeId is provided
+            if (jokeId > 0)
+            {
+                var imagePath = SaveImageToFile(imageBytes, jokeId);
+                if (!string.IsNullOrEmpty(imagePath))
+                {
+                    Console.WriteLine($"Saved image to {imagePath} ({imageBytes.Length} bytes)");
+                    return (imagePath, true, string.Empty);
+                }
+            }
+
+            // Fallback to base64 if saving failed or no jokeId
             var base64Image = Convert.ToBase64String(imageBytes);
             imageDataUrl = $"data:image/png;base64,{base64Image}";
 
@@ -120,11 +147,33 @@ public class AIHelper : IAIHelper
         }
     }
 
+    /// <summary>
+    /// Get the image file path for a joke if it exists
+    /// </summary>
+    /// <param name="jokeId">Joke ID</param>
+    /// <returns>Image file path if exists, empty string otherwise</returns>
+    public string GetJokeImagePath(int jokeId)
+    {
+        if (jokeId <= 0) return string.Empty;
+
+        var fileName = $"{jokeId}.png";
+        var webRootPath = environment.WebRootPath;
+        var imageFolderPath = Path.Combine(webRootPath, "images", "jokes");
+        var fullPath = Path.Combine(imageFolderPath, fileName);
+
+        if (File.Exists(fullPath))
+        {
+            return $"/images/jokes/{fileName}";
+        }
+
+        return string.Empty;
+    }
+
     #region Helper Methods
     /// <summary>
     /// Initialization
     /// </summary>
-    public AIHelper(IConfiguration config)
+    public AIHelper(IConfiguration config, IWebHostEnvironment env)
     {
         openaiEndpointUrl = config["AppSettings:AzureOpenAI:Chat:Endpoint"];
         openaiEndpoint = !string.IsNullOrEmpty(openaiEndpointUrl) ? new(config["AppSettings:AzureOpenAI:Chat:Endpoint"]) : null;
@@ -137,6 +186,7 @@ public class AIHelper : IAIHelper
         openaiImageApiKey = config["AppSettings:AzureOpenAI:Image:ApiKey"];
 
         vsTenantId = config["VisualStudioTenantId"];
+        environment = env;
     }
 
     /// <summary>
@@ -220,6 +270,38 @@ public class AIHelper : IAIHelper
             var errorMessage = ex.Message;
             Console.WriteLine($"Error initializing Image Agent: {errorMessage}");
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Save image bytes to a file
+    /// </summary>
+    /// <param name="imageBytes">Image bytes</param>
+    /// <param name="jokeId">Joke ID</param>
+    /// <returns>Web path to the saved image or empty string if failed</returns>
+    private string SaveImageToFile(byte[] imageBytes, int jokeId)
+    {
+        try
+        {
+            var fileName = $"{jokeId}.png";
+            var webRootPath = environment.WebRootPath;
+            var imageFolderPath = Path.Combine(webRootPath, "images", "jokes");
+
+            // Ensure directory exists
+            if (!Directory.Exists(imageFolderPath))
+            {
+                Directory.CreateDirectory(imageFolderPath);
+            }
+
+            var fullPath = Path.Combine(imageFolderPath, fileName);
+            File.WriteAllBytes(fullPath, imageBytes);
+
+            return $"/images/jokes/{fileName}";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving image for JokeId {jokeId}: {ex.Message}");
+            return string.Empty;
         }
     }
     #endregion
