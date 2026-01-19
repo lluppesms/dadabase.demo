@@ -43,23 +43,6 @@ gh secret set LOGIN_DOMAIN -b '<yourdomain>.onmicrosoft.com'
 gh secret set LOGIN_INSTANCEENDPOINT -b 'https://login.microsoftonline.com/'
 gh secret set LOGIN_TENANTID -b '<yourTenantId>'
 
-DEPRECATED: gh variable set WEB_APP_PROJECT_FOLDER_NAME -b 'src/web/Website'
-DEPRECATED: gh variable set WEB_APP_PROJECT_NAME -b 'DadABase.Web'
-DEPRECATED: gh variable set WEB_APP_TEST_FOLDER_NAME -b 'src/web/Tests'
-DEPRECATED: gh variable set WEB_APP_TEST_PROJECT_NAME -b 'DadABase.Tests'
-
-DEPRECATED: gh variable set FUNCTION_APP_PROJECT_FOLDER_NAME -b 'src/function/Function'
-DEPRECATED: gh variable set FUNCTION_APP_PROJECT_NAME -b 'DadABase.Function'
-DEPRECATED: gh variable set FUNCTION_APP_TEST_FOLDER_NAME -b 'src/function/Tests'
-DEPRECATED: gh variable set FUNCTION_APP_TEST_PROJECT_NAME -b 'DadABase.Function.Tests'
-
-DEPRECATED: gh variable set SQL_APP_PROJECT_FOLDER_NAME -b 'src/sql.database'
-DEPRECATED: gh variable set SQL_APP_SOLUTION_NAME -b 'sql.database'
-DEPRECATED: gh variable set SQL_APP_PROJECT_NAME -b 'sql.database'
-
-DEPRECATED: gh variable set CONSOLE_APP_PROJECT_FOLDER_NAME -b 'src/console'
-DEPRECATED: gh variable set CONSOLE_APP_PROJECT_NAME -b 'dadabase.net10.console'
-
 gh variable set OPENAI_CHAT_DEPLOYMENTNAME -b 'gpt-5-mini'
 gh variable set OPENAI_CHAT_MAXTOKENS -b '300'
 gh variable set OPENAI_CHAT_TEMPERATURE -b '0.7'
@@ -72,6 +55,9 @@ gh variable set SQL_DATABASE_NAME -b 'DadABase'
 gh variable set SQLADMIN_LOGIN_USERID -b 'youruser@yourdomain.com'
 gh variable set SQLADMIN_LOGIN_USERSID -b 'yoursid'
 gh variable set SQLADMIN_LOGIN_TENANTID -b 'yourtennant'
+
+gh variable set SUPERUSER_FIRSTNAME -b 'YourFirstName'
+gh variable set SUPERUSER_LASTNAME -b 'YourLastName'
 ```
 
 ---
