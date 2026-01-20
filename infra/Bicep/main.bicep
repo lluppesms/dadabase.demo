@@ -172,16 +172,15 @@ module appRoleAssignments2 './modules/iam/roleassignments.bicep' = if (addRoleAs
     storageAccountName: functionStorageModule.outputs.name
   }
 }
-module adminRoleAssignments './modules/iam/roleassignments.bicep' = if (addRoleAssignments) {
-  name: 'userRoleAssignments${deploymentSuffix}'
-  params: {
-    identityPrincipalId: adminUserId
-    principalType: 'User'
-    storageAccountName: storageModule.outputs.name
-    keyVaultName:  keyVaultModule.outputs.name
-  }
-}
-
+// module adminRoleAssignments './modules/iam/roleassignments.bicep' = if (addRoleAssignments) {
+//   name: 'userRoleAssignments${deploymentSuffix}'
+//   params: {
+//     identityPrincipalId: adminUserId
+//     principalType: 'User'
+//     storageAccountName: storageModule.outputs.name
+//     keyVaultName:  keyVaultModule.outputs.name
+//   }
+// }
 
 // --------------------------------------------------------------------------------
 module keyVaultModule './modules/security/keyvault.bicep' = {
