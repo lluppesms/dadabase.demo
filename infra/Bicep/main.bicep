@@ -102,6 +102,7 @@ module storageModule './modules/storage/storageaccount.bicep' = {
     storageAccountName: resourceNames.outputs.storageAccountName
     location: location
     commonTags: commonTags
+    containerNames: ['input', 'output', 'joke-images']
   }
 }
 
@@ -158,19 +159,28 @@ module appRoleAssignments './modules/iam/roleassignments.bicep' = if (addRoleAss
   params: {
     identityPrincipalId: identity.outputs.managedIdentityPrincipalId
     principalType: 'ServicePrincipal'
-    storageAccountName: functionStorageModule.outputs.name
+    storageAccountName: storageModule.outputs.name
     keyVaultName:  keyVaultModule.outputs.name
   }
 }
-// module adminRoleAssignments './security/roleassignments.bicep' = if (addRoleAssignments) {
-//   name: 'userRoleAssignments${deploymentSuffix}'
-//   params: {
-//     identityPrincipalId: adminUserId
-//     principalType: 'User'
-//     storageAccountName: functionStorageModule.outputs.name
-//     keyVaultName:  keyVaultModule.outputs.name
-//   }
-// }
+// also add rights to the function storage account
+module appRoleAssignments2 './modules/iam/roleassignments.bicep' = if (addRoleAssignments) {
+  name: 'appRoleAssignments2${deploymentSuffix}'
+  params: {
+    identityPrincipalId: identity.outputs.managedIdentityPrincipalId
+    principalType: 'ServicePrincipal'
+    storageAccountName: functionStorageModule.outputs.name
+  }
+}
+module adminRoleAssignments './modules/iam/roleassignments.bicep' = if (addRoleAssignments) {
+  name: 'userRoleAssignments${deploymentSuffix}'
+  params: {
+    identityPrincipalId: adminUserId
+    principalType: 'User'
+    storageAccountName: storageModule.outputs.name
+    keyVaultName:  keyVaultModule.outputs.name
+  }
+}
 
 
 // --------------------------------------------------------------------------------
@@ -259,6 +269,7 @@ module webSiteAppSettingsModule './modules/webapp/websiteappsettings.bicep' = {
       AppSettings__AzureOpenAI__Image__Endpoint: azureOpenAIImageEndpoint
       AppSettings__AzureOpenAI__Image__DeploymentName: azureOpenAIImageDeploymentName
       AppSettings__AzureOpenAI__Image__ApiKey: azureOpenAIImageApiKey
+      AppSettings__BlobStorageAccountName: storageModule.outputs.name
       AzureAD__Instance: adInstance
       AzureAD__Domain: adDomain
       AzureAD__TenantId: adTenantId

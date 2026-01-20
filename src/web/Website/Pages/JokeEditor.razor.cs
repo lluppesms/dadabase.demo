@@ -304,7 +304,7 @@ public partial class JokeEditor : ComponentBase
         }
         catch (Exception ex)
         {
-            editMessage = $"Error saving joke: {ex.Message}";
+            editMessage = $"Error saving joke: {Helpers.Utilities.GetExceptionMessage(ex)}";
             editAlertClass = "alert-danger";
         }
         finally

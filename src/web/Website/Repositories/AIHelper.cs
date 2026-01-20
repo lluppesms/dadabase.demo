@@ -1,4 +1,6 @@
 ﻿using Azure.AI.OpenAI;
+using Azure.Identity;
+using Azure.Storage.Blobs;
 using Microsoft.Agents.AI;
 using OpenAI;
 using OpenAI.Chat;
@@ -27,6 +29,9 @@ public class AIHelper : IAIHelper
     private ImageClient imageGenerator = null;
 
     private readonly string vsTenantId = string.Empty;
+    private readonly string blobStorageAccountName = string.Empty;
+    private readonly string blobContainerName = "joke-images";
+    private readonly DefaultAzureCredential azureCredential;
     #endregion
 
     private const string JokeImageGeneratorPrompt =
@@ -62,8 +67,8 @@ public class AIHelper : IAIHelper
         }
         catch (Exception ex)
         {
-            var errorMessage = $"Error during description generation: {ex.Message}";
-            Console.WriteLine(errorMessage);
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error during description generation: {msg}");
             return (imageDescription, false, "Could not generate an image description - see log for details!");
         }
     }
@@ -71,8 +76,10 @@ public class AIHelper : IAIHelper
     /// <summary>
     /// Give this a description and get back a generated image as a base64 data URL
     /// </summary>
+    /// <param name="imageDescription">Image description</param>
+    /// <param name="jokeId">Joke ID for saving the image</param>
     /// <returns></returns>
-    public async Task<(string, bool, string)> GenerateAnImage(string imageDescription)
+    public async Task<(string, bool, string)> GenerateAnImage(string imageDescription, int jokeId = 0)
     {
         var imageDataUrl = string.Empty;
         try
@@ -80,6 +87,17 @@ public class AIHelper : IAIHelper
             if (!InitializeImageGenerator())
             {
                 return (string.Empty, false, "AI Image Keys not found!");
+            }
+
+            // Check if image already exists in blob storage
+            if (jokeId > 0)
+            {
+                var existingImageUrl = await GetJokeImageUrlAsync(jokeId);
+                if (!string.IsNullOrEmpty(existingImageUrl))
+                {
+                    Console.WriteLine($"Image already exists for JokeId {jokeId}: {existingImageUrl}");
+                    return (existingImageUrl, true, string.Empty);
+                }
             }
 
             // gpt-image-1 parameters:
@@ -96,6 +114,19 @@ public class AIHelper : IAIHelper
 
             // gpt-image-1 models return base64 encoded image bytes
             var imageBytes = image.ImageBytes.ToArray();
+
+            // Save to Azure Blob Storage if jokeId is provided
+            if (jokeId > 0)
+            {
+                var imageBlobUrl = await SaveImageToBlobAsync(imageBytes, jokeId);
+                if (!string.IsNullOrEmpty(imageBlobUrl))
+                {
+                    Console.WriteLine($"Saved image to blob storage ({imageBytes.Length} bytes)");
+                    return (imageBlobUrl, true, string.Empty);
+                }
+            }
+
+            // Fallback to base64 if saving failed or no jokeId
             var base64Image = Convert.ToBase64String(imageBytes);
             imageDataUrl = $"data:image/png;base64,{base64Image}";
 
@@ -104,15 +135,16 @@ public class AIHelper : IAIHelper
         }
         catch (Exception ex)
         {
-            var errorMessage = $"Error during image generation: {ex.Message} Prompt: {imageDescription}";
+            var msg = Utilities.GetExceptionMessage(ex);
+            var errorMessage = $"Error during image generation: {msg} Prompt: {imageDescription}";
             Console.WriteLine(errorMessage);
 
             var sorryMessage = "Sorry - I can't even imagine drawing that picture...!  Try again with a different joke!";
-            if (ex.Message.Contains("safety system", StringComparison.CurrentCultureIgnoreCase))
+            if (msg.Contains("safety system", StringComparison.CurrentCultureIgnoreCase))
             {
                 sorryMessage += " (safety violation)";
             }
-            if (ex.Message.Contains("content filter", StringComparison.CurrentCultureIgnoreCase))
+            if (msg.Contains("content filter", StringComparison.CurrentCultureIgnoreCase))
             {
                 sorryMessage += " (content filter violation)";
             }
@@ -120,11 +152,113 @@ public class AIHelper : IAIHelper
         }
     }
 
+    /// <summary>
+    /// Get the image URL for a joke if it exists in blob storage
+    /// </summary>
+    /// <param name="jokeId">Joke ID</param>
+    /// <returns>Image URL if exists, empty string otherwise</returns>
+    public string GetJokeImagePath(int jokeId)
+    {
+        if (jokeId <= 0) return string.Empty;
+
+        // Use Task.Run to avoid blocking the synchronization context
+        return Task.Run(async () => await GetJokeImageUrlAsync(jokeId)).GetAwaiter().GetResult();
+    }
+
+    /// <summary>
+    /// Get a BlobContainerClient for the joke images container
+    /// </summary>
+    /// <returns>BlobContainerClient or null if not configured</returns>
+    private BlobContainerClient GetBlobContainerClient()
+    {
+        if (string.IsNullOrEmpty(blobStorageAccountName))
+        {
+            return null;
+        }
+
+        var blobServiceClient = new BlobServiceClient(new Uri($"https://{blobStorageAccountName}.blob.core.windows.net"), azureCredential);
+        return blobServiceClient.GetBlobContainerClient(blobContainerName);
+    }
+
+    /// <summary>
+    /// Get the image URL for a joke if it exists in blob storage (async)
+    /// </summary>
+    /// <param name="jokeId">Joke ID</param>
+    /// <returns>Image URL if exists, empty string otherwise</returns>
+    private async Task<string> GetJokeImageUrlAsync(int jokeId)
+    {
+        if (jokeId <= 0)
+        {
+            return string.Empty;
+        }
+
+        try
+        {
+            var containerClient = GetBlobContainerClient();
+            if (containerClient == null)
+            {
+                return string.Empty;
+            }
+
+            var blobName = $"{jokeId}.png";
+            var blobClient = containerClient.GetBlobClient(blobName);
+
+            if (await blobClient.ExistsAsync())
+            {
+                return blobClient.Uri.ToString();
+            }
+        }
+        catch (Exception ex)
+        {
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error checking blob existence for JokeId {jokeId}: {msg}");
+        }
+
+        return string.Empty;
+    }
+
+    /// <summary>
+    /// Save image bytes to Azure Blob Storage
+    /// </summary>
+    /// <param name="imageBytes">Image bytes</param>
+    /// <param name="jokeId">Joke ID</param>
+    /// <returns>Blob URL of the saved image or empty string if failed</returns>
+    private async Task<string> SaveImageToBlobAsync(byte[] imageBytes, int jokeId)
+    {
+        try
+        {
+            var containerClient = GetBlobContainerClient();
+            if (containerClient == null)
+            {
+                Console.WriteLine("Blob storage account name not configured");
+                return string.Empty;
+            }
+
+            // Create container if it doesn't exist
+            await containerClient.CreateIfNotExistsAsync(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
+
+            var blobName = $"{jokeId}.png";
+            var blobClient = containerClient.GetBlobClient(blobName);
+
+            using var stream = new MemoryStream(imageBytes);
+            await blobClient.UploadAsync(stream, overwrite: true);
+
+            Console.WriteLine($"Uploaded blob: {blobClient.Uri}");
+            return blobClient.Uri.ToString();
+        }
+        catch (Exception ex)
+        {
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error saving image to blob storage for JokeId {jokeId}: {msg}");
+            return string.Empty;
+        }
+    }
+
     #region Helper Methods
     /// <summary>
     /// Initialization
     /// </summary>
-    public AIHelper(IConfiguration config)
+    public AIHelper(IConfiguration config, DefaultAzureCredential credential)
     {
         openaiEndpointUrl = config["AppSettings:AzureOpenAI:Chat:Endpoint"];
         openaiEndpoint = !string.IsNullOrEmpty(openaiEndpointUrl) ? new(config["AppSettings:AzureOpenAI:Chat:Endpoint"]) : null;
@@ -136,7 +270,9 @@ public class AIHelper : IAIHelper
         openaiImageDeploymentName = config["AppSettings:AzureOpenAI:Image:DeploymentName"];
         openaiImageApiKey = config["AppSettings:AzureOpenAI:Image:ApiKey"];
 
+        blobStorageAccountName = config["AppSettings:BlobStorageAccountName"];
         vsTenantId = config["VisualStudioTenantId"];
+        azureCredential = credential;
     }
 
     /// <summary>
@@ -180,8 +316,8 @@ public class AIHelper : IAIHelper
         }
         catch (Exception ex)
         {
-            var errorMessage = ex.Message;
-            Console.WriteLine($"Error initializing Joke Agent: {errorMessage}");
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error initializing Joke Agent: {msg}");
             return false;
         }
     }
@@ -217,8 +353,8 @@ public class AIHelper : IAIHelper
         }
         catch (Exception ex)
         {
-            var errorMessage = ex.Message;
-            Console.WriteLine($"Error initializing Image Agent: {errorMessage}");
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error initializing Image Agent: {msg}");
             return false;
         }
     }

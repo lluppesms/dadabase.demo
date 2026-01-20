@@ -1,0 +1,59 @@
+@page "/joke/{Id:int}"
+@namespace DadABase.Web.Pages
+@using MudBlazor
+
+<PageTitle>Joke</PageTitle>
+
+<h1>Dad Joke</h1>
+
+@if (myJoke != null && !string.IsNullOrEmpty(myJoke.JokeTxt))
+{
+    <div class="joke-container">
+        <ul id="jokeList" style="list-style-type: none; padding: 0;">
+            <li><JokeDisplayComponent myJoke="@myJoke" /></li>
+        </ul>
+    </div>
+
+    <div class="button-group">
+        <button class="btn btn-primary" @onclick="GenerateAIImage" disabled="@(imageLoading || imageGenerated)" title="Let the DadJoke AI imagine this scenario for you!">@(string.IsNullOrEmpty(myJoke?.ImageTxt) ? "AI Image Generator" : "AI Imagine-a-tor")</button>
+    </div>
+
+    <div class="joke-image-section">
+        <p class="image-message">@jokeImageMessage</p>
+        @if (imageLoading)
+        {
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+            @if (!string.IsNullOrEmpty(jokeImageDescription))
+            {
+                <p class="image-note">@jokeImageDescription</p>
+            }
+        }
+        else
+        {
+            @if (!string.IsNullOrEmpty(jokeImageUrl))
+            {
+                <img src="@jokeImageUrl" class="joke-image" width="400" style="cursor: pointer;" @onclick="ShowImageDescriptionPopup" title="@jokeImageDescription" />
+            }
+            else if (!string.IsNullOrEmpty(jokeImageDescription))
+            {
+                <p class="image-note">@jokeImageDescription</p>
+            }
+        }
+    </div>
+
+    <MudDialog @bind-Visible="@imageDescriptionDialogVisible">
+        <TitleContent>
+            <MudText Typo="Typo.h6">Image Description</MudText>
+        </TitleContent>
+        <DialogContent>
+            <p>@jokeImageDescription</p>
+        </DialogContent>
+        <DialogActions>
+            <MudButton Color="Color.Secondary" OnClick="@CloseImageDescriptionPopup">Close</MudButton>
+        </DialogActions>
+    </MudDialog>
+}
+else
+{
+    <p>Joke not found.</p>
+}
