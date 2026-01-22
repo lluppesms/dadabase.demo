@@ -22,6 +22,10 @@ param sqlAdminLoginUserId = '#{SQLADMIN_LOGIN_USERID}#'
 param sqlAdminLoginUserSid = '#{SQLADMIN_LOGIN_USERSID}#'
 param sqlAdminLoginTenantId = '#{SQLADMIN_LOGIN_TENANTID}#'
 
+param sqlDatabaseName = '#{SQL_DATABASE_NAME}#'
+param existingSqlServerName = '#{EXISTING_SQLSERVER_NAME}#'
+param existingSqlServerResourceGroupName = '#{EXISTING_SQLSERVER_RESOURCE_GROUP_NAME}#'
+
 param adminUserId = '#{KEYVAULT_OWNER_USERID}#'
 
 param azureOpenAIChatEndpoint = '#{OPENAI_CHAT_ENDPOINT}#'

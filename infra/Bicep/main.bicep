@@ -34,6 +34,9 @@ param sqlAdminUser string = ''
 @secure()
 param sqlAdminPassword string = ''
 
+param existingSqlServerName string = ''
+param existingSqlServerResourceGroupName string = ''
+
 param adInstance string = environment().authentication.loginEndpoint // 'https://login.microsoftonline.com/'
 param adDomain string = ''
 param adTenantId string = ''
@@ -80,7 +83,6 @@ module resourceNames 'resourcenames.bicep' = {
   params: {
     appName: appName
     environmentCode: environmentCode
-    environmentSpecificFunctionName: environmentSpecificFunctionName
     instanceNumber: instanceNumber
   }
 }
@@ -125,8 +127,8 @@ module sqlDbModule './modules/database/sqlserver.bicep' = {
   params: {
     sqlServerName: resourceNames.outputs.sqlServerName
     sqlDBName: sqlDatabaseName
-    existingSqlServerName: ''
-    existingSqlServerResourceGroupName: ''
+    existingSqlServerName: existingSqlServerName
+    existingSqlServerResourceGroupName: existingSqlServerResourceGroupName
     sqlSkuTier: sqlSkuTier
     sqlSkuName: sqlSkuName
     sqlSkuFamily: sqlSkuFamily
