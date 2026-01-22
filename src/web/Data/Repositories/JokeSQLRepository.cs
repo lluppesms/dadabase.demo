@@ -544,6 +544,39 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
+    /// Delete a joke
+    /// </summary>
+    /// <param name="jokeId">Joke ID to delete</param>
+    /// <param name="requestingUserName">Requesting UserName</param>
+    /// <returns>Success</returns>
+    public bool DeleteJoke(int jokeId, string requestingUserName = "ANON")
+    {
+        try
+        {
+            // First, remove all category associations
+            var existingCategories = _context.JokeJokeCategories.Where(jjc => jjc.JokeId == jokeId);
+            _context.JokeJokeCategories.RemoveRange(existingCategories);
+
+            // Then, find and remove the joke
+            var joke = _context.Jokes.Find(jokeId);
+            if (joke == null)
+            {
+                return false;
+            }
+
+            _context.Jokes.Remove(joke);
+            _context.SaveChanges();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error deleting joke {jokeId}: {msg}");
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Dispose
     /// </summary>
     public void Dispose()
