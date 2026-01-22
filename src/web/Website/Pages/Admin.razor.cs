@@ -88,6 +88,26 @@ public partial class Admin : ComponentBase
                     Console.WriteLine($"Error loading admin page! {Helpers.Utilities.GetExceptionMessage(ex)}");
                 }
             }
+            else
+            {
+                if (userIdentity == null)
+                {
+                    Console.WriteLine($"User tried to access the admin page but is not authenticated and therefore failed!");
+                }
+                else
+                {
+                    if (!string.IsNullOrEmpty(userName))
+                    {
+                        Console.WriteLine($"User {userName} tried to access the admin page but failed!");
+                        Console.WriteLine($"Admin list = {Data.Constants.AdminUserList} ");
+                        Console.WriteLine($"IsAdmin = {Data.Constants.AdminUserList.Contains(userName, StringComparison.InvariantCultureIgnoreCase)}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"User tried to access the admin page and seems to be authenticated but the userName is blank!");
+                    }
+                }
+            }
             StateHasChanged();
         }
     }
