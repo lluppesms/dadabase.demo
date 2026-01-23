@@ -1,5 +1,5 @@
 {
-    "appInsightsSuffix": "insights",
+    "appInsightsSuffix": "appi",
     "appServicePlanSuffix": "appsvc",
     "bastionAbbreviation": "bastion",
     "containerRegistry": "cr",
@@ -17,7 +17,7 @@
     "publicIpAbbreviation": "pip",
     "serviceBus": "svcbus",
     "sqlAbbreviation": "sql",
-    "storageAccountSuffix": "store",
+    "storageAccountSuffix": "st",
     "vnetAbbreviation": "vnet",
     "webSiteSuffix": "web"
 }

@@ -29,6 +29,9 @@ public partial class Random : ComponentBase
     private bool imageLoading = false;
     private bool imageDescriptionDialogVisible = false;
 
+    /// <summary>
+    /// Initializer
+    /// </summary>
     protected override void OnInitialized()
     {
         ExecuteRandom();

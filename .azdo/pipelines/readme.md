@@ -32,7 +32,7 @@ These Azure DevOps YML files were designed to run as multi-stage environment dep
 
 ---
 
-## 4. These pipelines needs a variable group named "DadABase.Web"
+## 4. These pipelines needs a variable group named "DadABaseDemo"
 
 To create this variable groups, customize and run this command in the Azure Cloud Shell.
 
@@ -46,11 +46,36 @@ Alternatively, you could define these variables in the Azure DevOps Portal on ea
      --project='<yourAzDOProject>' 
      --name DadABaseDemo 
      --variables 
-         appName='<yourInitials>-DadABase' 
-         apiKey='<yourapiKey>'
-         adDomain='yourDomain.onmicrosoft.com'
-         adTenantId='yourTenantId'
-         adClientId='yourClientId'
-         adInstance='yourLoginInstance'
-         serviceConnectionName='yourServiceConnectionName'
+         APP_NAME='full-dadabase'
+         RESOURCE_GROUP_LOCATION='centralus'
+         RESOURCE_GROUP_PREFIX='rg-dadabase' 
+         INSTANCE_NUMBER='1'
+         API_KEY='somesecretstring'
+         OPENAI_CHAT_DEPLOYMENTNAME='gpt-5-mini'
+         OPENAI_CHAT_MAXTOKENS='300'
+         OPENAI_CHAT_TEMPERATURE='0.7'
+         OPENAI_CHAT_TOPP='0.95'
+         OPENAI_IMAGE_DEPLOYMENTNAME='gpt-image-1.5'
+         OPENAI_IMAGE_ENDPOINT='https://<yourendpoint>.openai.azure.com/'
+         OPENAI_CHAT_ENDPOINT='https://<yourendpoint>.cognitiveservices.azure.com/'
+         OPENAI_IMAGE_APIKEY='yourkey'
+         OPENAI_CHAT_APIKEY='yourkey'
+         SQL_SERVER_NAME_PREFIX='your-dadabase-server'
+         SQL_DATABASE_NAME='DadABase'
+         SQLADMIN_LOGIN_USERID='youruser@yourdomain.com'
+         SQLADMIN_LOGIN_USERSID='yoursid'
+         SQLADMIN_LOGIN_TENANTID='yourtennant'
+         ADMIN_USER_LIST='user1@domain.com,user2@domain.com'
+         LOGIN_CLIENTID='<yourADClientId>'
+         LOGIN_DOMAIN='<yourdomain>.onmicrosoft.com'
+         LOGIN_INSTANCEENDPOINT='https://login.microsoftonline.com/'
+         LOGIN_TENANTID='<yourTenantId>'
+         AZURE_TENANT_ID='b2073a82-d60f-48a0-bda5-722a163c88ad'
+         AZURE_SUBSCRIPTION_ID='6a97aa36-e4fc-4db0-baa6-4cffaba22e97'
+         AZURE_CLIENT_ID='a99cb515-1f75-4af9-8a28-94761688d02b'
+         KEYVAULT_OWNER_USERID='<yourAccountSid>'
+         EXISTING_SERVICEPLAN_NAME=''
+         EXISTING_SERVICEPLAN_RESOURCE_GROUP_NAME=''
+         EXISTING_SQLSERVER_NAME=''
+         EXISTING_SQLSERVER_RESOURCE_GROUP_NAME=''
 ```

@@ -113,11 +113,11 @@ public class JokeJsonRepository : IJokeRepository
         if (!string.IsNullOrEmpty(jokeCategoryTxt) && !string.IsNullOrEmpty(searchTxt))
         {
             var jokesByTermAndCategory = _jokes
-                .Where(joke => 
+                .Where(joke =>
                 {
                     if (string.IsNullOrEmpty(joke.Categories)) return false;
                     var jokeCategories = joke.Categories.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                    return jokeCategoryList.Any(category => jokeCategories.Contains(category, StringComparer.OrdinalIgnoreCase))
+                    return jokeCategoryList!.Any(category => jokeCategories.Contains(category, StringComparer.OrdinalIgnoreCase))
                         && joke.JokeTxt.Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase);
                 })
                 .ToList();
@@ -132,7 +132,7 @@ public class JokeJsonRepository : IJokeRepository
                 {
                     if (string.IsNullOrEmpty(joke.Categories)) return false;
                     var jokeCategories = joke.Categories.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                    return jokeCategoryList.Any(category => jokeCategories.Contains(category, StringComparer.OrdinalIgnoreCase));
+                    return jokeCategoryList!.Any(category => jokeCategories.Contains(category, StringComparer.OrdinalIgnoreCase));
                 })
                 .ToList();
             return jokesInCategory.AsQueryable();
@@ -198,7 +198,7 @@ public class JokeJsonRepository : IJokeRepository
     public string ExportToSql(string requestingUserName = "ANON")
     {
         var sb = new System.Text.StringBuilder();
-        
+
         // Header
         sb.AppendLine("------------------------------------------------------------------------------------------------------------------------");
         sb.AppendLine("-- Exported Joke Data (from JSON source)");
@@ -219,7 +219,7 @@ public class JokeJsonRepository : IJokeRepository
 
         // Group jokes by category for better organization
         var jokesByCategory = _jokes
-            .SelectMany(j => (j.Categories ?? "Unknown").Split(',').Select(c => c.Trim()), 
+            .SelectMany(j => (j.Categories ?? "Unknown").Split(',').Select(c => c.Trim()),
                        (j, c) => new { Category = c, Joke = j })
             .GroupBy(x => x.Category)
             .OrderBy(g => g.Key)

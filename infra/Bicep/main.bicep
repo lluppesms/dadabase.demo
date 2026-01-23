@@ -165,9 +165,18 @@ module appRoleAssignments './modules/iam/roleassignments.bicep' = if (addRoleAss
     keyVaultName:  keyVaultModule.outputs.name
   }
 }
-// also add rights to the function storage account
+// also add rights to the web app storage account
 module appRoleAssignments2 './modules/iam/roleassignments.bicep' = if (addRoleAssignments) {
-  name: 'appRoleAssignments2${deploymentSuffix}'
+  name: 'appRoleAssignments-webapp-storage${deploymentSuffix}'
+  params: {
+    identityPrincipalId: webSiteModule.outputs.name
+    principalType: 'ServicePrincipal'
+    storageAccountName: storageModule.outputs.name
+  }
+}
+// also add rights to the function storage account
+module appRoleAssignments3 './modules/iam/roleassignments.bicep' = if (addRoleAssignments) {
+  name: 'appRoleAssignments-function-storage${deploymentSuffix}'
   params: {
     identityPrincipalId: identity.outputs.managedIdentityPrincipalId
     principalType: 'ServicePrincipal'
