@@ -22,6 +22,7 @@ public static class Constants
     {
         ApplicationTitle = appSettings.AppTitle;
         AdminUserList = appSettings.AdminUserList;
+        Console.WriteLine($"Using '{AdminUserList}' for Constants.AdminUserList");
     }
 
     /// <summary>
