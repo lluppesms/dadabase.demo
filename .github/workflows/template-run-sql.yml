@@ -28,7 +28,7 @@ on:
       runInDatabase:
         required: true
         type: string
-      sqlServerName:
+      sqlServerPrefix:
         required: true
         type: string
       loginAccountType:
@@ -52,7 +52,8 @@ jobs:
     environment:
       name: ${{ inputs.envCode }}
     env:
-      fqdnServerName: ${{ inputs.sqlServerName }}.database.windows.net
+      sqlServerName: '${{ inputs.sqlServerPrefix }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}'
+      fqdnServerName: '${{ inputs.sqlServerPrefix }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}.database.windows.net'
     permissions:
       id-token: write
     steps:
@@ -71,7 +72,7 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "Environment: ${{ inputs.envCode }}"
-          Write-Host "SQL Server Name: ${{ inputs.sqlServerName }}"
+          Write-Host "SQL Server Name: ${{ env.sqlServerName }}"
           Write-Host "FQDN Server Name: ${{ env.fqdnServerName }}"
           Write-Host "Database: ${{ inputs.runInDatabase }}"
           Write-Host "SQL Folder: ${{ inputs.sqlFolderName }}"
@@ -154,7 +155,7 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "Copying database ${{ inputs.runInDatabase }} to ${{ inputs.databaseCopyName }}"
-          Write-Host "Server: ${{ inputs.sqlServerName }}, Resource Group: ${{ inputs.resourceGroupName }}"
+          Write-Host "Server: ${{ env.sqlServerName }}, Resource Group: ${{ inputs.resourceGroupName }}"
           
           # Install Az.Sql module if not present
           if (-not (Get-Module -ListAvailable -Name Az.Sql)) {
@@ -164,10 +165,10 @@ jobs:
           
           New-AzSqlDatabaseCopy `
             -ResourceGroupName "${{ inputs.resourceGroupName }}" `
-            -ServerName "${{ inputs.sqlServerName }}" `
+            -ServerName "${{ env.sqlServerName }}" `
             -DatabaseName "${{ inputs.runInDatabase }}" `
             -CopyResourceGroupName "${{ inputs.resourceGroupName }}" `
-            -CopyServerName "${{ inputs.sqlServerName }}" `
+            -CopyServerName "${{ env.sqlServerName }}" `
             -CopyDatabaseName "${{ inputs.databaseCopyName }}"
 
       - name: Azure Logout

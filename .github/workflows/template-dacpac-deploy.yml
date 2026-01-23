@@ -26,7 +26,7 @@ on:
       appProjectName:
         required: true
         type: string
-      sqlServerName:
+      sqlServerPrefix:
         required: true
         type: string
       sqlDatabaseName:
@@ -45,7 +45,8 @@ jobs:
     environment:
       name: ${{ inputs.envCode }}
     env:
-      fqdnServerName: ${{ inputs.sqlServerName }}.database.windows.net
+      sqlServerName: '${{ inputs.sqlServerPrefix }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}'
+      fqdnServerName: '${{ inputs.sqlServerPrefix }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}.database.windows.net'
     permissions:
       id-token: write
     steps:
@@ -65,7 +66,7 @@ jobs:
           echo ""
           echo "Deployment Variables:"
           echo "vars.INSTANCE_NUMBER=${{ vars.INSTANCE_NUMBER }}"
-          echo "inputs.sqlServerName=${{ inputs.sqlServerName }}"
+          echo "env.sqlServerName=${{ env.sqlServerName }}"
           echo "env.fqdnServerName=${{ env.fqdnServerName }}"
           echo "Database: inputs.sqlDatabaseName=${{ inputs.sqlDatabaseName }}"
           echo "Project: inputs.appProjectName=${{ inputs.appProjectName }}"
