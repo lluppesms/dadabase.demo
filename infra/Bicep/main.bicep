@@ -168,7 +168,7 @@ module appRoleAssignments './modules/iam/roleassignments.bicep' = if (addRoleAss
 module appRoleAssignments2 './modules/iam/roleassignments.bicep' = if (addRoleAssignments) {
   name: 'appRoleAssignments-webapp-storage${deploymentSuffix}'
   params: {
-    identityPrincipalId: webSiteModule.outputs.name
+    identityPrincipalId: webSiteModule.outputs.systemPrincipalId
     principalType: 'ServicePrincipal'
     storageAccountName: storageModule.outputs.name
   }
