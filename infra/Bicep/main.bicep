@@ -20,7 +20,6 @@ param webStorageSku string = 'Standard_LRS'
 param webApiKey string = ''
 
 param functionStorageSku string = 'Standard_LRS'
-param environmentSpecificFunctionName string = ''
 
 param sqlDatabaseName string = 'dadabase'
 @allowed(['Basic','Standard','Premium','BusinessCritical','GeneralPurpose'])
@@ -202,7 +201,7 @@ module keyVaultModule './modules/security/keyvault.bicep' = {
     commonTags: commonTags
     keyVaultOwnerUserId: adminUserId
     adminUserObjectIds: [ identity.outputs.managedIdentityPrincipalId ]
-    applicationUserObjectIds: [ webSiteModule.outputs.webappAppPrincipalId ]
+    applicationUserObjectIds: [ webSiteModule.outputs.userManagedPrincipalId, webSiteModule.outputs.systemPrincipalId ]
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
     publicNetworkAccess: 'Enabled'
     allowNetworkAccess: 'Allow'
