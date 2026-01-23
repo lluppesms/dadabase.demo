@@ -268,7 +268,7 @@ module webSiteAppSettingsModule './modules/webapp/websiteappsettings.bicep' = {
       AppSettings__EnableSwagger: appSwaggerEnabled
       AppSettings__DataSource: appDataSource
       AppSettings__ApiKey: webApiKey
-      AppSettings_AdminUserList: adminUserList
+      AppSettings__AdminUserList: adminUserList
       AppSettings__AzureOpenAI__Chat__Endpoint: azureOpenAIChatEndpoint
       AppSettings__AzureOpenAI__Chat__DeploymentName: azureOpenAIChatDeploymentName
       AppSettings__AzureOpenAI__Chat__ApiKey: azureOpenAIChatApiKey
