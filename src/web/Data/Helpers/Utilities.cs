@@ -91,7 +91,7 @@ public class Utilities
     /// <summary>
     /// Get an environment variable
     /// </summary>
-    public static string GetEnvironmentVariable(string name)
+    public static string? GetEnvironmentVariable(string name)
     {
         //return name + ": " + Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
         return Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
@@ -234,7 +234,6 @@ public class Utilities
             var options = new DefaultAzureCredentialOptions
             {
                 ExcludeVisualStudioCredential = false,
-                ExcludeVisualStudioCodeCredential = false,
                 ExcludeInteractiveBrowserCredential = true,
                 ExcludeAzureCliCredential = false, // Keep CLI for local dev
                 ExcludeManagedIdentityCredential = false, // Keep for Azure deployment

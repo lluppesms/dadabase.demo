@@ -32,7 +32,7 @@ These Azure DevOps YML files were designed to run as multi-stage environment dep
 
 ---
 
-## 4. These pipelines needs a variable group named "DadABase.Web"
+## 4. These pipelines needs a variable group named "DadABaseDemo"
 
 To create this variable groups, customize and run this command in the Azure Cloud Shell.
 

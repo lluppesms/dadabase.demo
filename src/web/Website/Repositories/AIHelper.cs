@@ -2,6 +2,7 @@
 using Azure.Identity;
 using Azure.Storage.Blobs;
 using Microsoft.Agents.AI;
+using Microsoft.Agents.AI.OpenAI;
 using OpenAI;
 using OpenAI.Chat;
 using OpenAI.Images;
@@ -175,8 +176,8 @@ public class AIHelper : IAIHelper
         {
             return null;
         }
-
-        var blobServiceClient = new BlobServiceClient(new Uri($"https://{blobStorageAccountName}.blob.core.windows.net"), azureCredential);
+        var blobOptions = new BlobClientOptions {Retry={MaxRetries=1}};
+        var blobServiceClient = new BlobServiceClient(new Uri($"https://{blobStorageAccountName}.blob.core.windows.net"), azureCredential, blobOptions);
         return blobServiceClient.GetBlobContainerClient(blobContainerName);
     }
 
@@ -307,7 +308,7 @@ public class AIHelper : IAIHelper
             var chatClient = azureClient.GetChatClient(openaiDeploymentName);
 
             // Create the AI Agent using the Agent Framework extension method
-            jokeDescriptionAgent = chatClient.CreateAIAgent(
+            jokeDescriptionAgent = chatClient.AsAIAgent(
                 name: "JokeImageDescriber",
                 instructions: JokeImageGeneratorPrompt
             );

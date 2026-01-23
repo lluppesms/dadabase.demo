@@ -16,6 +16,9 @@ namespace DadABase.Web.Pages;
 [AllowAnonymous]
 public partial class JokeDetail : ComponentBase
 {
+    /// <summary>
+    /// The ID of the joke to display
+    /// </summary>
     [Parameter]
     public int Id { get; set; }
 
@@ -23,7 +26,7 @@ public partial class JokeDetail : ComponentBase
     [Inject] IAIHelper GenAIAgent { get; set; }
     [Inject] ISnackbar Snackbar { get; set; }
 
-    private Joke? myJoke;
+    private Joke myJoke;
 
     private bool imageGenerated = false;
     private string jokeImageMessage = string.Empty;
@@ -32,6 +35,9 @@ public partial class JokeDetail : ComponentBase
     private bool imageLoading = false;
     private bool imageDescriptionDialogVisible = false;
 
+    /// <summary>
+    /// Initializer
+    /// </summary>
     protected override void OnInitialized()
     {
         LoadJoke();
