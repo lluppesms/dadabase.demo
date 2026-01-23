@@ -369,6 +369,18 @@ public class JokeJsonRepository : IJokeRepository
         }
 
         /// <summary>
+        /// Delete a joke
+        /// </summary>
+        /// <param name="jokeId">Joke ID to delete</param>
+        /// <param name="requestingUserName">Requesting UserName</param>
+        /// <returns>Success</returns>
+        public bool DeleteJoke(int jokeId, string requestingUserName = "ANON")
+        {
+            // Not supported for JSON-based repository
+            throw new NotSupportedException("DeleteJoke is not supported for JSON-based repository");
+        }
+
+        /// <summary>
         /// Disposal
         /// </summary>
         public void Dispose()

@@ -70,7 +70,7 @@ public partial class Index : ComponentBase
         }
         var elaspsedMS = timer.ElapsedMilliseconds;
         jokeLoading = false;
-        Snackbar.Add($"Joke Elapsed: {(decimal)elaspsedMS / 1000m:0.0} seconds", Severity.Info);
+        // Snackbar.Add($"Joke Elapsed: {(decimal)elaspsedMS / 1000m:0.0} seconds", Severity.Info);
 
         // Reset AI-related state
         jokeImageMessage = string.Empty;

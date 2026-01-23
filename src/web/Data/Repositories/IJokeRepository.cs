@@ -102,6 +102,14 @@ public interface IJokeRepository
         int AddJoke(Joke joke, string requestingUserName = "ANON");
 
         /// <summary>
+        /// Delete a joke
+        /// </summary>
+        /// <param name="jokeId">Joke ID to delete</param>
+        /// <param name="requestingUserName">Requesting UserName</param>
+        /// <returns>Success</returns>
+        bool DeleteJoke(int jokeId, string requestingUserName = "ANON");
+
+        /// <summary>
         /// Disposal
         /// </summary>
         void Dispose();

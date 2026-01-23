@@ -84,6 +84,16 @@
                                Disabled="@isSaving">
                         Cancel
                     </MudButton>
+                    @if (!isAddingNew)
+                    {
+                        <MudButton Variant="Variant.Filled" 
+                                   Color="Color.Error" 
+                                   StartIcon="@Icons.Material.Filled.Delete"
+                                   OnClick="ConfirmDeleteJoke" 
+                                   Disabled="@isSaving">
+                            Delete
+                        </MudButton>
+                    }
                 </MudStack>
 
                 @if (!string.IsNullOrEmpty(editMessage))

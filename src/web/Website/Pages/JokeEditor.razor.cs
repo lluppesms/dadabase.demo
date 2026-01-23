@@ -18,6 +18,7 @@ public partial class JokeEditor : ComponentBase
     [Inject] IJokeRepository JokeRepository { get; set; }
     [Inject] IJSRuntime JsInterop { get; set; }
     [Inject] HttpContextAccessor Context { get; set; }
+    [Inject] IDialogService DialogService { get; set; }
 
     private List<Joke> allJokes;
     private IEnumerable<Joke> filteredJokes;
@@ -324,5 +325,78 @@ public partial class JokeEditor : ComponentBase
             isAddingNew = false;
             selectedCategoryIds = new HashSet<int>();
             StateHasChanged();
+        }
+
+        /// <summary>
+        /// Confirm delete joke with a dialog
+        /// </summary>
+        private async Task ConfirmDeleteJoke()
+        {
+            if (editingJoke == null)
+            {
+                return;
+            }
+
+            bool? result = await DialogService.ShowMessageBox(
+                "Delete Joke",
+                $"Are you sure you want to delete this joke? This action cannot be undone.",
+                yesText: "Delete",
+                cancelText: "Cancel");
+
+            if (result == true)
+            {
+                await DeleteJoke();
+            }
+        }
+
+        /// <summary>
+        /// Delete the joke
+        /// </summary>
+        private async Task DeleteJoke()
+        {
+            if (editingJoke == null)
+            {
+                return;
+            }
+
+            isSaving = true;
+            editMessage = "Deleting...";
+            editAlertClass = "alert-info";
+            StateHasChanged();
+
+            try
+            {
+                var jokeId = editingJoke.JokeId;
+                var success = JokeRepository.DeleteJoke(jokeId, currentUserName);
+
+                if (!success)
+                {
+                    editMessage = "Failed to delete joke.";
+                    editAlertClass = "alert-danger";
+                    isSaving = false;
+                    StateHasChanged();
+                    return;
+                }
+
+                editMessage = "Joke deleted successfully!";
+                editAlertClass = "alert-success";
+
+                // Reload data and return to list
+                await Task.Delay(1000); // Show success message briefly
+                LoadData();
+                editingJoke = null;
+                isAddingNew = false;
+                FilterJokes();
+            }
+            catch (Exception ex)
+            {
+                editMessage = $"Error deleting joke: {Helpers.Utilities.GetExceptionMessage(ex)}";
+                editAlertClass = "alert-danger";
+            }
+            finally
+            {
+                isSaving = false;
+                StateHasChanged();
+            }
         }
     }
