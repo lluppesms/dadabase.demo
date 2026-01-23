@@ -188,6 +188,7 @@ public class AIHelper : IAIHelper
     /// <returns>Image URL if exists, empty string otherwise</returns>
     private async Task<string> GetJokeImageUrlAsync(int jokeId)
     {
+        var blobName = string.Empty;
         if (jokeId <= 0)
         {
             return string.Empty;
@@ -201,7 +202,7 @@ public class AIHelper : IAIHelper
                 return string.Empty;
             }
 
-            var blobName = $"{jokeId}.png";
+            blobName = $"{jokeId}.png";
             var blobClient = containerClient.GetBlobClient(blobName);
 
             if (await blobClient.ExistsAsync())
@@ -212,7 +213,7 @@ public class AIHelper : IAIHelper
         catch (Exception ex)
         {
             var msg = Utilities.GetExceptionMessage(ex);
-            Console.WriteLine($"Error checking blob existence for JokeId {jokeId}: {msg}");
+            Console.WriteLine($"Error checking blob existence for JokeId {jokeId}: {msg} Storge Account: {blobStorageAccountName} Container: {blobContainerName} Blob: {blobName}");
         }
 
         return string.Empty;
