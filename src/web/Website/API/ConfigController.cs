@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
 
 /// <summary>
-/// Joke API Controller
+/// Config API Controller
 /// </summary>
 [Route("api/[controller]")]
 [ApiController]

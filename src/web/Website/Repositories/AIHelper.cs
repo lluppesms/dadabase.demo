@@ -105,49 +105,74 @@ public class AIHelper : IAIHelper
             // - Size: 1024x1024, 1024x1536, or 1536x1024
             // - Quality: Low, Medium (default), or High
             // - Note: gpt-image-1 models only return base64, no URI option
+            Console.WriteLine($"Generating Image for Joke {jokeId} using endpoint {openaiImageEndpointUrl} and model {openaiImageDeploymentName} with Prompt: {imageDescription[..Math.Min(15, imageDescription.Length)]}...");
+            var imageQuality = openaiImageDeploymentName == "dall-e-3" ? GeneratedImageQuality.High : GeneratedImageQuality.Medium;
             var imageResult = await imageGenerator.GenerateImageAsync(imageDescription, new()
             {
-                Quality = GeneratedImageQuality.Medium,
+                Quality = imageQuality,
                 Size = GeneratedImageSize.W1024xH1024
             });
 
             var image = imageResult.Value;
 
-            // gpt-image-1 models return base64 encoded image bytes
-            var imageBytes = image.ImageBytes.ToArray();
-
-            // Save to Azure Blob Storage if jokeId is provided
-            if (jokeId > 0)
+            // gpt-image-1 models return base64 encoded image bytes, Dall-e-3 return a URL to a private storage account
+            if (image != null && image.ImageBytes != null)
             {
-                var imageBlobUrl = await SaveImageToBlobAsync(imageBytes, jokeId);
-                if (!string.IsNullOrEmpty(imageBlobUrl))
+                var imageBytes = image.ImageBytes.ToArray();
+
+                // Save to Azure Blob Storage if jokeId is provided
+                if (jokeId > 0)
                 {
-                    Console.WriteLine($"Saved image to blob storage ({imageBytes.Length} bytes)");
-                    return (imageBlobUrl, true, string.Empty);
+                    var imageBlobUrl = await SaveImageToBlobAsync(imageBytes, jokeId);
+                    if (!string.IsNullOrEmpty(imageBlobUrl))
+                    {
+                        Console.WriteLine($"Saved image to blob storage ({imageBytes.Length} bytes)");
+                        return (imageBlobUrl, true, string.Empty);
+                    }
+                }
+
+                // Fallback to base64 if saving failed or no jokeId
+                var base64Image = Convert.ToBase64String(imageBytes);
+                imageDataUrl = $"data:image/png;base64,{base64Image}";
+                Console.WriteLine($"Generated Image (base64 data URL, {imageBytes.Length} bytes)");
+            }
+            else
+            {
+                if (image!= null && image.ImageUri != null)
+                {
+                    imageDataUrl = image.ImageUri.ToString();
+                    // TODO: get this image data from the URL and then save it to our blob and return it...?
+                    Console.WriteLine($"Generated Image URI (not bytes!): {imageDataUrl}");
+                }
+                else
+                {
+                    return ("Blank!", false, "No image data was returned from the image generator!");
                 }
             }
-
-            // Fallback to base64 if saving failed or no jokeId
-            var base64Image = Convert.ToBase64String(imageBytes);
-            imageDataUrl = $"data:image/png;base64,{base64Image}";
-
-            Console.WriteLine($"Generated Image (base64 data URL, {imageBytes.Length} bytes)");
             return (imageDataUrl, true, string.Empty);
         }
         catch (Exception ex)
         {
             var msg = Utilities.GetExceptionMessage(ex);
-            var errorMessage = $"Error during image generation: {msg} Prompt: {imageDescription}";
+            var errorMessage = $"Error during image generation: {msg} Endpoint: {openaiImageEndpointUrl} Model: {openaiImageDeploymentName} Prompt: {imageDescription[..Math.Min(100, imageDescription.Length)]}...";
             Console.WriteLine(errorMessage);
 
-            var sorryMessage = "Sorry - I can't even imagine drawing that picture...!  Try again with a different joke!";
-            if (msg.Contains("safety system", StringComparison.CurrentCultureIgnoreCase))
+            var sorryMessage = string.Empty; // "Sorry - I can't even imagine drawing that picture...!  Try again with a different joke!";
+            if (msg.Contains("safety system", StringComparison.CurrentCultureIgnoreCase) || msg.Contains("content filter", StringComparison.CurrentCultureIgnoreCase))
             {
-                sorryMessage += " (safety violation)";
+                sorryMessage = "Sorry - I can't even imagine drawing that picture...!  Try again with a different joke!";
+                if (msg.Contains("safety system", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    sorryMessage += " (safety violation)";
+                }
+                if (msg.Contains("content filter", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    sorryMessage += " (content filter violation)";
+                }
             }
-            if (msg.Contains("content filter", StringComparison.CurrentCultureIgnoreCase))
+            else
             {
-                sorryMessage += " (content filter violation)";
+              sorryMessage = "Sorry - I'm having serious trouble imagining anything right now...!";
             }
             return (imageDescription, false, sorryMessage);
         }
@@ -207,13 +232,16 @@ public class AIHelper : IAIHelper
 
             if (await blobClient.ExistsAsync())
             {
+                Console.WriteLine($"    Found existing image {blobName} in Storage Account: {blobStorageAccountName} Container: {blobContainerName}");
                 return blobClient.Uri.ToString();
             }
+            Console.WriteLine($"    Did NOT find Image {blobName} in Storage Account: {blobStorageAccountName} Container: {blobContainerName}");
         }
         catch (Exception ex)
         {
             var msg = Utilities.GetExceptionMessage(ex);
-            Console.WriteLine($"Error checking blob existence for JokeId {jokeId}: {msg} Storge Account: {blobStorageAccountName} Container: {blobContainerName} Blob: {blobName}");
+            Console.WriteLine($"Error checking blob existence for JokeId {jokeId}: {msg}");
+            Console.WriteLine($"    Searching for Image {blobName} in Storage Account: {blobStorageAccountName} Container: {blobContainerName}");
         }
 
         return string.Empty;
