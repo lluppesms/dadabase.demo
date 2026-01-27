@@ -24,6 +24,11 @@ permissions:
 
 # ------------------------------------------------------------------------------------------------------------------------
 jobs:
+  load-config:
+    name: Load Project Config
+    uses: ./.github/workflows/template-load-config.yml
+    secrets: inherit
+
   scan-code:
     name: Scan Source Code
     uses: ./.github/workflows/template-scan-code.yml
@@ -36,13 +41,13 @@ jobs:
   build-app:
     name: Build WebApp
     uses: ./.github/workflows/template-webapp-build.yml
-    needs: scan-code
+    needs: [load-config, scan-code]
     secrets: inherit
     with:
       envCode: 'dev'
-      rootDirectory: '${{ vars.WEB_APP_PROJECT_FOLDER_NAME }}'
-      projectName: '${{ vars.WEB_APP_PROJECT_NAME }}'
-      testDirectory: '${{ vars.WEB_APP_TEST_FOLDER_NAME }}'
-      testProjectName: '${{ vars.WEB_APP_TEST_PROJECT_NAME }}'
+      rootDirectory: '${{ needs.load-config.outputs.web_rootDirectory }}'
+      projectName: '${{ needs.load-config.outputs.web_projectName }}'
+      testDirectory: '${{ needs.load-config.outputs.web_testDirectory }}'
+      testProjectName: '${{ needs.load-config.outputs.web_testProjectName }}'
       testApplication: true
       listFilesAfterBuild: true
