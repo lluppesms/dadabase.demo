@@ -69,7 +69,7 @@ jobs:
           Write-Host "SQL Server Name: ${{ env.sqlServerName }}"
           Write-Host "FQDN Server Name: ${{ env.fqdnServerName }}"
           echo "Server: vars.SQL_SERVER_NAME_PREFIX=${{ vars.SQL_SERVER_NAME_PREFIX }}"
-          echo "Database: inputs.sqlDatabaseName=${{ vars.sqlDatabaseName }}"
+          echo "Database: inputs.sqlDatabaseName=${{ vars.SQL_DATABASE_NAME }}"
           Write-Host "SQL Folder: ${{ inputs.sqlFolderName }}"
           Write-Host "SQL File: ${{ inputs.sqlFileName }}"
           Write-Host "Login Type: ${{ inputs.loginAccountType }}"
@@ -102,7 +102,7 @@ jobs:
         shell: pwsh
         run: |
           $sqlFile = "${{ inputs.sqlFolderName }}/${{ inputs.sqlFileName }}"
-          Write-Host "Running SQL script: $sqlFile on ${{ env.fqdnServerName }} / ${{ vars.sqlDatabaseName }}"
+          Write-Host "Running SQL script: $sqlFile on ${{ env.fqdnServerName }} / ${{ vars.SQL_DATABASE_NAME }}"
           
           # Install SqlServer module if not present
           if (-not (Get-Module -ListAvailable -Name SqlServer)) {
@@ -111,7 +111,7 @@ jobs:
           Import-Module SqlServer
           
           Invoke-Sqlcmd -ServerInstance "${{ env.fqdnServerName }}" `
-            -Database "${{ vars.sqlDatabaseName }}" `
+            -Database "${{ vars.SQL_DATABASE_NAME }}" `
             -Username "${{ secrets.SQL_ADMIN_USER }}" `
             -Password "${{ secrets.SQL_ADMIN_PASSWORD }}" `
             -InputFile "$sqlFile" `
@@ -125,7 +125,7 @@ jobs:
         shell: pwsh
         run: |
           $sqlFile = "${{ inputs.sqlFolderName }}/${{ inputs.sqlFileName }}"
-          Write-Host "Running SQL script: $sqlFile on ${{ env.fqdnServerName }} / ${{ vars.sqlDatabaseName }}"
+          Write-Host "Running SQL script: $sqlFile on ${{ env.fqdnServerName }} / ${{ vars.SQL_DATABASE_NAME }}"
           
           # Get access token for Azure SQL
           $accessToken = az account get-access-token --resource=https://database.windows.net/ --query accessToken -o tsv
@@ -137,7 +137,7 @@ jobs:
           Import-Module SqlServer
           
           Invoke-Sqlcmd -ServerInstance "${{ env.fqdnServerName }}" `
-            -Database "${{ vars.sqlDatabaseName }}" `
+            -Database "${{ vars.SQL_DATABASE_NAME }}" `
             -AccessToken $accessToken `
             -InputFile "$sqlFile" `
             -Verbose
@@ -149,7 +149,7 @@ jobs:
         if: inputs.loginAccountType == 'SVC_PRINCIPAL' && inputs.sqlFileName == 'DBCOPY'
         shell: pwsh
         run: |
-          Write-Host "Copying database ${{ vars.sqlDatabaseName }} to ${{ inputs.databaseCopyName }}"
+          Write-Host "Copying database ${{ vars.SQL_DATABASE_NAME }} to ${{ inputs.databaseCopyName }}"
           Write-Host "Server: ${{ env.sqlServerName }}, Resource Group: ${{ inputs.resourceGroupName }}"
           
           # Install Az.Sql module if not present
@@ -161,7 +161,7 @@ jobs:
           New-AzSqlDatabaseCopy `
             -ResourceGroupName "${{ inputs.resourceGroupName }}" `
             -ServerName "${{ env.sqlServerName }}" `
-            -DatabaseName "${{ vars.sqlDatabaseName }}" `
+            -DatabaseName "${{ vars.SQL_DATABASE_NAME }}" `
             -CopyResourceGroupName "${{ inputs.resourceGroupName }}" `
             -CopyServerName "${{ env.sqlServerName }}" `
             -CopyDatabaseName "${{ inputs.databaseCopyName }}"
