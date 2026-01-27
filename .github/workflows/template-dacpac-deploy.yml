@@ -26,12 +26,6 @@ on:
       appProjectName:
         required: true
         type: string
-      sqlServerPrefix:
-        required: true
-        type: string
-      sqlDatabaseName:
-        required: true
-        type: string
       loginAccountType:
         required: false
         type: string
@@ -45,8 +39,8 @@ jobs:
     environment:
       name: ${{ inputs.envCode }}
     env:
-      sqlServerName: '${{ inputs.sqlServerPrefix }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}'
-      fqdnServerName: '${{ inputs.sqlServerPrefix }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}.database.windows.net'
+      sqlServerName: '${{ vars.sqlServerPrefix }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}'
+      fqdnServerName: '${{ vars.sqlServerPrefix }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}.database.windows.net'
     permissions:
       id-token: write
     steps:
@@ -68,7 +62,8 @@ jobs:
           echo "vars.INSTANCE_NUMBER=${{ vars.INSTANCE_NUMBER }}"
           echo "env.sqlServerName=${{ env.sqlServerName }}"
           echo "env.fqdnServerName=${{ env.fqdnServerName }}"
-          echo "Database: inputs.sqlDatabaseName=${{ inputs.sqlDatabaseName }}"
+          echo "Server: vars.sqlServerPrefix=${{ vars.sqlServerPrefix }}"
+          echo "Database: inputs.sqlDatabaseName=${{ vars.sqlDatabaseName }}"
           echo "Project: inputs.appProjectName=${{ inputs.appProjectName }}"
 
       - name: Azure Login (Reusable Action)
@@ -84,8 +79,8 @@ jobs:
         if: inputs.loginAccountType == 'SVC_PRINCIPAL'
         uses: azure/sql-action@v2.3
         with:
-          connection-string: 'Server=${{ env.fqdnServerName }};Database=${{ inputs.sqlDatabaseName }};Authentication=Active Directory Default; Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
-          # connection-string: 'Server=${{ env.fqdnServerName }};Database=${{ inputs.sqlDatabaseName }};Authentication=Active Directory Service Principal;'
+          connection-string: 'Server=${{ env.fqdnServerName }};Database=${{ vars.sqlDatabaseName }};Authentication=Active Directory Default; Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
+          # connection-string: 'Server=${{ env.fqdnServerName }};Database=${{ vars.sqlDatabaseName }};Authentication=Active Directory Service Principal;'
           path: './dacpac/${{ inputs.appProjectName }}.dacpac'
           action: 'publish'
 
@@ -94,7 +89,7 @@ jobs:
         if: inputs.loginAccountType == 'LOCAL_SQL'
         uses: azure/sql-action@v2.3
         with:
-          connection-string: 'Server=${{ env.fqdnServerName }};Database=${{ inputs.sqlDatabaseName }};User Id=${{ secrets.SQL_ADMIN_USER }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};'
+          connection-string: 'Server=${{ env.fqdnServerName }};Database=${{ vars.sqlDatabaseName }};User Id=${{ secrets.SQL_ADMIN_USER }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};'
           path: './dacpac/${{ inputs.appProjectName }}.dacpac'
           action: 'publish'
 

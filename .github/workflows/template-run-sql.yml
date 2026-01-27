@@ -25,12 +25,6 @@ on:
       sqlFileName:
         required: true
         type: string
-      runInDatabase:
-        required: true
-        type: string
-      sqlServerPrefix:
-        required: true
-        type: string
       loginAccountType:
         required: false
         type: string
@@ -52,8 +46,8 @@ jobs:
     environment:
       name: ${{ inputs.envCode }}
     env:
-      sqlServerName: '${{ inputs.sqlServerPrefix }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}'
-      fqdnServerName: '${{ inputs.sqlServerPrefix }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}.database.windows.net'
+      sqlServerName: '${{ vars.sqlServerPrefix }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}'
+      fqdnServerName: '${{ vars.sqlServerPrefix }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}.database.windows.net'
     permissions:
       id-token: write
     steps:
@@ -74,7 +68,8 @@ jobs:
           Write-Host "Environment: ${{ inputs.envCode }}"
           Write-Host "SQL Server Name: ${{ env.sqlServerName }}"
           Write-Host "FQDN Server Name: ${{ env.fqdnServerName }}"
-          Write-Host "Database: ${{ inputs.runInDatabase }}"
+          echo "Server: vars.sqlServerPrefix=${{ vars.sqlServerPrefix }}"
+          echo "Database: inputs.sqlDatabaseName=${{ vars.sqlDatabaseName }}"
           Write-Host "SQL Folder: ${{ inputs.sqlFolderName }}"
           Write-Host "SQL File: ${{ inputs.sqlFileName }}"
           Write-Host "Login Type: ${{ inputs.loginAccountType }}"
@@ -107,7 +102,7 @@ jobs:
         shell: pwsh
         run: |
           $sqlFile = "${{ inputs.sqlFolderName }}/${{ inputs.sqlFileName }}"
-          Write-Host "Running SQL script: $sqlFile on ${{ env.fqdnServerName }} / ${{ inputs.runInDatabase }}"
+          Write-Host "Running SQL script: $sqlFile on ${{ env.fqdnServerName }} / ${{ vars.sqlDatabaseName }}"
           
           # Install SqlServer module if not present
           if (-not (Get-Module -ListAvailable -Name SqlServer)) {
@@ -116,7 +111,7 @@ jobs:
           Import-Module SqlServer
           
           Invoke-Sqlcmd -ServerInstance "${{ env.fqdnServerName }}" `
-            -Database "${{ inputs.runInDatabase }}" `
+            -Database "${{ vars.sqlDatabaseName }}" `
             -Username "${{ secrets.SQL_ADMIN_USER }}" `
             -Password "${{ secrets.SQL_ADMIN_PASSWORD }}" `
             -InputFile "$sqlFile" `
@@ -130,7 +125,7 @@ jobs:
         shell: pwsh
         run: |
           $sqlFile = "${{ inputs.sqlFolderName }}/${{ inputs.sqlFileName }}"
-          Write-Host "Running SQL script: $sqlFile on ${{ env.fqdnServerName }} / ${{ inputs.runInDatabase }}"
+          Write-Host "Running SQL script: $sqlFile on ${{ env.fqdnServerName }} / ${{ vars.sqlDatabaseName }}"
           
           # Get access token for Azure SQL
           $accessToken = az account get-access-token --resource=https://database.windows.net/ --query accessToken -o tsv
@@ -142,7 +137,7 @@ jobs:
           Import-Module SqlServer
           
           Invoke-Sqlcmd -ServerInstance "${{ env.fqdnServerName }}" `
-            -Database "${{ inputs.runInDatabase }}" `
+            -Database "${{ vars.sqlDatabaseName }}" `
             -AccessToken $accessToken `
             -InputFile "$sqlFile" `
             -Verbose
@@ -154,7 +149,7 @@ jobs:
         if: inputs.loginAccountType == 'SVC_PRINCIPAL' && inputs.sqlFileName == 'DBCOPY'
         shell: pwsh
         run: |
-          Write-Host "Copying database ${{ inputs.runInDatabase }} to ${{ inputs.databaseCopyName }}"
+          Write-Host "Copying database ${{ vars.sqlDatabaseName }} to ${{ inputs.databaseCopyName }}"
           Write-Host "Server: ${{ env.sqlServerName }}, Resource Group: ${{ inputs.resourceGroupName }}"
           
           # Install Az.Sql module if not present
@@ -166,7 +161,7 @@ jobs:
           New-AzSqlDatabaseCopy `
             -ResourceGroupName "${{ inputs.resourceGroupName }}" `
             -ServerName "${{ env.sqlServerName }}" `
-            -DatabaseName "${{ inputs.runInDatabase }}" `
+            -DatabaseName "${{ vars.sqlDatabaseName }}" `
             -CopyResourceGroupName "${{ inputs.resourceGroupName }}" `
             -CopyServerName "${{ env.sqlServerName }}" `
             -CopyDatabaseName "${{ inputs.databaseCopyName }}"

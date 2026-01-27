@@ -71,8 +71,6 @@ jobs:
       envCode: ${{ inputs.deployEnvironment }}
       artifactName: 'dacpac'
       appProjectName: ${{ needs.load-config.outputs.sql_projectName }}
-      sqlServerPrefix: ${{ vars.SQL_SERVER_NAME_PREFIX }}
-      sqlDatabaseName: ${{ vars.SQL_DATABASE_NAME }}
       loginAccountType: ${{ inputs.loginAccountType }}
     secrets: inherit
 
@@ -90,7 +88,5 @@ jobs:
       envCode: ${{ inputs.deployEnvironment }}
       sqlFolderName: '${{ needs.load-config.outputs.sql_rootDirectory }}/Patch'
       sqlFileName: 'InsertDefaultData.sql'
-      sqlServerPrefix: ${{ vars.SQL_SERVER_NAME_PREFIX }}
-      runInDatabase: ${{ vars.SQL_DATABASE_NAME }}
       loginAccountType: 'SVC_PRINCIPAL'
     secrets: inherit
