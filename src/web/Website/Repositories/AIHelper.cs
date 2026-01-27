@@ -105,6 +105,7 @@ public class AIHelper : IAIHelper
             // - Size: 1024x1024, 1024x1536, or 1536x1024
             // - Quality: Low, Medium (default), or High
             // - Note: gpt-image-1 models only return base64, no URI option
+            Console.WriteLine($"Generating Image for Joke {jokeId} using endpoint {openaiImageEndpointUrl} and model {openaiDeploymentName} with Prompt: {imageDescription[..Math.Min(15, imageDescription.Length)]}...");
             var imageResult = await imageGenerator.GenerateImageAsync(imageDescription, new()
             {
                 Quality = GeneratedImageQuality.Medium,
@@ -213,7 +214,8 @@ public class AIHelper : IAIHelper
         catch (Exception ex)
         {
             var msg = Utilities.GetExceptionMessage(ex);
-            Console.WriteLine($"Error checking blob existence for JokeId {jokeId}: {msg} Storge Account: {blobStorageAccountName} Container: {blobContainerName} Blob: {blobName}");
+            Console.WriteLine($"Error checking blob existence for JokeId {jokeId}: {msg}");
+            Console.WriteLine($"  Checked Storage Account: {blobStorageAccountName} Container: {blobContainerName} Blob: {blobName}");
         }
 
         return string.Empty;
