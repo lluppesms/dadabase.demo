@@ -39,8 +39,8 @@ jobs:
     environment:
       name: ${{ inputs.envCode }}
     env:
-      sqlServerName: '${{ vars.sqlServerPrefix }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}'
-      fqdnServerName: '${{ vars.sqlServerPrefix }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}.database.windows.net'
+      sqlServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}'
+      fqdnServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}.database.windows.net'
     permissions:
       id-token: write
     steps:
@@ -62,7 +62,7 @@ jobs:
           echo "vars.INSTANCE_NUMBER=${{ vars.INSTANCE_NUMBER }}"
           echo "env.sqlServerName=${{ env.sqlServerName }}"
           echo "env.fqdnServerName=${{ env.fqdnServerName }}"
-          echo "Server: vars.sqlServerPrefix=${{ vars.sqlServerPrefix }}"
+          echo "Server: vars.SQL_SERVER_NAME_PREFIX=${{ vars.SQL_SERVER_NAME_PREFIX }}"
           echo "Database: inputs.sqlDatabaseName=${{ vars.sqlDatabaseName }}"
           echo "Project: inputs.appProjectName=${{ inputs.appProjectName }}"
 

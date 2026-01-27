@@ -46,8 +46,8 @@ jobs:
     environment:
       name: ${{ inputs.envCode }}
     env:
-      sqlServerName: '${{ vars.sqlServerPrefix }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}'
-      fqdnServerName: '${{ vars.sqlServerPrefix }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}.database.windows.net'
+      sqlServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}'
+      fqdnServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}.database.windows.net'
     permissions:
       id-token: write
     steps:
@@ -68,7 +68,7 @@ jobs:
           Write-Host "Environment: ${{ inputs.envCode }}"
           Write-Host "SQL Server Name: ${{ env.sqlServerName }}"
           Write-Host "FQDN Server Name: ${{ env.fqdnServerName }}"
-          echo "Server: vars.sqlServerPrefix=${{ vars.sqlServerPrefix }}"
+          echo "Server: vars.SQL_SERVER_NAME_PREFIX=${{ vars.SQL_SERVER_NAME_PREFIX }}"
           echo "Database: inputs.sqlDatabaseName=${{ vars.sqlDatabaseName }}"
           Write-Host "SQL Folder: ${{ inputs.sqlFolderName }}"
           Write-Host "SQL File: ${{ inputs.sqlFileName }}"
