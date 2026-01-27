@@ -63,19 +63,7 @@
             
             if (isNinetiesTheme)
             {
-                // Get or initialize hit counter
-                var countStr = await JS.InvokeAsync<string>("localStorage.getItem", HitCountKey);
-                if (int.TryParse(countStr, out var count))
-                {
-                    hitCount = count + 1;
-                }
-                else
-                {
-                    hitCount = 1337; // Start with a cool 90's number
-                }
-                
-                // Save updated count
-                await JS.InvokeVoidAsync("localStorage.setItem", HitCountKey, hitCount.ToString());
+                await IncrementHitCounter();
                 StateHasChanged();
             }
         }
@@ -90,19 +78,26 @@
         
         if (isNinetiesTheme && !wasNineties)
         {
-            // Just switched to 90's theme - increment counter
-            var countStr = await JS.InvokeAsync<string>("localStorage.getItem", HitCountKey);
-            if (int.TryParse(countStr, out var count))
-            {
-                hitCount = count + 1;
-            }
-            else
-            {
-                hitCount = 1337;
-            }
-            await JS.InvokeVoidAsync("localStorage.setItem", HitCountKey, hitCount.ToString());
+            await IncrementHitCounter();
         }
         
         StateHasChanged();
+    }
+    
+    private async Task IncrementHitCounter()
+    {
+        // Get or initialize hit counter
+        var countStr = await JS.InvokeAsync<string>("localStorage.getItem", HitCountKey);
+        if (int.TryParse(countStr, out var count))
+        {
+            hitCount = count + 1;
+        }
+        else
+        {
+            hitCount = 1337; // Start with a cool 90's number
+        }
+        
+        // Save updated count
+        await JS.InvokeVoidAsync("localStorage.setItem", HitCountKey, hitCount.ToString());
     }
 }
