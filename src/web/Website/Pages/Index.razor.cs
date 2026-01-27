@@ -14,12 +14,13 @@ namespace DadABase.Web.Pages;
 /// Index Page Code Behind
 /// </summary>
 [AllowAnonymous]
-public partial class Index : ComponentBase
+public partial class Index : ComponentBase, IDisposable
 {
     [Inject] IJSRuntime JsInterop { get; set; }
     [Inject] IJokeRepository JokeRepository { get; set; }
     [Inject] IAIHelper GenAIAgent { get; set; }
     [Inject] ISnackbar Snackbar { get; set; }
+    [Inject] DadABase.Web.Repositories.ThemeService ThemeService { get; set; }
 
     private Joke myJoke = new();
     private readonly bool addDelay = false;
@@ -35,6 +36,12 @@ public partial class Index : ComponentBase
     private string jokeImageUrl = string.Empty;
     private bool imageLoading = false;
     private bool imageDescriptionDialogVisible = false;
+    private bool isNinetiesTheme = false;
+
+    protected override void OnInitialized()
+    {
+        ThemeService.OnThemeChanged += HandleThemeChanged;
+    }
 
     /// <summary>
     /// Initialization
@@ -46,9 +53,23 @@ public partial class Index : ComponentBase
         if (firstRender)
         {
             await JsInterop.InvokeVoidAsync("syncHeaderTitle");
+            var theme = await JsInterop.InvokeAsync<string>("localStorage.getItem", "theme-mode");
+            isNinetiesTheme = theme == "nineties";
             await ExecuteRandom();
             StateHasChanged();
         }
+    }
+
+    private async void HandleThemeChanged()
+    {
+        var theme = await JsInterop.InvokeAsync<string>("localStorage.getItem", "theme-mode");
+        isNinetiesTheme = theme == "nineties";
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ThemeService.OnThemeChanged -= HandleThemeChanged;
     }
 
     private async Task ExecuteRandom()

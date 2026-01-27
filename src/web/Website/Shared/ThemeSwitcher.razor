@@ -23,6 +23,7 @@
     private const string ThemeKey = "theme-mode";
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private DadABase.Web.Repositories.ThemeService ThemeService { get; set; } = default!;
     private bool _initialized = false;
     private string _pendingTheme = null;
 
@@ -72,5 +73,8 @@
         {
             await JS.InvokeVoidAsync("eval", "document.body.classList.add('theme-system'); document.body.removeAttribute('data-bs-theme');");
         }
+        
+        // Notify subscribers that theme has changed
+        ThemeService.NotifyThemeChanged();
     }
 }

@@ -2,11 +2,11 @@
 @namespace DadABase.Web.Pages
 @using MudBlazor
 
-<PageTitle>@Data.Constants.ApplicationTitle</PageTitle>
+<PageTitle>@(isNinetiesTheme ? "The Grand-Dad-A-Base" : Data.Constants.ApplicationTitle)</PageTitle>
 
 <div class="page-container">
     <MudContainer MaxWidth="MaxWidth.Large">
-        <h1>Tell me a Joke, Dad!</h1>
+        <h1>@(isNinetiesTheme ? "Tell me a Joke, Grandpa!" : "Tell me a Joke, Dad!")</h1>
         @if (jokeLoading)
         {
             <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
@@ -21,8 +21,19 @@
         }
             <div class="button-group">
                 <button class="btn btn-primary" @onclick="ExecuteRandom" disabled="@imageLoading">Tell me another one!</button>
-                <button class="btn btn-primary" @onclick="GenerateAIImage" disabled="@(imageLoading || imageGenerated)" title="Let the DadJoke AI imagine this scenario for you!">@(string.IsNullOrEmpty(myJoke?.ImageTxt) ? "AI Image Generator" : "AI Imagine-a-tor")</button>
+                @if (!isNinetiesTheme)
+                {
+                    <button class="btn btn-primary" @onclick="GenerateAIImage" disabled="@(imageLoading || imageGenerated)" title="Let the DadJoke AI imagine this scenario for you!">@(string.IsNullOrEmpty(myJoke?.ImageTxt) ? "AI Image Generator" : "AI Imagine-a-tor")</button>
+                }
             </div>
+            @if (isNinetiesTheme)
+            {
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="https://en.wikipedia.org/wiki/Dancing_baby" target="_blank" style="text-decoration: none;">
+                        <img src="/DancingBaby.gif" alt="Dancing Baby" style="max-width: 200px; cursor: pointer;" />
+                    </a>
+                </div>
+            }
             <div class="joke-image-section">
                 <p class="image-message">@jokeImageMessage</p>
                 @if (imageLoading)

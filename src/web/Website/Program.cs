@@ -92,6 +92,7 @@ else
 
 builder.Services.AddSingleton<IAIHelper, AIHelper>();
 builder.Services.AddScoped<IBuildInfoService, BuildInfoService>();
+builder.Services.AddScoped<DadABase.Web.Repositories.ThemeService>();
 
 // ----- Configure Authentication ---------------------------------------------------------------------
 var authSettings = builder.Configuration.GetSection("AzureAD");

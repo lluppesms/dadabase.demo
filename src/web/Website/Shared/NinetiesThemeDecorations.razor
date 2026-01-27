@@ -2,21 +2,22 @@
 @using Microsoft.JSInterop
 @namespace DadABase.Web.Shared
 @inject IJSRuntime JS
+@inject DadABase.Web.Repositories.ThemeService ThemeService
+@implements IDisposable
 
 @if (isNinetiesTheme)
 {
     <div class="nineties-decorations">
         <!-- Hit Counter and Badges Row -->
-        <div style="text-align: center; padding: 20px; background: #000000; border: 3px solid #ffff00; margin-top: 20px;">
-            <div class="hit-counter">
-                👁️ VISITORS: <span>@hitCount.ToString("D6")</span> 👁️
-            </div>
-            <div style="margin-top: 15px;">
+        <div style="text-align: center; padding: 0 20px 20px 20px; background: #000000; border: 3px solid #ffff00; margin-top: 10px;">
+            <div style="display: flex; align-items: center; justify-content: center; margin-top: 15px;">
                 <span class="spinning-logo" style="font-size: 2rem; margin: 0 10px;">🌟</span>
                 <span class="spinning-logo" style="font-size: 2rem; margin: 0 10px; animation-delay: 0.5s;">💫</span>
+                <div class="hit-counter" style="margin: 0 15px;">
+                    👁️ VISITORS: <span>@hitCount.ToString("D6")</span> 👁️
+                </div>
                 <span class="spinning-logo" style="font-size: 2rem; margin: 0 10px; animation-delay: 1s;">✨</span>
                 <span class="spinning-logo" style="font-size: 2rem; margin: 0 10px; animation-delay: 1.5s;">⭐</span>
-                <span class="spinning-logo" style="font-size: 2rem; margin: 0 10px; animation-delay: 2s;">🌠</span>
             </div>
             <div style="margin-top: 10px;">
                 <span style="display: inline-block; height: 31px; margin: 5px; background: linear-gradient(90deg, #ff00ff, #00ffff); padding: 5px 10px; border: 2px solid #ffff00; font-size: 11px; color: #000; font-weight: bold;">
@@ -26,10 +27,10 @@
                     <span style="animation: blink 1s linear infinite;">💻</span> DOWNLOAD INTERNET EXPLORER NOW! <span style="animation: blink 1s linear infinite;">💻</span>
                 </span>
             </div>
-            <div style="margin-top: 10px; color: #00ff00; font-size: 10px;">
-                <span style="animation: blink 1.5s linear infinite;">★</span>
-                <span style="text-shadow: 0 0 5px #00ff00;">This site is OPTIMIZED for 800x600 resolution!</span>
-                <span style="animation: blink 1.5s linear infinite;">★</span>
+            <div style="margin-top: 10px; font-size: 10px;">
+                <span style="animation: blink 1.5s linear infinite; color: #00ff00 !important;">★</span>
+                <span style="color: #00ff00 !important; text-shadow: 0 0 5px #00ff00;">This site is OPTIMIZED for 800x600 resolution!</span>
+                <span style="animation: blink 1.5s linear infinite; color: #00ff00 !important;">★</span>
             </div>
         </div>
     </div>
@@ -41,6 +42,11 @@
     private const string HitCountKey = "nineties-hit-count";
     private const string ThemeKey = "theme-mode";
 
+    protected override void OnInitialized()
+    {
+        ThemeService.OnThemeChanged += HandleThemeChanged;
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -48,7 +54,7 @@
             // Check if 90's theme is active
             var theme = await JS.InvokeAsync<string>("localStorage.getItem", ThemeKey);
             isNinetiesTheme = theme == "nineties";
-            
+
             if (isNinetiesTheme)
             {
                 await IncrementHitCounter();
@@ -56,22 +62,27 @@
             }
         }
     }
-    
+
+    private async void HandleThemeChanged()
+    {
+        await UpdateThemeStatus();
+    }
+
     // Method to be called when theme changes (can be invoked from parent)
     public async Task UpdateThemeStatus()
     {
         var theme = await JS.InvokeAsync<string>("localStorage.getItem", ThemeKey);
         var wasNineties = isNinetiesTheme;
         isNinetiesTheme = theme == "nineties";
-        
+
         if (isNinetiesTheme && !wasNineties)
         {
             await IncrementHitCounter();
         }
-        
-        StateHasChanged();
+
+        await InvokeAsync(StateHasChanged);
     }
-    
+
     private async Task IncrementHitCounter()
     {
         // Get or initialize hit counter
@@ -84,8 +95,13 @@
         {
             hitCount = 1337; // Start with a cool 90's number
         }
-        
+
         // Save updated count
         await JS.InvokeVoidAsync("localStorage.setItem", HitCountKey, hitCount.ToString());
+    }
+
+    public void Dispose()
+    {
+        ThemeService.OnThemeChanged -= HandleThemeChanged;
     }
 }

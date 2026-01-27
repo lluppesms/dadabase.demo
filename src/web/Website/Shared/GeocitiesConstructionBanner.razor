@@ -2,6 +2,8 @@
 @using Microsoft.JSInterop
 @namespace DadABase.Web.Shared
 @inject IJSRuntime JS
+@inject DadABase.Web.Repositories.ThemeService ThemeService
+@implements IDisposable
 
 @if (isNinetiesTheme)
 {
@@ -20,6 +22,11 @@
     private bool isNinetiesTheme = false;
     private const string ThemeKey = "theme-mode";
 
+    protected override void OnInitialized()
+    {
+        ThemeService.OnThemeChanged += HandleThemeChanged;
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -30,12 +37,22 @@
             StateHasChanged();
         }
     }
+
+    private async void HandleThemeChanged()
+    {
+        await UpdateThemeStatus();
+    }
     
     // Method to be called when theme changes
     public async Task UpdateThemeStatus()
     {
         var theme = await JS.InvokeAsync<string>("localStorage.getItem", ThemeKey);
         isNinetiesTheme = theme == "nineties";
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ThemeService.OnThemeChanged -= HandleThemeChanged;
     }
 }
