@@ -20,6 +20,7 @@
         </div>
     </MudAppBar>
     <MudMainContent Class="LayoutContentContainer">
+        <GeocitiesConstructionBanner @ref="geocitiesBanner" />
         <div class="LayoutContentStyle">
             <NinetiesThemeDecorations @ref="ninetiesDecorations" />
             @Body
@@ -44,6 +45,7 @@
     string assemblyVersionNumber => Assembly.GetEntryAssembly().GetName().Version.ToString();
     private BuildInfo buildInfo;
     private NinetiesThemeDecorations ninetiesDecorations;
+    private GeocitiesConstructionBanner geocitiesBanner;
 
     protected override async Task OnInitializedAsync()
     {
