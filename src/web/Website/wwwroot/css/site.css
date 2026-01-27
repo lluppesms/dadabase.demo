@@ -762,8 +762,8 @@ a, .btn-link {
     50%, 99% { opacity: 0; }
 }
 
-/* Geocities Construction Banner */
-.geocities-construction-banner {
+/* Under Construction Banner */
+.under-construction-banner {
     width: 100%;
     background: linear-gradient(90deg, #ff8c00, #ffd700, #ff8c00, #ffd700);
     background-size: 200% 100%;
@@ -777,7 +777,7 @@ a, .btn-link {
     z-index: 999;
 }
 
-.geocities-construction-banner .banner-content {
+.under-construction-banner .banner-content {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -791,7 +791,7 @@ a, .btn-link {
     );
 }
 
-.geocities-construction-banner .construction-icon {
+.under-construction-banner .construction-icon {
     font-size: 2rem;
     animation: construction-swing 1s ease-in-out infinite;
     margin: 0 12px;
@@ -802,7 +802,7 @@ a, .btn-link {
     50% { transform: rotate(10deg); }
 }
 
-.geocities-construction-banner h2 {
+.under-construction-banner h2 {
     color: #ff0000;
     font-size: 1.4rem;
     font-weight: bold;
@@ -815,7 +815,7 @@ a, .btn-link {
     letter-spacing: 3px;
 }
 
-.geocities-construction-banner .flame-bar {
+.under-construction-banner .flame-bar {
     width: 100%;
     height: 5px;
     background: linear-gradient(to right, #ff0000, #ff4500, #ff8c00, #ffa500, #ff8c00, #ff4500, #ff0000);
