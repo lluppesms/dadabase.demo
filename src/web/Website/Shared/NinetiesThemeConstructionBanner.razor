@@ -1,0 +1,58 @@
+@* NinetiesThemeConstructionBanner.razor: 90s-style construction banner that appears below navigation when 90s theme is active *@
+@using Microsoft.JSInterop
+@namespace DadABase.Web.Shared
+@inject IJSRuntime JS
+@inject DadABase.Web.Repositories.ThemeService ThemeService
+@implements IDisposable
+
+@if (isNinetiesTheme)
+{
+    <div id="under-construction-banner" class="under-construction-banner">
+        <div class="flame-bar"></div>
+        <div class="banner-content">
+            <span class="construction-icon">🚧</span>
+            <h2>UNDER CONSTRUCTION</h2>
+            <span class="construction-icon">🚧</span>
+        </div>
+        <div class="flame-bar"></div>
+    </div>
+}
+
+@code {
+    private bool isNinetiesTheme = false;
+    private const string ThemeKey = "theme-mode";
+
+    protected override void OnInitialized()
+    {
+        ThemeService.OnThemeChanged += HandleThemeChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Check if 90's theme is active
+            var theme = await JS.InvokeAsync<string>("localStorage.getItem", ThemeKey);
+            isNinetiesTheme = theme == "nineties";
+            StateHasChanged();
+        }
+    }
+
+    private async void HandleThemeChanged()
+    {
+        await UpdateThemeStatus();
+    }
+    
+    // Method to be called when theme changes
+    public async Task UpdateThemeStatus()
+    {
+        var theme = await JS.InvokeAsync<string>("localStorage.getItem", ThemeKey);
+        isNinetiesTheme = theme == "nineties";
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ThemeService.OnThemeChanged -= HandleThemeChanged;
+    }
+}
