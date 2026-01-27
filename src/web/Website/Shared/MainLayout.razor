@@ -21,6 +21,7 @@
     </MudAppBar>
     <MudMainContent Class="LayoutContentContainer">
         <div class="LayoutContentStyle">
+            <NinetiesThemeDecorations @ref="ninetiesDecorations" />
             @Body
         </div>
     </MudMainContent>
@@ -42,6 +43,7 @@
     int thisYear = DateTime.Today.Year;
     string assemblyVersionNumber => Assembly.GetEntryAssembly().GetName().Version.ToString();
     private BuildInfo buildInfo;
+    private NinetiesThemeDecorations ninetiesDecorations;
 
     protected override async Task OnInitializedAsync()
     {

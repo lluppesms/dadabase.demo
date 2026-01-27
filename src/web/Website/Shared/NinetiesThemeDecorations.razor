@@ -1,0 +1,104 @@
+@* NinetiesThemeDecorations.razor: 90's themed decorations including under construction banner, flames, and hit counter *@
+@using Microsoft.JSInterop
+@namespace DadABase.Web.Shared
+@inject IJSRuntime JS
+
+@if (isNinetiesTheme)
+{
+    <div class="nineties-decorations">
+        <!-- Flames at the top -->
+        <div class="nineties-flames"></div>
+        
+        <!-- Under Construction Banner -->
+        <div class="nineties-banner">
+            <h1>🚧 UNDER CONSTRUCTION 🚧</h1>
+            <p class="marquee-text">⭐ Welcome to the BEST Dad Joke Database on the World Wide Web! ⭐</p>
+        </div>
+        
+        <!-- Hit Counter and Badges Row -->
+        <div style="text-align: center; padding: 20px; background: #000000; border: 3px solid #ffff00;">
+            <div class="hit-counter">
+                👁️ VISITORS: <span>@hitCount.ToString("D6")</span> 👁️
+            </div>
+            <div style="margin-top: 15px;">
+                <span class="spinning-logo" style="font-size: 2rem; margin: 0 10px;">🌟</span>
+                <span class="spinning-logo" style="font-size: 2rem; margin: 0 10px; animation-delay: 0.5s;">💫</span>
+                <span class="spinning-logo" style="font-size: 2rem; margin: 0 10px; animation-delay: 1s;">✨</span>
+                <span class="spinning-logo" style="font-size: 2rem; margin: 0 10px; animation-delay: 1.5s;">⭐</span>
+            </div>
+            <div style="margin-top: 10px;">
+                <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" 
+                     alt="Best viewed in Netscape Navigator" 
+                     style="height: 31px; margin: 5px; background: linear-gradient(90deg, #ff00ff, #00ffff); padding: 5px; border: 2px solid #ffff00; font-size: 12px; color: #000; font-weight: bold; display: inline-block;"
+                     title="Best viewed in Netscape Navigator 4.0" />
+                <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" 
+                     alt="Download Internet Explorer NOW!" 
+                     style="height: 31px; margin: 5px; background: linear-gradient(90deg, #00ffff, #ffff00); padding: 5px; border: 2px solid #ff00ff; font-size: 12px; color: #000; font-weight: bold; display: inline-block;"
+                     title="Download Internet Explorer NOW!" />
+            </div>
+        </div>
+        
+        <!-- Bottom flames -->
+        <div class="nineties-flames"></div>
+    </div>
+}
+
+@code {
+    private bool isNinetiesTheme = false;
+    private int hitCount = 0;
+    private const string HitCountKey = "nineties-hit-count";
+    private const string ThemeKey = "theme-mode";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Check if 90's theme is active
+            var theme = await JS.InvokeAsync<string>("localStorage.getItem", ThemeKey);
+            isNinetiesTheme = theme == "nineties";
+            
+            if (isNinetiesTheme)
+            {
+                // Get or initialize hit counter
+                var countStr = await JS.InvokeAsync<string>("localStorage.getItem", HitCountKey);
+                if (int.TryParse(countStr, out var count))
+                {
+                    hitCount = count + 1;
+                }
+                else
+                {
+                    hitCount = 1337; // Start with a cool 90's number
+                }
+                
+                // Save updated count
+                await JS.InvokeVoidAsync("localStorage.setItem", HitCountKey, hitCount.ToString());
+                StateHasChanged();
+            }
+        }
+    }
+    
+    // Method to be called when theme changes (can be invoked from parent)
+    public async Task UpdateThemeStatus()
+    {
+        var theme = await JS.InvokeAsync<string>("localStorage.getItem", ThemeKey);
+        var wasNineties = isNinetiesTheme;
+        isNinetiesTheme = theme == "nineties";
+        
+        if (isNinetiesTheme && !wasNineties)
+        {
+            // Just switched to 90's theme - increment counter
+            var countStr = await JS.InvokeAsync<string>("localStorage.getItem", HitCountKey);
+            if (int.TryParse(countStr, out var count))
+            {
+                hitCount = count + 1;
+            }
+            else
+            {
+                hitCount = 1337;
+            }
+            await JS.InvokeVoidAsync("localStorage.setItem", HitCountKey, hitCount.ToString());
+        }
+        
+        StateHasChanged();
+    }
+}

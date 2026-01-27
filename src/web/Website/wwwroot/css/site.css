@@ -618,3 +618,228 @@ a, .btn-link {
         content: "⚠️ An error has occurred. Please try refreshing the page.";
         font-weight: 600;
     }
+
+/* ============================================
+   90's THEME STYLES
+   ============================================ */
+
+.theme-nineties {
+    font-family: 'Comic Sans MS', 'Comic Sans', cursive, sans-serif !important;
+}
+
+.theme-nineties * {
+    font-family: 'Comic Sans MS', 'Comic Sans', cursive, sans-serif !important;
+}
+
+.theme-nineties .LayoutContentContainer {
+    background: repeating-linear-gradient(
+        45deg,
+        #00ffff,
+        #00ffff 10px,
+        #ff00ff 10px,
+        #ff00ff 20px,
+        #ffff00 20px,
+        #ffff00 30px,
+        #00ff00 30px,
+        #00ff00 40px
+    ) !important;
+    animation: rainbow-bg 10s linear infinite;
+}
+
+@keyframes rainbow-bg {
+    0% { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+}
+
+.theme-nineties .LayoutFooterStyle {
+    background: linear-gradient(90deg, #ff00ff, #00ffff, #ffff00, #00ff00, #ff00ff) !important;
+    background-size: 400% 400%;
+    animation: gradient-shift 3s ease infinite;
+    color: #000000 !important;
+    font-weight: bold;
+    text-shadow: 2px 2px #ffffff;
+}
+
+@keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.theme-nineties .JokeCard,
+.theme-nineties .CategoryCard,
+.theme-nineties .card {
+    background: linear-gradient(135deg, #ff00ff, #00ffff) !important;
+    border: 5px ridge #ffff00 !important;
+    box-shadow: 0 0 20px #ff00ff, 0 0 30px #00ffff !important;
+    color: #000000 !important;
+    font-weight: bold;
+    animation: card-pulse 2s ease-in-out infinite;
+}
+
+@keyframes card-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+.theme-nineties .JokeCard h3,
+.theme-nineties .CategoryCard h3,
+.theme-nineties h1,
+.theme-nineties h2,
+.theme-nineties h3,
+.theme-nineties h4 {
+    color: #ff00ff !important;
+    text-shadow: 3px 3px #00ffff, 6px 6px #ffff00;
+    animation: blink 1.5s linear infinite;
+}
+
+@keyframes blink {
+    0%, 49% { opacity: 1; }
+    50%, 99% { opacity: 0.3; }
+}
+
+.theme-nineties .mud-typography,
+.theme-nineties p,
+.theme-nineties span,
+.theme-nineties label {
+    color: #000000 !important;
+    font-weight: bold;
+    text-shadow: 1px 1px #ffffff;
+}
+
+.theme-nineties .nav-tab-top,
+.theme-nineties .navbar,
+.theme-nineties .top-row {
+    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3) !important;
+    background-size: 200% 200%;
+    animation: rainbow-nav 5s linear infinite;
+}
+
+@keyframes rainbow-nav {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+
+.theme-nineties .btn,
+.theme-nineties button {
+    background: linear-gradient(135deg, #ff00ff, #ffff00) !important;
+    border: 3px outset #00ffff !important;
+    color: #000000 !important;
+    font-weight: bold;
+    text-shadow: 1px 1px #ffffff;
+    box-shadow: 0 0 10px #ff00ff;
+}
+
+.theme-nineties .btn:hover,
+.theme-nineties button:hover {
+    animation: button-spin 0.5s linear infinite;
+    transform: scale(1.1);
+}
+
+@keyframes button-spin {
+    0% { transform: rotate(0deg) scale(1.1); }
+    100% { transform: rotate(360deg) scale(1.1); }
+}
+
+/* Under Construction Banner */
+.nineties-banner {
+    background: linear-gradient(90deg, #ff0000, #ffff00, #ff0000);
+    background-size: 200% 100%;
+    animation: banner-slide 2s linear infinite;
+    padding: 20px;
+    text-align: center;
+    border: 5px solid #000000;
+    margin-bottom: 20px;
+}
+
+@keyframes banner-slide {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+
+.nineties-banner h1 {
+    color: #000000 !important;
+    text-shadow: 3px 3px #ffff00, 6px 6px #ff0000;
+    font-size: 3rem;
+    font-weight: bold;
+    animation: blink-fast 0.5s linear infinite;
+    margin: 0;
+}
+
+@keyframes blink-fast {
+    0%, 49% { opacity: 1; }
+    50%, 99% { opacity: 0; }
+}
+
+.nineties-flames {
+    width: 100%;
+    height: 50px;
+    background: linear-gradient(to top, #ff0000, #ff7f00, #ffff00);
+    animation: flame-flicker 0.3s ease-in-out infinite;
+    border-bottom: 3px solid #000000;
+}
+
+@keyframes flame-flicker {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(1.2); }
+}
+
+/* Hit Counter */
+.hit-counter {
+    background: #000000;
+    color: #00ff00;
+    font-family: 'Courier New', monospace !important;
+    padding: 10px 20px;
+    border: 3px ridge #00ff00;
+    display: inline-block;
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-shadow: 0 0 10px #00ff00;
+    animation: counter-glow 1s ease-in-out infinite;
+}
+
+@keyframes counter-glow {
+    0%, 100% { box-shadow: 0 0 10px #00ff00; }
+    50% { box-shadow: 0 0 20px #00ff00, 0 0 30px #00ff00; }
+}
+
+/* Spinning Logo */
+.spinning-logo {
+    animation: spin-logo 3s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin-logo {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 90's style marquee text */
+.marquee-text {
+    color: #ff00ff;
+    font-weight: bold;
+    font-size: 1.2rem;
+    text-shadow: 2px 2px #00ffff;
+    animation: blink 1s linear infinite;
+}
+
+/* Webring style links */
+.theme-nineties a {
+    color: #0000ff !important;
+    text-decoration: underline !important;
+    font-weight: bold;
+}
+
+.theme-nineties a:visited {
+    color: #800080 !important;
+}
+
+.theme-nineties a:hover {
+    color: #ff00ff !important;
+    animation: link-pulse 0.5s ease-in-out infinite;
+}
+
+@keyframes link-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}

@@ -12,13 +12,14 @@
         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="themeDropdown">
             <li><a class="dropdown-item" href="#" @onclick="() => SetTheme(ThemeMode.Light)"><i class="fas fa-sun"></i> Light</a></li>
             <li><a class="dropdown-item" href="#" @onclick="() => SetTheme(ThemeMode.Dark)"><i class="fas fa-moon"></i> Dark</a></li>
+            <li><a class="dropdown-item" href="#" @onclick="() => SetTheme(ThemeMode.Nineties)"><i class="fas fa-star"></i> 90's Theme</a></li>
             <li><a class="dropdown-item" href="#" @onclick="() => SetTheme(ThemeMode.System)"><i class="fas fa-desktop"></i> System Default</a></li>
         </ul>
     </div>
 </NavLink>
 
 @code {
-    private enum ThemeMode { Light, Dark, System }
+    private enum ThemeMode { Light, Dark, Nineties, System }
     private const string ThemeKey = "theme-mode";
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
@@ -54,7 +55,7 @@
     private async Task ApplyTheme(string mode)
     {
         // Remove all theme classes
-        await JS.InvokeVoidAsync("eval", "document.body.classList.remove('theme-light','theme-dark','theme-system');");
+        await JS.InvokeVoidAsync("eval", "document.body.classList.remove('theme-light','theme-dark','theme-nineties','theme-system');");
         if (mode == "light")
         {
             await JS.InvokeVoidAsync("eval", "document.body.classList.add('theme-light'); document.body.setAttribute('data-bs-theme','light');");
@@ -62,6 +63,10 @@
         else if (mode == "dark")
         {
             await JS.InvokeVoidAsync("eval", "document.body.classList.add('theme-dark'); document.body.setAttribute('data-bs-theme','dark');");
+        }
+        else if (mode == "nineties")
+        {
+            await JS.InvokeVoidAsync("eval", "document.body.classList.add('theme-nineties'); document.body.setAttribute('data-bs-theme','light');");
         }
         else
         {
