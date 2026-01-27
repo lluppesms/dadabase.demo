@@ -79,7 +79,7 @@ public partial class JokeDetail : ComponentBase
         if (!string.IsNullOrEmpty(myJoke.ImageTxt))
         {
             jokeImageDescription = myJoke.ImageTxt;
-            jokeImageMessage = "🚀 Using existing description! Let me draw that for you! (gimme a sec...)";
+            jokeImageMessage = "🚀 The DadJoke AI has created a description! Let me draw that for you! (gimme a sec...)";
             imageLoading = true;
             StateHasChanged();
 
