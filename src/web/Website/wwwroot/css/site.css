@@ -632,23 +632,17 @@ a, .btn-link {
 }
 
 .theme-nineties .LayoutContentContainer {
-    background: repeating-linear-gradient(
-        45deg,
-        #00ffff,
-        #00ffff 10px,
-        #ff00ff 10px,
-        #ff00ff 20px,
-        #ffff00 20px,
-        #ffff00 30px,
-        #00ff00 30px,
-        #00ff00 40px
-    ) !important;
-    animation: rainbow-bg 10s linear infinite;
+    background-color: #c0c0c0 !important;
+    background-image: 
+        repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,.05) 10px, rgba(255,255,255,.05) 20px),
+        linear-gradient(to bottom, #00ffff 0%, #ff00ff 25%, #ffff00 50%, #00ff00 75%, #00ffff 100%);
+    background-size: 100% 100%;
+    animation: rainbow-scroll 20s linear infinite;
 }
 
-@keyframes rainbow-bg {
-    0% { filter: hue-rotate(0deg); }
-    100% { filter: hue-rotate(360deg); }
+@keyframes rainbow-scroll {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 0% 400%; }
 }
 
 .theme-nineties .LayoutFooterStyle {
@@ -842,4 +836,102 @@ a, .btn-link {
 @keyframes link-pulse {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.2); }
+}
+
+/* MUD Blazor component overrides for 90's theme */
+.theme-nineties .mud-button {
+    background: linear-gradient(135deg, #ff00ff, #ffff00) !important;
+    border: 3px outset #00ffff !important;
+    color: #000000 !important;
+    font-weight: bold !important;
+    box-shadow: 0 0 10px #ff00ff !important;
+}
+
+.theme-nineties .mud-button:hover {
+    animation: button-wiggle 0.3s ease-in-out infinite;
+}
+
+@keyframes button-wiggle {
+    0%, 100% { transform: rotate(-2deg); }
+    50% { transform: rotate(2deg); }
+}
+
+/* Input fields */
+.theme-nineties .mud-input,
+.theme-nineties input,
+.theme-nineties textarea,
+.theme-nineties select {
+    background: #ffff99 !important;
+    border: 3px inset #ff00ff !important;
+    color: #000000 !important;
+    font-weight: bold !important;
+}
+
+/* Dropdown menus */
+.theme-nineties .dropdown-menu {
+    background: linear-gradient(135deg, #ff00ff, #00ffff) !important;
+    border: 5px ridge #ffff00 !important;
+}
+
+.theme-nineties .dropdown-item {
+    color: #000000 !important;
+    font-weight: bold !important;
+    text-shadow: 1px 1px #ffffff;
+}
+
+.theme-nineties .dropdown-item:hover {
+    background: #ffff00 !important;
+    animation: item-bounce 0.5s ease-in-out infinite;
+}
+
+@keyframes item-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+
+/* Make scrollbars colorful */
+.theme-nineties ::-webkit-scrollbar {
+    width: 16px;
+}
+
+.theme-nineties ::-webkit-scrollbar-track {
+    background: linear-gradient(180deg, #ff00ff, #00ffff, #ffff00, #00ff00);
+}
+
+.theme-nineties ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #ffff00, #ff00ff);
+    border: 2px solid #000000;
+    border-radius: 0;
+}
+
+.theme-nineties ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #00ffff, #ff00ff);
+}
+
+/* Add some sparkle to tables */
+.theme-nineties table {
+    border: 5px ridge #ff00ff !important;
+}
+
+.theme-nineties th {
+    background: linear-gradient(90deg, #ff00ff, #ffff00) !important;
+    color: #000000 !important;
+    font-weight: bold !important;
+    border: 3px outset #00ffff !important;
+}
+
+.theme-nineties td {
+    border: 2px solid #ff00ff !important;
+    background: #ffff99 !important;
+    color: #000000 !important;
+}
+
+.theme-nineties tr:hover td {
+    background: #00ffff !important;
+    animation: row-flash 0.5s linear infinite;
+}
+
+@keyframes row-flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
 }
