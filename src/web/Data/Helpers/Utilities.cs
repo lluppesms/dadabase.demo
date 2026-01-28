@@ -63,8 +63,6 @@ public class Utilities
     /// </summary>
     public static string GetSanitizedConnectionString(string connection)
     {
-        //// "DeviceConnectionString": "HostName=iothub123.azure-devices.net;DeviceId=test1;SharedAccessKey=E5Z6******=",
-        //// "SQLConnectionString": "Server=myServerAddress;Database=myDataBase;User Id=myUsername;Password=myPassword";
         string noKey;
         if (string.IsNullOrEmpty(connection)) return string.Empty;
         var keyPos = connection.IndexOf("key=", StringComparison.OrdinalIgnoreCase);
