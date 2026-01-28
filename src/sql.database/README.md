@@ -134,18 +134,15 @@ This database project is designed to be reusable across different applications:
 
 Example connection strings for different environments:
 
-**Azure SQL Database (Service Principal)**
-```
-Server=tcp:yourserver.database.windows.net,1433;Database=DadABase;Authentication=Active Directory Service Principal;User ID=your-sp-id;Password=your-sp-secret;
-```
+**Azure SQL Database**
 
-**Azure SQL Database (User/Password)**
-```
-Server=tcp:yourserver.database.windows.net,1433;Database=DadABase;User ID=yourusername;Password=yourpassword;Encrypt=True;
+``` sql
+data source=tcp:<databaseServerName>.database.windows.net,1433;Database=YourBase;Authentication=Active Directory Default;Connection Timeout=120;
 ```
 
 **LocalDB (Development)**
-```
+
+``` sql
 Server=(localdb)\\mssqllocaldb;Database=DadABase;Trusted_Connection=True;MultipleActiveResultSets=true
 ```
 
