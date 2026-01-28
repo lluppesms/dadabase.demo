@@ -17,10 +17,15 @@
     vertical-align: text-top;
     top: -2px;
 }
+.nav-item-text {
+    color: white !important;
+    text-decoration: none;
+}
 
 .nav-item {
     font-size: 0.9rem;
     padding-bottom: 0.5rem;
+    color: white;
 }
 
     .nav-item:first-of-type {
@@ -59,7 +64,7 @@
         /* Never collapse the sidebar for wide screens */
         display: block;
     }
-    
+
     .nav-scrollable {
         /* Allow sidebar to scroll for tall menus */
         height: calc(100vh - 3.5rem);

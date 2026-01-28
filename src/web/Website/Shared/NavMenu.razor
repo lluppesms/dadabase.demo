@@ -1,29 +1,16 @@
 ﻿
 <NavLink class="nav-tab-top" href="" Match="NavLinkMatch.All">
-  <MudIcon Icon="@Icons.Material.Filled.Home" Class="WhiteIcon" Style="padding-bottom: 6px;" /> Home
+  <MudIcon Icon="@Icons.Material.Filled.Home" Class="WhiteIcon" Style="padding-bottom: 6px;" /> <span class="nav-item-text">Home</span>
 </NavLink>
 <NavLink class="nav-tab-top" href="Search">
-  <MudIcon Icon="@Icons.Material.Filled.Search" Class="WhiteIcon" Style="padding-bottom: 6px;" /> Search
+  <MudIcon Icon="@Icons.Material.Filled.Search" Class="WhiteIcon" Style="padding-bottom: 6px;" /> <span class="nav-item-text">Search</span>
 </NavLink>
 <NavLink class="nav-tab-top" href="About">
-  <MudIcon Icon="@Icons.Material.Filled.Info" Class="WhiteIcon" Style="padding-bottom: 6px;" /> About
+  <MudIcon Icon="@Icons.Material.Filled.Info" Class="WhiteIcon" Style="padding-bottom: 6px;" /> <span class="nav-item-text">About</span>
 </NavLink>
-@* <NavLink class="nav-tab-top" href="Export">
-  <MudIcon Icon="@Icons.Material.Filled.Download" Class="WhiteIcon" Style="padding-bottom: 6px;" /> Export
-</NavLink> *@
 <ThemeSwitcher />
-
 <AuthorizeView Roles="Admin">
-  @* <NavLink class="nav-tab-top" href="JokeEditor">
-    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="WhiteIcon" Style="padding-bottom: 6px;" /> Editor
-  </NavLink>
-  <NavLink class="nav-tab-top" href="Export">
-    <MudIcon Icon="@Icons.Material.Filled.Download" Class="WhiteIcon" Style="padding-bottom: 6px;" /> Export
-  </NavLink>
-  <NavLink class="nav-tab-top" href="Swagger">
-    <MudIcon Icon="@Icons.Material.Filled.Code" Class="WhiteIcon" Style="padding-bottom: 6px;" /> Swagger
-  </NavLink> *@
   <NavLink class="nav-tab-top" href="Admin">
-    <MudIcon Icon="@Icons.Material.Filled.Key" Class="WhiteIcon" Style="padding-bottom: 6px;" /> Admin
+    <MudIcon Icon="@Icons.Material.Filled.Key" Class="WhiteIcon" Style="padding-bottom: 6px;" /> <span class="nav-item-text">Admin</span>
   </NavLink>
 </AuthorizeView>

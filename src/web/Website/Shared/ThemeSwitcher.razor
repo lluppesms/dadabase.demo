@@ -5,17 +5,17 @@
 <NavLink class="nav-tab-top">
     <div class="theme-switcher dropdown" style="text-align: center;">
         <div id="themeDropdown" data-bs-toggle="dropdown">
-          <MudIcon Icon="@Icons.Material.Filled.Settings" />
+          <MudIcon Icon="@Icons.Material.Filled.Settings" Class="WhiteIcon" Style="padding-bottom: 6px;" />
           <br />
-          <span>Theme</span>
-        </div>
-        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="themeDropdown">
-            <li><a class="dropdown-item" href="#" @onclick="() => SetTheme(ThemeMode.Light)"><i class="fas fa-sun"></i> Light</a></li>
-            <li><a class="dropdown-item" href="#" @onclick="() => SetTheme(ThemeMode.Dark)"><i class="fas fa-moon"></i> Dark</a></li>
-            <li><a class="dropdown-item" href="#" @onclick="() => SetTheme(ThemeMode.Nineties)"><i class="fas fa-star"></i> 90's Theme</a></li>
-            <li><a class="dropdown-item" href="#" @onclick="() => SetTheme(ThemeMode.System)"><i class="fas fa-desktop"></i> System Default</a></li>
-        </ul>
+          <span class="nav-item-text">Theme</span>
     </div>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="themeDropdown">
+        <li><a class="dropdown-item" href="#" @onclick="() => SetTheme(ThemeMode.Light)"><i class="fas fa-sun"></i> Light</a></li>
+        <li><a class="dropdown-item" href="#" @onclick="() => SetTheme(ThemeMode.Dark)"><i class="fas fa-moon"></i> Dark</a></li>
+        <li><a class="dropdown-item" href="#" @onclick="() => SetTheme(ThemeMode.Nineties)"><i class="fas fa-star"></i> 90's Theme</a></li>
+        <li><a class="dropdown-item" href="#" @onclick="() => SetTheme(ThemeMode.System)"><i class="fas fa-desktop"></i> System Default</a></li>
+    </ul>
+</div>
 </NavLink>
 
 @code {
@@ -73,7 +73,7 @@
         {
             await JS.InvokeVoidAsync("eval", "document.body.classList.add('theme-system'); document.body.removeAttribute('data-bs-theme');");
         }
-        
+
         // Notify subscribers that theme has changed
         ThemeService.NotifyThemeChanged();
     }

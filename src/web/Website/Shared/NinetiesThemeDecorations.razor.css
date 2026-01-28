@@ -1,0 +1,95 @@
+/* NinetiesThemeDecorations.razor.css: Scoped styles for 90s themed decorations */
+
+/* Hit Counter */
+.hit-counter {
+    background: #000000;
+    color: #00ff00;
+    font-family: 'Courier New', monospace !important;
+    padding: 10px 20px;
+    border: 3px ridge #00ff00;
+    display: inline-block;
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-shadow: 0 0 10px #00ff00;
+    animation: counter-glow 1s ease-in-out infinite;
+}
+
+.hit-counter span {
+    color: #ffff00 !important;
+    text-shadow: 2px 2px #808080, -1px -1px #808080 !important;
+}
+
+@keyframes counter-glow {
+    0%, 100% { box-shadow: 0 0 10px #00ff00; }
+    50% { box-shadow: 0 0 20px #00ff00, 0 0 30px #00ff00; }
+}
+
+/* Spinning Logo */
+.spinning-logo {
+    animation: spin-logo 3s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin-logo {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 90's style marquee text */
+.marquee-text {
+    color: #ff00ff;
+    font-weight: bold;
+    font-size: 1.2rem;
+    text-shadow: 2px 2px #00ffff;
+    animation: blink 1s linear infinite;
+}
+
+@keyframes blink {
+    0%, 49% { opacity: 1; }
+    50%, 99% { opacity: 0.3; }
+}
+
+/* Nineties Banner */
+.nineties-banner {
+    background: linear-gradient(90deg, #ff0000, #ffff00, #ff0000);
+    background-size: 200% 100%;
+    animation: banner-slide 2s linear infinite;
+    padding: 20px;
+    text-align: center;
+    border: 5px solid #000000;
+    margin-bottom: 20px;
+}
+
+@keyframes banner-slide {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+
+.nineties-banner h1 {
+    color: #000000 !important;
+    text-shadow: 3px 3px #ffff00, 6px 6px #ff0000;
+    font-size: 3rem;
+    font-weight: bold;
+    animation: blink-fast 0.5s linear infinite;
+    margin: 0;
+}
+
+@keyframes blink-fast {
+    0%, 49% { opacity: 1; }
+    50%, 99% { opacity: 0; }
+}
+
+/* Nineties Flames */
+.nineties-flames {
+    width: 100%;
+    height: 50px;
+    background: url('/imgs/flames.gif') repeat-x center;
+    image-rendering: pixelated;
+    animation: flame-flicker 0.3s ease-in-out infinite;
+    border-bottom: 3px solid #000000;
+}
+
+@keyframes flame-flicker {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(1.2); }
+}
