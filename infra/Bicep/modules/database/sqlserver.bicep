@@ -213,5 +213,5 @@ output serverId string = deployNewServer ? sqlServerResource.id : existingSqlSer
 output apiVersion string = deployNewServer ? sqlServerResource.apiVersion : existingSqlServerResource.apiVersion
 output databaseName string = outputDatabaseName
 output databaseId string = deployNewServer ? sqlDBResource.id : existingSqlDBResource.id
-output identityConnectionString string = 'Server=tcp:${outputServerName}.database.windows.net,1433;Initial Catalog=${outputDatabaseName};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication="Active Directory Default";'
+output identityConnectionString string = 'Server=tcp:${outputServerName}.database.windows.net,1433;Initial Catalog=${outputDatabaseName};Encrypt=True;TrustServerCertificate=False;Connection Timeout=120;Authentication="Active Directory Default";'
 //output serverPrincipalId string = sqlServerResource.identity.principalId

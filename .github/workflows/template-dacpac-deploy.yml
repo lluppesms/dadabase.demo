@@ -79,7 +79,7 @@ jobs:
         if: inputs.loginAccountType == 'SVC_PRINCIPAL'
         uses: azure/sql-action@v2.3
         with:
-          connection-string: 'Server=${{ env.fqdnServerName }};Database=${{ vars.SQL_DATABASE_NAME }};Authentication=Active Directory Default; Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
+          connection-string: 'Server=${{ env.fqdnServerName }};Database=${{ vars.SQL_DATABASE_NAME }};Authentication=Active Directory Default; Encrypt=True;TrustServerCertificate=False;Connection Timeout=120;'
           # connection-string: 'Server=${{ env.fqdnServerName }};Database=${{ vars.SQL_DATABASE_NAME }};Authentication=Active Directory Service Principal;'
           path: './dacpac/${{ inputs.appProjectName }}.dacpac'
           action: 'publish'

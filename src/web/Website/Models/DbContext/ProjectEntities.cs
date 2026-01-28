@@ -1,15 +1,10 @@
 ﻿//-----------------------------------------------------------------------
 // <copyright file="ProjectEntities.cs" company="Luppes Consulting, Inc.">
-// Copyright 2025, Luppes Consulting, Inc. All rights reserved.
+// Copyright 2026, Luppes Consulting, Inc. All rights reserved.
 // </copyright>
 // <summary>
 // Project Entities
 // </summary>
-//-----------------------------------------------------------------------
-// *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-// These notes are right for .NET Framework 4.x, but not right for .NET Core...!!!
-// Will have to figure out how to set the right settings in Program.cs file...
-// *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 //-----------------------------------------------------------------------
 // Using Managed Identity rights to connect to SQL Server
 //-----------------------------------------------------------------------
@@ -19,10 +14,15 @@
 // Run these scripts in the database to grant access to the App Service MI:
 //    CREATE USER [<appServiceIdentityName>] FROM EXTERNAL PROVIDER
 //    ALTER ROLE db_owner ADD MEMBER  [<appServiceIdentityName>]
+// Run these scripts in the database to grant the APPLICATION user access to data and stored procs:
+//    CREATE USER [your-app-id] FROM EXTERNAL PROVIDER;
+//    ALTER ROLE db_datareader ADD MEMBER [your-app-id];
+//    ALTER ROLE db_datawriter ADD MEMBER [your-app-id];
+//    GRANT EXECUTE ON SCHEMA::[dbo] TO [your-app-id];
 //-----------------------------------------------------------------------
-// The Connection string should be set to the following:
+// The Connection string should be set to the following: (if using serverless SQL, timeout should be 120 to allow for sleep/wakeup)
 //    data source=tcp:<databaseServerName>.database.windows.net,1433;initial catalog=<databaseName>;
-//    data source=xxxxx.database.windows.net;Database=YourBase;Authentication=Active Directory Default;Connection Timeout=10;",
+//    data source=xxxxx.database.windows.net;Database=YourBase;Authentication=Active Directory Default;Connection Timeout=120;",
 //-----------------------------------------------------------------------
 // For more info, see:
 // https://learn.microsoft.com/en-us/azure/app-service/tutorial-connect-msi-sql-database?tabs=windowsclient%2Cef%2Cdotnet
