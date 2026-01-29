@@ -624,11 +624,11 @@ a, .btn-link {
    ============================================ */
 
 .theme-nineties {
-    font-family: 'Comic Sans MS', 'Comic Sans', cursive, sans-serif !important;
+    font-family: 'Comic Sans MS', 'Comic Sans', 'Trebuchet MS', 'Arial', 'Verdana', sans-serif !important;
 }
 
 .theme-nineties * {
-    font-family: 'Comic Sans MS', 'Comic Sans', cursive, sans-serif !important;
+    font-family: 'Comic Sans MS', 'Comic Sans', 'Trebuchet MS', 'Arial', 'Verdana', sans-serif !important;
 }
 
 .theme-nineties .LayoutContentContainer {
