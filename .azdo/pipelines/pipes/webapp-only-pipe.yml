@@ -22,13 +22,13 @@ stages:
     jobs:
     - template: templates/scan-code-template.yml
       parameters:
-        environmentName: 'DEMO'
+        environmentName: 'DEV'
         runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
         runGHASScan: ${{ parameters.runGHASScan }}
 
 # ----------------------------------------------------------------------------------------------------
-- stage: BuildWebApi
-  displayName: Build WebApi
+- stage: BuildWebApp
+  displayName: Build WebApp
   jobs:
   - template: templates/build-webapp-template.yml
     parameters:

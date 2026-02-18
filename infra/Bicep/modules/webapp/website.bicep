@@ -17,11 +17,24 @@ param appServicePlanName string
 param appServicePlanResourceGroupName string = resourceGroup().name
 param webAppKind string = 'linux'
 
+@description('Custom application settings to merge with the base settings.')
+param customAppSettings object = {}
+
 // --------------------------------------------------------------------------------
 var templateTag = { TemplateFile: '~website.bicep'}
 var azdTag = environmentCode == 'azd' ? { 'azd-service-name': 'web' } : {}
 var tags = union(commonTags, templateTag)
 var webSiteTags = union(commonTags, templateTag, azdTag)
+
+// Base app settings that are always applied
+var baseAppSettings = {
+  APPINSIGHTS_INSTRUMENTATIONKEY: appInsightsResource.properties.InstrumentationKey
+  APPLICATIONINSIGHTS_CONNECTION_STRING: appInsightsResource.properties.ConnectionString
+  ApplicationInsightsAgent_EXTENSION_VERSION: '~2'
+}
+
+// Merge base settings with custom settings
+var mergedAppSettings = union(baseAppSettings, customAppSettings)
 
 // --------------------------------------------------------------------------------
 var linuxFxVersion = webAppKind == 'linux' ? 'DOTNETCORE|10.0' : '' // 	The runtime stack of web app
@@ -81,9 +94,17 @@ resource webSiteResource 'Microsoft.Web/sites@2024-11-01' = {
   }
 }
 
+// App Settings Configuration - merges base settings with custom app settings
+resource webSiteAppSettingsConfig 'Microsoft.Web/sites/config@2024-11-01' = {
+  parent: webSiteResource
+  name: 'appsettings'
+  properties: mergedAppSettings
+}
+
 resource webSiteAppSettings 'Microsoft.Web/sites/config@2024-11-01' = {
   parent: webSiteResource
   name: 'logs'
+  dependsOn: [webSiteAppSettingsConfig]
   properties: {
     applicationLogs: {
       fileSystem: {

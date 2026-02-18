@@ -3,7 +3,7 @@
 # ------------------------------------------------------------------------------------------------------------------------
 name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r)
 pool:
-  vmImage: windows-latest
+  vmImage: ubuntu-latest
 
 # ------------------------------------------------------------------------------------------------------------------------
 trigger:
@@ -33,16 +33,29 @@ parameters:
     values:
       - API
       - UI
-      - BOTH
-    default: BOTH
+      - BASIC
+      - ALL
+    default: ALL
 
 # ----------------------------------------------------------------------------------------------------
 variables:
+  - group: Dadabase.Demo
   - template: vars/var-common.yml
 
 # ----------------------------------------------------------------------------------------------------
 stages:
-- ${{ if or(eq(parameters.testsToRun, 'UI'), eq(parameters.testsToRun, 'BOTH')) }}:
+- ${{ if or(eq(parameters.testsToRun, 'BASIC'), eq(parameters.testsToRun, 'ALL')) }}:
+  - stage: BasicTestWebApp
+    displayName: Basic Test ${{ parameters.environmentToTest }}
+    jobs:
+    - template: pipes/templates/playwright-template.yml
+      parameters:
+        environment: ${{ parameters.environmentToTest }}
+        testType: ${{ variables.playwrightBasicTestType }}
+        testPath: ${{ variables.playwrightBasicTestPath }}
+        debug: true
+
+- ${{ if or(eq(parameters.testsToRun, 'UI'), eq(parameters.testsToRun, 'ALL')) }}:
   - stage: UITestWebApp
     displayName: UI Test ${{ parameters.environmentToTest }}
     jobs:
@@ -53,7 +66,7 @@ stages:
         testPath: ${{ variables.playwrightUITestPath }}
         debug: true
 
-- ${{ if or(eq(parameters.testsToRun, 'API'), eq(parameters.testsToRun, 'BOTH')) }}:
+- ${{ if or(eq(parameters.testsToRun, 'API'), eq(parameters.testsToRun, 'ALL')) }}:
   - stage: APITestWebApp
     displayName: API Test ${{ parameters.environmentToTest }}
     jobs:

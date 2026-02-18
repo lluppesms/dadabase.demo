@@ -1,0 +1,39 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Pipeline Steps Template -- steps to build and deploy Azure Resources via Bicep File
+# ------------------------------------------------------------------------------------------------------------------------
+parameters:
+  - name: serviceConnectionName
+    default: ''
+  - name: loginAccountType
+    default: ''
+  - name: sqlFileName
+    default: ''
+  - name: resourceGroupName
+    default: ''
+  - name: runInDatabase
+    default: ''
+  - name: databaseCopyName
+    default: ''
+  - name: azDbCopyScriptFullName
+    default: ''
+  - name: sqlServerName
+    default: ''
+  - name: logFullFileName
+    default: ''
+
+# ------------------------------------------------------------------------------------------------------------------------
+steps:
+  # ------------------------------------------------------------------------------------------------------------------------
+  # Run AzSqlDatabaseCopy command in Pipeline Service Connection context
+  #   See: https://learn.microsoft.com/en-us/powershell/module/sqlserver/invoke-sqlcmd?view=sqlserver-ps
+  # ------------------------------------------------------------------------------------------------------------------------
+  - ${{ if and(eq(lower(parameters.loginAccountType), 'svc_principal'), eq(lower(parameters.sqlFileName), 'DBCOPY')) }}:
+    - task: AzurePowerShell@4
+      displayName: DBCopy PowerShell as Service Principal
+      inputs:
+        azureSubscription: ${{ parameters.serviceConnectionName }}
+        azurePowerShellVersion: 'LatestVersion'
+        scriptType: FilePath
+        ScriptPath: ${{ parameters.azDbCopyScriptFullName }}
+        ScriptArguments: ' -ResourceGroup ${{ parameters.resourceGroupName }} -DbServerName ${{ parameters.sqlServerName }} -DatabaseToCopy ${{ parameters.runInDatabase }} -CopyDatabaseTo ${{ parameters.databaseCopyName }} | Out-File -FilePath ${{ parameters.logFullFileName }}'
+      continueOnError: true

@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------------------------------
 variables:
   - name: appFolderName
-    value: 'src\Dadabase'
+    value: 'src/Dadabase'
   - name: appSolutionName
     value: 'DadABase.Net8.Web'
 

@@ -1,0 +1,17 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Pipeline Template to build and deploy Application Only
+# ------------------------------------------------------------------------------------------------------------------------
+parameters:
+- name: runUnitTests
+  default: 'false'
+
+# ----------------------------------------------------------------------------------------------------
+stages:
+- stage: BuildWebApp
+  displayName: Build WebApp
+  jobs:
+  - template: templates/build-webapp-template.yml
+    parameters:
+      environmentName: 'DEV'
+      runUnitTests: ${{ parameters.runUnitTests }}
+

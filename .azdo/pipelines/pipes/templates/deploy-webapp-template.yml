@@ -1,20 +1,20 @@
 # ----------------------------------------------------------------------------------------------------
-# Template to deploy a pre-built Azure WebApi artifact to one environment
+# Template to deploy a pre-built Azure WebApp artifact to one environment
 # ----------------------------------------------------------------------------------------------------
 parameters: 
 - name: environmentName
-  default:  'DEMO'
+  default:  'DEV'
 - name: pipelineResourceIdentifier # supplied if this is deployed with artifacts from another pipeline
   default: '' # internal identifier for the resource
 
 # ------------------------------------------------------------------------------------------------------------------------
 jobs:
-- deployment: InitializeDeploy${{ parameters.environmentName }}WebApi
-  displayName: Initialize ${{ parameters.environmentName }} WebApi
+- deployment: InitializeDeploy${{ parameters.environmentName }}WebApp
+  displayName: Initialize ${{ parameters.environmentName }} WebApp
   environment: ${{ parameters.environmentName }}
 
-- job: Deploy${{ parameters.environmentName }}WebApi
-  displayName: Deploy ${{ parameters.environmentName }} WebApi
+- job: Deploy${{ parameters.environmentName }}WebApp
+  displayName: Deploy ${{ parameters.environmentName }} WebApp
   variables:
     - name: environmentName
       value: ${{ parameters.environmentName }}
@@ -23,7 +23,7 @@ jobs:
     - name: environmentNameLower
       value: ${{ lower(parameters.environmentName) }}
     - name: fullAppName
-      value: '$(appName)-$(environmentNameLower)'
+      value: '$(APP_NAME)$(INSTANCE_NUMBER)-$(environmentNameLower)'
     - name: pipelineResourcePath
       value: '$(Pipeline.Workspace)/${{ parameters.pipelineResourceIdentifier }}'
     - name: pipelineResourceDropPath
@@ -45,8 +45,7 @@ jobs:
     inputs:
       script: |
         echo "Directory of Default Working Directory:"
-        tree $(System.DefaultWorkingDirectory)
-        dir $(System.DefaultWorkingDirectory) /s
+        tree -L 4 $(System.DefaultWorkingDirectory)
     continueOnError: true
 
   # ----------------------------------------------------------------------------------------------------
@@ -66,6 +65,8 @@ jobs:
       displayName: Download Artifact Files
       
     - task: CmdLine@2
+      displayName: 'Display Artifact Info'
+      continueOnError: true
       inputs:
         script: |
           echo "Build Artifact Name: ${{ parameters.pipelineResourceIdentifier }}"
@@ -84,8 +85,6 @@ jobs:
           echo "requestedForID: $(resources.pipeline.${{ parameters.pipelineResourceIdentifier }}.requestedForID)"
           echo "Directory of $(pipelineResourcePath):"
           tree -L 4 $(Build.SourcesDirectory)
-      displayName: 'Display Artifact Info'
-      continueOnError: true
 
     - task: CopyFiles@2
       displayName: Copy Artifact Package to Root
@@ -103,14 +102,13 @@ jobs:
       script: |
         echo "fullAppName=$(fullAppName)"
         echo "serviceConnectionName=$(serviceConnectionName)"
-        echo "appName=$(appName)"
+        echo "appName=$(APP_NAME)"
         echo "environmentName=$(environmentName)"
         echo "Directory of pipeline workspace:"
         tree -L 4 $(Pipeline.Workspace)
         echo "----------------------------------------"
         echo "##[group]Directory of Default Working Directory:"
-        tree $(System.DefaultWorkingDirectory)
-        dir $(System.DefaultWorkingDirectory) /s
+        tree -L 4 $(System.DefaultWorkingDirectory)
         echo "##[endgroup]"
     continueOnError: true
 
@@ -121,6 +119,6 @@ jobs:
       azureSubscription: '$(serviceConnectionName)'
       appType: webAppLinux
       WebAppName: $(fullAppName)
-      Package: "$(Build.ArtifactStagingDirectory)/../$(appProjectName).zip"
+      Package: "$(Build.ArtifactStagingDirectory)/../Website.zip"
       enableCustomDeployment: true
       deploymentMethod: zipDeployment

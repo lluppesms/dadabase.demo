@@ -138,7 +138,7 @@ jobs:
       rootFolderOrFile: '$(System.DefaultWorkingDirectory)/publish_output'
       includeRootFolder: false
       archiveType: zip
-      archiveFile: $(Build.ArtifactStagingDirectory)/$(appName)-$(Build.BuildId).zip
+      archiveFile: $(Build.ArtifactStagingDirectory)/$(APP_NAME)-$(Build.BuildId).zip
       replaceExistingArchive: true
 
   - task: PublishPipelineArtifact@1
@@ -171,7 +171,7 @@ jobs:
       inputs:
         script: |
           echo "Directory of Build.SourcesDirectory:"
-          tree $(Build.SourcesDirectory)
+          tree -L 4 $(Build.SourcesDirectory)
       continueOnError: true
 
     - task: PublishCodeCoverageResults@2

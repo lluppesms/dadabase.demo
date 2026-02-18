@@ -9,7 +9,7 @@ test.describe('PW MCP Generated DadABase API Tests', () => {
   const headers = {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
-    'ApiKey': 'Hello, hungry!'
+    'ApiKey': 'DadJokes!'
   }
 
   test.describe('Dad Joke API Endpoints', () => {

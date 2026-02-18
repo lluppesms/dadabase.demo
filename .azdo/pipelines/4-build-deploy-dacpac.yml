@@ -1,22 +1,27 @@
 # ------------------------------------------------------------------------------------------------------------------------
-# Pipeline to deploy Azure Resources Only
-# See readme file for info about the contents of the variable group
+# Pipeline to build and deploy Database Objects Only to existing resources
+# See readme file for info about variable group "SQLDeployDemo"
 # ------------------------------------------------------------------------------------------------------------------------
 name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r)
 pool:
-  vmImage: windows-latest
+  vmImage: windows-latest # dacpac restore only runs on Windows...
+
+# ----------------------------------------------------------------------------------------------------
 trigger:
-  # since this repo has both AzDO and GHA pipelines, nothing is run automatically...
+  # this repo is set so that nothing is run automatically...
   - none
   # batch: true
   # branches:
   #   include:
   #     - main
   # paths:
-  #   include: 
+  #   include:
+  #     - 'src\sql.database/*'
+  #   exclude: 
   #     - '**/*.yml'
   #     - '**/*.yaml'
   #     - '**/*.bicep'
+  #     - '**/*.md'
 
 # ----------------------------------------------------------------------------------------------------
 parameters:
@@ -29,35 +34,37 @@ parameters:
       - PROD
       - DEV-QA-PROD
     default: DEV
-  - name: runGHASScan
-    displayName: Run GHAS Scan
-    type: boolean
-    default: false
-  - name: runMSDevSecOpsScan
-    displayName: Run MS DevSecOps Scan
-    type: boolean
-    default: false
+  - name: loginAccountType
+    displayName: Login Type
+    type: string
+    values:
+      - SVC_PRINCIPAL
+      - LOCAL_SQL
+    default: SVC_PRINCIPAL
 
 # ----------------------------------------------------------------------------------------------------
 variables:
-  - group: Dadabase.Web
+  - group: Dadabase.Demo
+  - template: vars/var-common.yml
   - template: vars/var-service-connections.yml
 
 # ----------------------------------------------------------------------------------------------------
 stages:
 - ${{ if ne(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
-  - template: pipes/infra-only-pipe.yml
+  - template: pipes/schema-only-pipe.yml
     parameters:
-      environments: ['${{ parameters.deployToEnvironment }}']
-      #singleEnvironment: 'true'
-      parseBicepOutputs: true
-      runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
-      runGHASScan: ${{ parameters.runGHASScan }}
+      environments: ['DEV']
+      singleEnvironment: 'true'
+      appFolderName: $(sqlAppFolderName)
+      appSolutionName: $(sqlAppSolutionName)
+      appProjectName: $(sqlAppProjectName)
+      loginAccountType: ${{ parameters.loginAccountType }}
 
 - ${{ if eq(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
-  - template: pipes/infra-only-pipe.yml
+  - template: pipes/schema-only-pipe.yml
     parameters:
       environments: ['DEV','QA','PROD']
-      parseBicepOutputs: true
-      runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
-      runGHASScan: ${{ parameters.runGHASScan }}
+      appFolderName: $(sqlAppFolderName)
+      appSolutionName: $(sqlAppSolutionName)
+      appProjectName: $(sqlAppProjectName)
+      loginAccountType: ${{ parameters.loginAccountType }}

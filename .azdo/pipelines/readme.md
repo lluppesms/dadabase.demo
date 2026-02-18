@@ -44,7 +44,7 @@ Alternatively, you could define these variables in the Azure DevOps Portal on ea
    az pipelines variable-group create 
      --organization=https://dev.azure.com/<yourAzDOOrg>/ 
      --project='<yourAzDOProject>' 
-     --name DadABaseDemo 
+     --name Dadabase.Demo 
      --variables 
          APP_NAME='full-dadabase'
          RESOURCE_GROUP_LOCATION='centralus'
@@ -70,9 +70,9 @@ Alternatively, you could define these variables in the Azure DevOps Portal on ea
          LOGIN_DOMAIN='<yourdomain>.onmicrosoft.com'
          LOGIN_INSTANCEENDPOINT='https://login.microsoftonline.com/'
          LOGIN_TENANTID='<yourTenantId>'
-         AZURE_TENANT_ID='b2073a82-d60f-48a0-bda5-722a163c88ad'
-         AZURE_SUBSCRIPTION_ID='6a97aa36-e4fc-4db0-baa6-4cffaba22e97'
-         AZURE_CLIENT_ID='a99cb515-1f75-4af9-8a28-94761688d02b'
+         AZURE_TENANT_ID='<yourTenantId>'
+         AZURE_SUBSCRIPTION_ID='<yourSubscriptionId>'
+         AZURE_CLIENT_ID='<yourClientId>'
          KEYVAULT_OWNER_USERID='<yourAccountSid>'
          EXISTING_SERVICEPLAN_NAME=''
          EXISTING_SERVICEPLAN_RESOURCE_GROUP_NAME=''

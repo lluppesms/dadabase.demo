@@ -26,12 +26,12 @@ parameters:
     displayName: Multi-Stage Deploy
     type: boolean
     default: false
-  - name: runGHASScan
-    displayName: Run GHAS Scan
-    type: boolean
-    default: false
   - name: runMSDevSecOpsScan
     displayName: Run MS DevSecOps Scan
+    type: boolean
+    default: false
+  - name: runGHASScan
+    displayName: Run GHAS Scan
     type: boolean
     default: false
   - name: loginAccountType
@@ -44,7 +44,7 @@ parameters:
 
 # ----------------------------------------------------------------------------------------------------
 variables:
-  - group: SQLDeployDemo
+  - group: Dadabase.Demo
   - template: vars/var-common.yml
 
 # ----------------------------------------------------------------------------------------------------

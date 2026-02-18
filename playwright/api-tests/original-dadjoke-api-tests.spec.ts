@@ -4,7 +4,7 @@ test.describe('Original DadABase API  Tests', () => {
   const headers = {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
-    'ApiKey': 'Hello, hungry!'
+    'ApiKey': 'DadJokes!'
   }
 
   test('should get one random joke', async ( { baseURL } ) => {
@@ -34,13 +34,14 @@ test.describe('Original DadABase API  Tests', () => {
       ignoreHTTPSErrors: true 
     });
     const response = await apiContext.get("/api/joke/category/Chickens");
-    const responseBody = await response.json()
-    expect(responseBody[0]).toHaveProperty("category", "Chickens");
-    const jokeCount = responseBody.length;
-    console.log('Found ' + jokeCount + ' chicken jokes!');
-    console.log('First chicken joke:');
-    console.log(responseBody[0]);
     expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
+    const responseBody = await response.json();
+    const jokeCount = responseBody.length;
+    console.log('Found ' + jokeCount + ' chicken jokes!');
+    expect(jokeCount).toBeGreaterThan(0);
+    console.log('First chicken joke:');
+    console.log(responseBody[0]);
+    expect(responseBody[0].category).toContain("Chickens");
   });
 });

@@ -14,21 +14,17 @@ pr:
 - main
 
 # ----------------------------------------------------------------------------------------------------
-stages:
-- stage: ScanApplication
-  displayName: Scan Application
-  jobs:
-  - template: pipes/scan-code-pipe.yml
-    parameters:
-      runMSDevSecOpsScan: false
-      runGHASScan: true
+variables:
+  - group: Dadabase.Demo
+  - template: vars/var-service-connections.yml
 
-- stage: BuildApplication
-  displayName: Build Application
-  dependsOn: ScanApplication
-  jobs:
-  - template: pipes/webapi-only-pipe.yml
-    parameters:
-      environments: ['DEV']
-      runUnitTests: true
-      runUITests: false
+# ----------------------------------------------------------------------------------------------------
+stages:
+- template: pipes/scan-code-pipe.yml
+  parameters:
+    runMSDevSecOpsScan: true
+    runGHASScan: false
+
+- template: pipes/webapp-build-pipe.yml
+  parameters:
+    runUnitTests: true

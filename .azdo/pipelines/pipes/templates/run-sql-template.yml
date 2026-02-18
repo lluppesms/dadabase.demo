@@ -38,7 +38,7 @@ jobs:
     - name: environmentNameLower
       value: ${{ lower(parameters.environmentName) }}
     - name: sqlServerName
-      value: $(sqlServerNamePrefix)${{ lower(parameters.environmentName) }}
+      value: $(SQL_SERVER_NAME_PREFIX)$(INSTANCE_NUMBER)sql${{ lower(parameters.environmentName) }}
     - name: fqdnServerName
       value: $(sqlServerName).database.windows.net
     - name: sqlFullFolderName
@@ -46,13 +46,24 @@ jobs:
     - name: sqlFullFileName
       value: $(System.DefaultWorkingDirectory)\${{ parameters.sqlFolderName }}${{ parameters.sqlFileName }}
 
-    - name: invokeSQLScriptFullName
-      value: $(System.DefaultWorkingDirectory)\scripts\InvokeSqlCommand.ps1
+
     - name: azDbCopyScriptFullName
       value: $(System.DefaultWorkingDirectory)\scripts\azDbCopyCommand.ps1
 
     - name: dummyOutputFile
       value: $(Build.ArtifactStagingDirectory)\Output\Sample-Output-1.txt
+
+    # Bring in environment common variable file
+    - template: ../../vars/var-service-connections.yml
+    - template: ../../vars/var-common.yml
+    
+    # Bring in environment specific variable files
+    - ${{ if eq(lower(parameters.environmentName), 'dev') }}:
+      - template: ../../vars/var-dev.yml
+    - ${{ if eq(lower(parameters.environmentName), 'qa') }}:
+      - template: ../../vars/var-qa.yml
+    - ${{ if eq(lower(parameters.environmentName), 'prod') }}:
+      - template: ../../vars/var-prod.yml
 
   steps:
   - bash: |
@@ -81,7 +92,9 @@ jobs:
 
   - bash: |
       echo "resourceGroupName=${{ parameters.resourceGroupName }}"
-      echo "serviceConnectionName=$(serviceConnectionName)"
+      echo "serviceConnectionDEV=$(serviceConnectionDEV)"
+      echo "serviceConnectionQA=$(serviceConnectionQA)"
+      echo "serviceConnectionPROD=$(serviceConnectionPROD)"
       echo "sqlServerName=$(sqlServerName)"
       echo "fqdnServerName=$(fqdnServerName)"
       echo "runInDatabase=${{ parameters.runInDatabase }}"
@@ -91,7 +104,7 @@ jobs:
       echo "logFullFileName=$(logFullFileName)"
       echo "invokeSQLScriptFullName=$(invokeSQLScriptFullName)"
       echo "azDbCopyScriptFullName=$(azDbCopyScriptFullName)"
-      echo "CMD: Sqlcmd -i $(sqlFullFileName) -S $(fqdnServerName) -d ${{ parameters.runInDatabase }} -U $(sqlAdminUser) -P $(sqlAdminPassword) -o $(logFullFileName)"
+      echo "CMD: Sqlcmd -i $(sqlFullFileName) -S $(fqdnServerName) -d ${{ parameters.runInDatabase }} -U $(SQLADMIN_LOGIN_USERID) -P $(sqlAdminPassword) -o $(logFullFileName)"
       echo "PS: Invoke-SqlCmd -ServerInstance '$(fqdnServerName)' -Database '${{ parameters.runInDatabase }}' -AccessToken 'xxxxx' -InputFile '$(sqlFullFileName)' -Verbose | Out-File -FilePath $(logFullFileName)"
     displayName: 'Display variables and CMD'
     continueOnError: true
@@ -106,96 +119,83 @@ jobs:
     continueOnError: true
 
   # ------------------------------------------------------------------------------------------------------------------------
-  ## This seemed to be required, but it works without running the firewall change, maybe because I've got Azure services enabled...?
+  # Run SQL Commands (excluding DBCOPY operations)
   # ------------------------------------------------------------------------------------------------------------------------
-  # # ERROR: this is failing because I'm getting a subscription does not exist error...!
-  # - task: AzurePowerShell@5
-  #   displayName: 'Add SQL Firewall Exception'
-  #   inputs:
-  #     azureSubscription: $(serviceConnectionName)
-  #     ScriptType: filePath
-  #     ScriptPath: '$(Build.SourcesDirectory)\scripts\SetAzureFirewallRule.ps1'
-  #     ScriptArguments: '-ServerName $(sqlServerName) -ResourceGroupName ${{ parameters.resourceGroupName }} -SubscriptionName "$(serviceConnectionName)"'
-  #     azurePowerShellVersion: LatestVersion
-  #   continueOnError: true
-
-  # ------------------------------------------------------------------------------------------------------------------------
-  # If you want to add your own IP to the database for testing...
-  # ------------------------------------------------------------------------------------------------------------------------
-  # - task: AzureCLI@2
-  #   displayName: 'Personal Firewall Rule Update (untested)'
-  #   inputs:
-  #     azureSubscription: ${{ variables.serviceEndpointName }}
-  #     scriptType: 'pscore'
-  #     scriptLocation: 'inlineScript'
-  #     inlineScript: 'az sql server firewall-rule create --name TestRule --resource-group ${{ parameters.resourceGroupName }} --server $(sqlServerName) --end-ip-address 192.168.60.236 --start-ip-address 192.168.60.236'
-
-  # ------------------------------------------------------------------------------------------------------------------------
-  # Run SqlCmd utility with SQL Userid/Password
-  # ------------------------------------------------------------------------------------------------------------------------
-  - ${{ if eq(lower(parameters.loginAccountType), 'local_sql') }}:
-    - task: CmdLine@2
-      displayName: Run SQLCMD as SQL User
-      inputs:
-        script: |
-          echo "Run $(sqlFullFileName) on $(fqdnServerName) / ${{ parameters.runInDatabase }} with uid/pw, logging to $(logFullFileName)"
-          Sqlcmd -i $(sqlFullFileName) -S $(fqdnServerName) -d ${{ parameters.runInDatabase }} -U $(sqlAdminUser) -P $(sqlAdminPassword) -o $(logFullFileName)
-      continueOnError: true
+  - ${{ if ne(lower(parameters.sqlFileName), 'DBCOPY') }}:
+    - ${{ if eq(variables.environmentNameUpper, 'DEV') }}:
+      - template: steps-run-sql-template.yml
+        parameters:
+          serviceConnectionName: ${{ variables.serviceConnectionDEV }}
+          loginAccountType: ${{ parameters.loginAccountType }}
+          runInDatabase: ${{ parameters.runInDatabase }}
+          sqlFullFileName: $(sqlFullFileName)
+          fqdnServerName: $(fqdnServerName)
+          logFullFileName: $(logFullFileName)
+          sqlAdminUser: $(sqlAdminUser)
+          sqlAdminPassword: $(sqlAdminPassword)
+    - ${{ if eq(variables.environmentNameUpper, 'QA') }}:
+      - template: steps-run-sql-template.yml
+        parameters:
+          serviceConnectionName: ${{ variables.serviceConnectionQA }}
+          loginAccountType: ${{ parameters.loginAccountType }}
+          runInDatabase: ${{ parameters.runInDatabase }}
+          sqlFullFileName: $(sqlFullFileName)
+          fqdnServerName: $(fqdnServerName)
+          logFullFileName: $(logFullFileName)
+          sqlAdminUser: $(sqlAdminUser)
+          sqlAdminPassword: $(sqlAdminPassword)
+    - ${{ if eq(variables.environmentNameUpper, 'PROD') }}:
+      - template: steps-run-sql-template.yml
+        parameters:
+          serviceConnectionName: ${{ variables.serviceConnectionPROD }}
+          loginAccountType: ${{ parameters.loginAccountType }}
+          runInDatabase: ${{ parameters.runInDatabase }}
+          sqlFullFileName: $(sqlFullFileName)
+          fqdnServerName: $(fqdnServerName)
+          logFullFileName: $(logFullFileName)
+          sqlAdminUser: $(sqlAdminUser)
+          sqlAdminPassword: $(sqlAdminPassword)
 
   # ------------------------------------------------------------------------------------------------------------------------
   # Run AzSqlDatabaseCopy command in Pipeline Service Connection context
-  #   See: https://learn.microsoft.com/en-us/powershell/module/sqlserver/invoke-sqlcmd?view=sqlserver-ps
   # ------------------------------------------------------------------------------------------------------------------------
-  - ${{ if and(eq(lower(parameters.loginAccountType), 'svc_principal'), eq(lower(parameters.sqlFileName), 'DBCOPY')) }}:
-    - task: AzurePowerShell@4
-      displayName: DBCopy PowerShell as Service Principal
-      inputs:
-        azureSubscription: $(serviceConnectionName)
-        azurePowerShellVersion: 'LatestVersion'
-        scriptType: FilePath
-        ScriptPath: $(azDbCopyScriptFullName)
-        ScriptArguments: ' -ResourceGroup ${{ parameters.resourceGroupName }} -DbServerName $(sqlServerName) -DatabaseToCopy ${{ parameters.runInDatabase }} -CopyDatabaseTo ${{ parameters.databaseCopyName }} | Out-File -FilePath $(logFullFileName)'
-      continueOnError: true
-
-  # ------------------------------------------------------------------------------------------------------------------------
-  # Run Powershell SqlCmd utility with Service Principal access token
-  #   See: https://learn.microsoft.com/en-us/powershell/module/sqlserver/invoke-sqlcmd?view=sqlserver-ps
-  # ------------------------------------------------------------------------------------------------------------------------
-  #   Note: I've tried calling the Invoke-SqlCmd directly from the AzureCLI task and it works - but I can't capture outputs...
-  #         Calling it from a PS1 file allows me to capture the output and log it for review. A bit strange but it works.
-  # ------------------------------------------------------------------------------------------------------------------------
-  - ${{ if and(eq(lower(parameters.loginAccountType), 'svc_principal'), ne(lower(parameters.sqlFileName), 'DBCOPY')) }}:
-    - task: AzureCLI@2
-      displayName: Get Access Token
-      inputs:
-        azureSubscription: $(serviceConnectionName)
-        scriptType: pscore
-        scriptLocation: inlineScript
-        inlineScript: |
-          $sqlAccessToken = az account get-access-token --resource=https://database.windows.net/ | ConvertFrom-Json | Select -ExpandProperty AccessToken
-          Write-Host "##vso[task.setvariable variable=sqlAccessToken;issecret=true;]$sqlAccessToken"
-
-    - task: AzurePowerShell@4
-      displayName: Invoke-SqlCmd PowerShell as Service Principal
-      inputs:
-        azureSubscription: $(serviceConnectionName)
-        azurePowerShellVersion: 'LatestVersion'
-        scriptType: FilePath
-        ScriptPath: $(invokeSQLScriptFullName)
-        ScriptArguments: ' -FQDNServerName $(fqdnServerName) -RunInDatabase ${{ parameters.runInDatabase }} -SqlAccessToken $(sqlAccessToken) -SqlFullFileName $(sqlFullFileName) | Out-File -FilePath $(logFullFileName)'
-      continueOnError: true
-
-  # ------------------------------------------------------------------------------------------------------------------------
-  # This seemed to be required, but it works without running the firewall change, maybe because I've got Azure services enabled...?
-  # ------------------------------------------------------------------------------------------------------------------------
-  # - task: AzurePowerShell@5
-  #   displayName: 'Remove SQL Firewall Exception'
-  #   inputs:
-  #     azureSubscription: $(serviceConnectionName)
-  #     ScriptType: filePath
-  #     ScriptPath: '$(Build.SourcesDirectory)\scripts\RemoveAzureFirewallRule.ps1'
-  #     ScriptArguments: '-ServerName $(sqlServerName) -ResourceGroupName ${{ parameters.resourceGroupName }}'
-  #     azurePowerShellVersion: LatestVersion
+  - ${{ if eq(lower(parameters.sqlFileName), 'DBCOPY') }}:
+    - ${{ if eq(variables.environmentNameUpper, 'DEV') }}:
+      - template: steps-run-dbcopy-template.yml
+        parameters:
+          serviceConnectionName: ${{ variables.serviceConnectionDEV }}
+          loginAccountType: ${{ parameters.loginAccountType }}
+          sqlFileName: ${{ parameters.sqlFileName }}
+          resourceGroupName: ${{ parameters.resourceGroupName }}
+          runInDatabase: ${{ parameters.runInDatabase }}
+          databaseCopyName: ${{ parameters.databaseCopyName }}
+          azDbCopyScriptFullName: $(azDbCopyScriptFullName)
+          sqlServerName: $(sqlServerName)
+          logFullFileName: $(logFullFileName)
+    - ${{ if eq(variables.environmentNameUpper, 'QA') }}:
+      - template: steps-run-dbcopy-template.yml
+        parameters:
+          serviceConnectionName: ${{ variables.serviceConnectionQA }}
+          loginAccountType: ${{ parameters.loginAccountType }}
+          sqlFileName: ${{ parameters.sqlFileName }}
+          resourceGroupName: ${{ parameters.resourceGroupName }}
+          runInDatabase: ${{ parameters.runInDatabase }}
+          databaseCopyName: ${{ parameters.databaseCopyName }}
+          azDbCopyScriptFullName: $(azDbCopyScriptFullName)
+          sqlServerName: $(sqlServerName)
+          logFullFileName: $(logFullFileName)
+    - ${{ if eq(variables.environmentNameUpper, 'PROD') }}:
+      - template: steps-run-dbcopy-template.yml
+        parameters:
+          serviceConnectionName: ${{ variables.serviceConnectionPROD }}
+          loginAccountType: ${{ parameters.loginAccountType }}
+          sqlFileName: ${{ parameters.sqlFileName }}
+          resourceGroupName: ${{ parameters.resourceGroupName }}
+          runInDatabase: ${{ parameters.runInDatabase }}
+          databaseCopyName: ${{ parameters.databaseCopyName }}
+          azDbCopyScriptFullName: $(azDbCopyScriptFullName)
+          sqlServerName: $(sqlServerName)
+          logFullFileName: $(logFullFileName)
 
   # ------------------------------------------------------------------------------------------------------------------------
   # Publish output and artifacts
@@ -210,13 +210,6 @@ jobs:
         dir D:\a\_temp\ /s
     continueOnError: true
 
-  - ${{ if eq(lower(parameters.sqlFileName), 'DBCOPY') }}:
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publish Input DBCopy Artifact'
-      inputs:
-        PathtoPublish: '$(azDbCopyScriptFullName)'
-        ArtifactName: 'Input'
-      continueOnError: true
   - ${{ if ne(lower(parameters.sqlFileName), 'DBCOPY') }}:
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Input SQL Artifact'
@@ -225,6 +218,14 @@ jobs:
         ArtifactName: 'Input'
       continueOnError: true
 
+  - ${{ if eq(lower(parameters.sqlFileName), 'DBCOPY') }}:
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Input DBCopy Artifact'
+      inputs:
+        PathtoPublish: '$(azDbCopyScriptFullName)'
+        ArtifactName: 'Input'
+      continueOnError: true
+      
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Output Artifacts'
     inputs:

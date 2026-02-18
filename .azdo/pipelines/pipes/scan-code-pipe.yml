@@ -1,0 +1,19 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Pipeline Template to Scan Application Only
+# ------------------------------------------------------------------------------------------------------------------------
+parameters:
+- name: runGHASScan
+  default: 'false'
+- name: runMSDevSecOpsScan
+  default: 'false'
+
+# ----------------------------------------------------------------------------------------------------
+stages:
+- stage: ScanApplication
+  displayName: Scan Application
+  jobs:
+  - template: templates/scan-code-template.yml
+    parameters:
+      environmentName: 'DEV'
+      runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
+      runGHASScan: ${{ parameters.runGHASScan }}

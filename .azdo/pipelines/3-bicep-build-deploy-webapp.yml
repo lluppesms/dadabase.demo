@@ -1,10 +1,10 @@
 # ------------------------------------------------------------------------------------------------------------------------
-# Pipeline to deploy a Website Only
+# Pipeline to build and deploy Azure Resources and Application
 # See readme file for info about the contents of the variable group
 # ------------------------------------------------------------------------------------------------------------------------
 name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r)
 pool:
-  vmImage: windows-latest
+  vmImage: ubuntu-latest
 trigger:
   # since this repo has both AzDO and GHA pipelines, nothing is run automatically...
   - none
@@ -12,14 +12,11 @@ trigger:
   # branches:
   #   include:
   #     - main
+  #   exclude:
+  #     - '**/*.md'
   # paths:
   #   include:
-  #     - 'src/Dadabase.Web/*'
-  #   exclude: 
-  #     - '**/*.yml'
-  #     - '**/*.yaml'
-  #     - '**/*.bicep'
-  #     - '**/*.md'
+  #     - 'src/Dadabase.web/**'
 
 # ----------------------------------------------------------------------------------------------------
 parameters:
@@ -27,45 +24,57 @@ parameters:
     displayName: Deploy To
     type: string
     values:
-      - DEMO
       - DEV
       - QA
       - PROD
-      - MULTIPLE
+      - DEV-QA-PROD
     default: DEV
+  - name: deployBicep
+    displayName: Deploy Bicep
+    type: boolean
+    default: false
   - name: runUnitTests
     displayName: Run Unit Tests
+    type: boolean
+    default: true
+  - name: runSmokeTest
+    displayName: Run Playwright Smoke Test
+    type: boolean
+    default: true
+  - name: runMSDevSecOpsScan
+    displayName: Run MS DevSecOps Scan
     type: boolean
     default: true
   - name: runGHASScan
     displayName: Run GHAS Scan
     type: boolean
     default: false
-  - name: runMSDevSecOpsScan
-    displayName: Run MS DevSecOps Scan
-    type: boolean
-    default: false
 
 # ----------------------------------------------------------------------------------------------------
 variables:
-  - group: Dadabase.Web
+  - group: Dadabase.Demo
+  - template: vars/var-service-connections.yml
 
 # ----------------------------------------------------------------------------------------------------
 stages:
-- ${{ if ne(parameters.deployToEnvironment, 'MULTIPLE') }}:
-  - template: pipes/webapi-only-pipe.yml
+- ${{ if ne(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
+  - template: pipes/infra-and-webapp-pipe.yml
     parameters:
       environments: ['${{ parameters.deployToEnvironment }}']
-      runUnitTests: ${{ parameters.runUnitTests }}
-      runUITests: 'false'
+      deployBicep: ${{ parameters.deployBicep }}
+      parseBicepOutputs: true
+      runSmokeTest: ${{ parameters.runSmokeTest }}
       runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
       runGHASScan: ${{ parameters.runGHASScan }}
+      runUnitTests: ${{ parameters.runUnitTests }}
 
-- ${{ if eq(parameters.deployToEnvironment, 'MULTIPLE') }}:
-  - template: pipes/webapi-only-pipe.yml
+- ${{ if eq(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
+  - template: pipes/infra-and-webapp-pipe.yml
     parameters:
-      environments: ['DEV','PROD']
-      runUnitTests: ${{ parameters.runUnitTests }}
-      runUITests: 'false'
+      environments: ['DEV','QA','PROD']
+      deployBicep: ${{ parameters.deployBicep }}
+      parseBicepOutputs: true
+      runSmokeTest: ${{ parameters.runSmokeTest }}
       runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
       runGHASScan: ${{ parameters.runGHASScan }}
+      runUnitTests: ${{ parameters.runUnitTests }}

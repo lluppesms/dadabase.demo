@@ -8,11 +8,11 @@ variables:
   #   value: 'this is unique to you - define in a variable group or on the pipeline variables!'
 
   - name: resourceGroupPrefix
-    value: 'rg_dadabase_web'
+    value: 'rg-dadabase-azdo'
   - name: applicationTitle
     value: 'Dadabase Demo'
-  - name: location
-    value: 'eastus'
+  # - name: location  replaced by RESOURCE_GROUP_LOCATION in the variable group
+  #   value: 'westus'
 
   - name: webSiteSku 
     value: 'B1'
@@ -20,19 +20,19 @@ variables:
     value: 'Standard_LRS'
 
   - name: webAppFolderName
-    value: 'src/web'
+    value: 'src/web/'
   - name: webAppSolutionName
-    value: 'DadABase.Net8.Web'
+    value: 'dadabase.net10.web.sln'
 
   - name: webAppProjectFolderName
-    value: 'DadABase.Web'
+    value: 'Website'
   - name: webAppProjectName
     value: 'DadABase.Web'
   - name: webAppProjectExtension
     value: 'csproj'
 
   - name: webTestFolderName 
-    value: 'DadABase.Tests'
+    value: 'Tests'
   - name: webTestProjectName
     value: 'DadABase.Tests'
 
@@ -48,12 +48,12 @@ variables:
   - name: functionFolderName
     value: 'src/function'
   - name: functionSolutionName
-    value: 'DadABase.Function.Net8'
+    value: 'DadABase.Function'
 
   - name: functionProjectFolderName
     value: 'DadABase.Function'
   - name: functionProjectName
-    value: 'DadABase.Function.Net8'
+    value: 'DadABase.Function'
   - name: functionProjectExtension
     value: 'csproj'
 
@@ -62,6 +62,13 @@ variables:
   - name: functionTestProjectName
     value: 'DadABase.Tests'
 
+  # SQL Deploy must run on Windows
+  - name: sqlAppFolderName
+    value: 'src\sql.database\'
+  - name: sqlAppSolutionName
+    value: 'sql.database.sln'
+  - name: sqlAppProjectName
+    value: 'sql.database'
 
   - name: consoleAppFolderName
     value: 'src/console'
@@ -80,8 +87,6 @@ variables:
   - name: consoleTestProjectName
     value: 'DadABase.Tests'
 
-
-
   - name: buildPlatform
     value: 'Any CPU'
   - name: buildConfiguration
@@ -89,13 +94,20 @@ variables:
   - name: runtime 
     value: 'win-x64'
 
+  - name: playwrightUITestType
+    value: 'ui'
+  - name: playwrightUITestPath
+    value: 'playwright/ui-tests'
+
+  - name: playwrightBasicTestType
+    value: 'basic'
+  - name: playwrightBasicTestPath
+    value: 'playwright/basic-tests'
+
   - name: playwrightAPITestType
     value: 'api'
   - name: playwrightAPITestPath
     value: 'playwright/api-tests'
-
-  - name: playwrightWebsitePrefix
-    value: 'lci-dadabase-web'
 
   - name: workingDirectoryInfra
     value: '/infra/bicep'

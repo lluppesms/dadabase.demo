@@ -10,7 +10,7 @@
 # ----------------------------------------------------------------------------------------------------
 parameters:
 - name: environmentName
-  default: 'DEMO'
+  default: 'DEV'
 - name: runGHASScan
   default: 'false'
 - name: runMSDevSecOpsScan
@@ -51,25 +51,25 @@ jobs:
       inputs:
         script: |
           echo "parameters.continueOnScanError=${{ parameters.continueOnScanError }}"
-          echo "appFolderName=$(appFolderName)"
-          echo "appSolutionName=$(appSolutionName)"
-          echo "appProjectName=$(appProjectName)"
-          echo "appProjectFolderName=$(appProjectFolderName)"
+          echo "appFolderName=$(webAppFolderName)"
+          echo "appSolutionName=$(webAppSolutionName)"
+          echo "appProjectName=$(webAppProjectName)"
+          echo "appProjectFolderName=$(webAppProjectFolderName)"
           echo "workingDirectoryInfra=$(workingDirectoryInfra)"
           echo "workingDirectoryIgnore=$(workingDirectoryIgnore)"
-          echo "Project Path: $(Build.SourcesDirectory)\$(appProjectFolderName)\*.$(appProjectExtension)"
+          echo "Project Path: $(Build.SourcesDirectory)/$(webAppProjectFolderName)/*.$(webAppProjectExtension)"
           echo "Build.SourcesDirectory=$(Build.SourcesDirectory)"
           echo "----------------------------------------"
           echo "##[group]Display All Environment Variables:"
           printenv | sort
           echo "##[endgroup]"
           echo "------------------------------------------------"
-          echo "##[group]Directory of Project Files: $(Build.SourcesDirectory)\$(appProjectFolderName)"
-          dir $(Build.SourcesDirectory)\$(appProjectFolderName) /s
+          echo "##[group]Directory of Project Files: $(Build.SourcesDirectory)/$(webAppProjectFolderName)"
+            tree -L 4 $(Build.SourcesDirectory)/$(webAppProjectFolderName)
           echo "##[endgroup]"
           echo "------------------------------------------------"
           echo "##[group]Directory of Full Staging Directory: $(Build.SourcesDirectory)"
-          dir $(Build.SourcesDirectory) /s
+          tree -L 4 $(Build.SourcesDirectory)
           echo "##[endgroup]"
       continueOnError: true
 
@@ -78,28 +78,28 @@ jobs:
       inputs:
         languages: 'csharp'
         querysuite: security-extended
-      #   sourcesfolder: $(appProjectFolderName)
-      #   codeqlpathstoinclude: $(appProjectFolderName)
+      #   sourcesfolder: $(webAppProjectFolderName)
+      #   codeqlpathstoinclude: $(webAppProjectFolderName)
       #   codeqlpathstoignore: $(workingDirectoryIgnore)
 
     - task: DotNetCoreCLI@2
       displayName: 'Restore project'
       inputs:
         command: 'restore'
-        projects: '$(Build.SourcesDirectory)\$(appFolderName)\$(appProjectFolderName)\*.$(appProjectExtension)'
+        projects: '$(Build.SourcesDirectory)/$(webAppFolderName)/$(webAppProjectFolderName)/*.$(webAppProjectExtension)'
 
     - ${{ if eq(lower(variables.appProjectExtension), 'csproj') }}:
       - task: DotNetCoreCLI@2
         displayName: Build CS Project
         inputs:
-          projects: '$(Build.SourcesDirectory)\$(appFolderName)\$(appProjectFolderName)\*.$(appProjectExtension)'
+          projects: '$(Build.SourcesDirectory)/$(webAppFolderName)/$(webAppProjectFolderName)/*.$(webAppProjectExtension)'
           arguments: '--output publish_output --configuration Release'
 
     - ${{ if eq(lower(variables.appProjectExtension), 'sqlproj') }}:
       - task: VSBuild@1
         displayName: Build DacPac Project
         inputs:
-          solution: '$(appFolderName)\$(appFolderName)\$(appSolutionName).sln'
+          solution: '$(webAppFolderName)/$(webAppFolderName)/$(webAppSolutionName).sln'
           platform: 'Any CPU'
           configuration: 'Release'
 
@@ -143,7 +143,7 @@ jobs:
         echo "continueAfterScanErrors=$(continueAfterScanErrors)"
         echo "parameters.continueOnScanError=${{parameters.continueOnScanError}}"
         echo "sourceVariableFile=$(sourceVariableFile)"
-        echo "appProjectFolderName=$(appProjectFolderName)"
+        echo "appProjectFolderName=$(webAppProjectFolderName)"
         echo "workingDirectoryInfra=$(workingDirectoryInfra)"
         echo "workingDirectoryIgnore=$(workingDirectoryIgnore)"
         echo "----------------------------------------"

@@ -244,7 +244,7 @@ parameters:
     default: DEV
 
 variables:
-  - group: DadABase.Web
+  - group: Dadabase.Demo
   - template: vars/var-service-connections.yml
 
 stages:
@@ -267,7 +267,7 @@ parameters:
     default: DEV
 
 variables:
-  - group: DadABase.Web
+  - group: Dadabase.Demo
   - template: vars/var-service-connections.yml
 
 stages:

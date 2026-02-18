@@ -26,13 +26,17 @@ test('search for chicken jokes', async ({ page, baseURL }) => {
   console.log('process.env.CI: ' + process.env.CI);
   console.log('process.env.TEST_ENVIRONMENT: ' + process.env.TEST_ENVIRONMENT);
   await page.goto('/Search');
-  await page.waitForSelector('input[name="inputText"], #inputText, input[type="search"]', { state: 'visible' });
+  await page.waitForSelector('input[type="text"]', { state: 'visible' });
   await page.waitForTimeout(1000); // Give time for page to update
-  await page.locator('#inputText').fill('chicken');
+  // await page.locator('#inputText').fill('chicken');
+  await page.getByRole('textbox', { name: 'Search For' }).click();
+  await page.getByRole('textbox', { name: 'Search For' }).fill('chicken');
+  // await page.getByRole('textbox', { name: 'Search For' }).press('Enter');
   await page.getByRole('button', { name: 'Search' }).click();
   await page.waitForTimeout(1000); // Give time for the page to update
-  const listItems = await page.locator('main ul li').all();
+  const listItems = await page.locator('#jokeList li').all();
   const jokeCount = listItems.length;
   console.log('Found ' + jokeCount + ' chicken jokes!');
   expect(jokeCount).toBeGreaterThan(0);
 });
+

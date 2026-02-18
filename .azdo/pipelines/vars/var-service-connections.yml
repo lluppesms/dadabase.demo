@@ -8,5 +8,5 @@ variables:
     value: 'DEV Service Connection'
   - name: serviceConnectionQA
     value: 'QA Service Connection'
-  - name: serviceConnectionProd
+  - name: serviceConnectionPROD
     value: 'PROD Service Connection'

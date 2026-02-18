@@ -1,0 +1,80 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Pipeline Steps Template -- steps to build and deploy SQL DACPAC
+# ------------------------------------------------------------------------------------------------------------------------
+parameters:
+  - name: serviceConnectionName
+    default: ''
+  - name: loginAccountType
+    default: 'svc_principal'
+  - name: artifactName
+    default: ''
+  - name: appProjectName
+    default: ''
+  - name: fqdnServerName
+    default: ''
+  - name: sqlDatabaseName
+    default: ''
+  - name: sqlAdminUser
+    default: ''
+  - name: sqlAdminPassword
+    default: ''
+
+# ------------------------------------------------------------------------------------------------------------------------
+steps:
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download Build Artifacts'
+    inputs:
+      buildType: 'current'
+      downloadType: 'single'
+      artifactName: '${{ parameters.artifactName }}'
+      downloadPath: '$(System.ArtifactsDirectory)'
+
+  # this "servicePrincipal" login type logs in using some identity magic
+  - ${{ if eq(lower(parameters.loginAccountType), 'svc_principal') }}:
+    - task: SqlAzureDacpacDeployment@1
+      displayName: Deploy DACPAC - SvcPrin
+      inputs:
+        azureSubscription: ${{ parameters.serviceConnectionName }}
+        ServerName: ${{ parameters.fqdnServerName }}
+        DatabaseName: ${{ parameters.sqlDatabaseName }}
+        DacpacFile: '$(System.ArtifactsDirectory)\${{ parameters.artifactName }}\${{ parameters.appProjectName }}.dacpac'
+        AuthenticationType: 'servicePrincipal' # 'server' | 'aadAuthenticationPassword' | 'aadAuthenticationIntegrated' | 'connectionString' | 'servicePrincipal'.  Default: server
+        DeleteFirewallRule: false
+      continueOnError: true
+
+  # this "server" login type logs in as a local sql user with a name and password
+  - ${{ if eq(lower(parameters.loginAccountType), 'local_sql') }}:
+    - task: SqlAzureDacpacDeployment@1
+      displayName: Deploy DACPAC - Local User
+      inputs:
+        azureSubscription: ${{ parameters.serviceConnectionName }}
+        ServerName: ${{ parameters.fqdnServerName }}
+        DatabaseName: ${{ parameters.sqlDatabaseName }}
+        DacpacFile: '$(System.ArtifactsDirectory)\${{ parameters.artifactName }}\${{ parameters.appProjectName }}.dacpac'
+        AuthenticationType: 'server' # 'server' | 'aadAuthenticationPassword' | 'aadAuthenticationIntegrated' | 'connectionString' | 'servicePrincipal'.  Default: server
+        SqlUsername: '${{ parameters.sqlAdminUser }}'
+        SqlPassword: '${{ parameters.sqlAdminPassword }}'
+        DeleteFirewallRule: false
+      continueOnError: true
+
+  # ------------------------------------------------------------------------------------------------------------------------
+  # Additional References:
+  # ------------------------------------------------------------------------------------------------------------------------
+  # Logins: (try this to get a token for the service principal)
+  #  https://erikej.github.io/sqlserver/2021/02/01/azure-sql-advanced-deployment-part4.html
+  #
+  # There are other possible actions that could be triggered:
+  #   DeploymentAction: 'Publish' # 'Publish' | 'Extract' | 'Export' | 'Import' | 'Script' | 'DriftReport' | 'DeployReport'. Required when TaskNameSelector = DacpacTask. Action. Default: Publish.
+  #   See: https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/sql-azure-dacpac-deployment-v1?view=azure-pipelines
+  #        https://learn.microsoft.com/en-us/sql/tools/sqlpackage/sqlpackage?view=sql-server-ver15
+  #
+  # If you want to drop tables not in the source you need to specify the parameter DropObjectsNotInSource=true
+  # See:
+  #   https://learn.microsoft.com/en-us/archive/blogs/ssdt/new-advanced-publish-options-to-specify-object-types-to-exclude-or-not-drop
+  #   https://learn.microsoft.com/en-us/answers/questions/811899/sqlpackage-does-not-delete-the-tables-from-target
+  #   https://dev.to/dealeron/dropping-objects-with-ssdt-33g2
+  # NOTE: I can't get this to work right...!   (only valid with certain DeploymentActions...?)
+  #   AdditionalArguments: DropObjectsNotInSource=true
+  #   AdditionalArguments: # string. Optional. Use when TaskNameSelector/DeployType = DacpacTask || DeploymentAction = Extract || DeploymentAction = Export || DeploymentAction = Import || DeploymentAction = Script || DeploymentAction = DeployReport || DeploymentAction = DriftReport. Additional SqlPackage.exe Arguments. 
+  #   DeployType: 'DacpacTask' # 'DacpacTask' | 'SqlTask' | 'InlineSqlTask'. Alias: TaskNameSelector. Required. Deploy type. Default: DacpacTask.
+

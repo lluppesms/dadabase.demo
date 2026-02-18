@@ -43,14 +43,23 @@ jobs:
         echo "appProjectName=${{ parameters.appProjectName }}"
         echo "artifactName=${{ parameters.artifactName }}"
         echo "Directory of pipeline workspace:"
-        tree $(Pipeline.Workspace)
+        tree -L 4 $(Pipeline.Workspace)
     displayName: 'Display Variables and Tree'
     continueOnError: true
+
+  - task: NuGetToolInstaller@1
+    displayName: 'Setup NuGet'
+
+  - task: NuGetCommand@2
+    displayName: 'Restore NuGet Packages'
+    inputs:
+      restoreSolution: '${{ parameters.appFolderName }}/${{ parameters.appProjectName }}.sqlproj'
+      command: 'restore'
 
   - task: VSBuild@1
     displayName: Build DacPac
     inputs:
-      solution: '${{ parameters.appFolderName }}/${{ parameters.appSolutionName }}.sln'
+      solution: '${{ parameters.appFolderName }}/${{ parameters.appProjectName }}.sqlproj'
       platform: '$(buildPlatform)'
       configuration: '$(buildConfiguration)'
       msbuildArgs: /p:DropObjectsNotInSource=False
@@ -65,6 +74,6 @@ jobs:
   - task: PublishBuildArtifacts@1
     displayName: Save DacPac Artifact
     inputs:
-      PathtoPublish: '$(Pipeline.Workspace)\s\${{ parameters.appFolderName }}\${{ parameters.appProjectName }}\bin\Release\${{ parameters.appProjectName }}.dacpac'
+      PathtoPublish: '$(Pipeline.Workspace)\s\${{ parameters.appFolderName }}\bin\Any CPU\Release\${{ parameters.appProjectName }}.dacpac'
       ArtifactName: '${{ parameters.artifactName }}'
       publishLocation: 'Container'

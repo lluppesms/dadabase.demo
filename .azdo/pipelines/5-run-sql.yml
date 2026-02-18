@@ -25,30 +25,32 @@ trigger:
 
 # ----------------------------------------------------------------------------------------------------
 parameters:
-  - name: environments
-    displayName: Environment
+  - name: deployToEnvironment
+    displayName: Deploy To
     type: string
-    default: 'DEV'
     values:
       - DEV
-      - DEV-QA
+      - QA
+      - PROD
       - DEV-QA-PROD
+    default: DEV
   - name: loginAccountType
     displayName: Login Type
-    default: 'SVC_PRINCIPAL'
+    type: string
     values:
       - SVC_PRINCIPAL
       - LOCAL_SQL
-    type: string
+    default: SVC_PRINCIPAL
   - name: scriptName
     displayName: Action
     type: string
-    default: 'Patch-20240101.sql'
+    default: 'InsertDefaultData.sql'
     values:
-      - DBCOPY
-      - Patch-20240101.sql
-      - Patch-20240102.sql
-      - Patch-20240103.sql
+      - 'InsertDefaultData.sql'
+      - 'Patch-20260101.sql'
+      - 'Patch-20260102.sql'
+      - 'Patch-20260103.sql'
+      - 'DBCOPY'
   - name: databaseName
     displayName: Starting Database
     type: string
@@ -56,46 +58,36 @@ parameters:
   - name: databaseCopyName
     displayName: Action DBCopy - Copy Database To
     type: string
-    default: 'DADABASEV093001'
+    default: 'DADABASEV001'
   - name: resourceGroupName
     displayName: Action DBCopy - Resource Group Name
     type: string
-    default: 'rg_sqldeploy_demo'
+    default: 'rg-dadabase'
 
 # ----------------------------------------------------------------------------------------------------
 variables:
-  - group: SQLDeployDemo
+  - group: Dadabase.Demo
   - template: vars/var-common.yml
+  - template: vars/var-service-connections.yml
 
 # ----------------------------------------------------------------------------------------------------
 stages:
-- ${{ if eq(parameters.environments, 'DEV') }}:
+- ${{ if ne(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
   - template: pipes/run-sql-pipe.yml
     parameters:
       environments: ['DEV']
-      sqlFolderName: 'src\sql.database\sql.database\Patch\'
+      sqlFolderName: 'src\sql.database\Patch\'
       sqlFileName: ${{ parameters.scriptName }}
       runInDatabase: ${{ parameters.databaseName }}
       loginAccountType: ${{ parameters.loginAccountType }}
       resourceGroupName: ${{ parameters.resourceGroupName }}
       databaseCopyName: ${{ parameters.databaseCopyName }}
 
-- ${{ if eq(parameters.environments, 'DEV-QA') }}:
-  - template: pipes/run-sql-pipe.yml
-    parameters:
-      environments: ['DEV','QA']
-      sqlFolderName: 'src\sql.database\sql.database\Patch\'
-      sqlFileName: ${{ parameters.scriptName }}
-      runInDatabase: ${{ parameters.databaseName }}
-      loginAccountType: ${{ parameters.loginAccountType }}
-      resourceGroupName: ${{ parameters.resourceGroupName }}
-      databaseCopyName: ${{ parameters.databaseCopyName }}
-
-- ${{ if eq(parameters.environments, 'DEV-QA-PROD') }}:
+- ${{ if eq(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
   - template: pipes/run-sql-pipe.yml
     parameters:
       environments: ['DEV','QA','PROD']
-      sqlFolderName: 'src\sql.database\sql.database\Patch\'
+      sqlFolderName: 'src\sql.database\Patch\'
       sqlFileName: ${{ parameters.scriptName }}
       runInDatabase: ${{ parameters.databaseName }}
       loginAccountType: ${{ parameters.loginAccountType }}

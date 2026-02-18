@@ -1,0 +1,79 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Pipeline Steps Template -- steps to run a SQL script against an Azure SQL Database
+# ------------------------------------------------------------------------------------------------------------------------
+parameters:
+  - name: serviceConnectionName
+    default: ''
+  - name: loginAccountType
+    default: ''
+  - name: runInDatabase
+    default: ''
+  - name: sqlFullFileName
+    default: ''
+  - name: fqdnServerName
+    default: ''
+  - name: logFullFileName
+    default: ''
+  - name: sqlAdminUser
+    default: ''
+  - name: sqlAdminPassword
+    default: ''
+
+# ------------------------------------------------------------------------------------------------------------------------
+steps:
+  # ------------------------------------------------------------------------------------------------------------------------
+  # Run SQL Script with Local SQL User/Password (using Invoke-Sqlcmd)
+  # ------------------------------------------------------------------------------------------------------------------------
+  - ${{ if eq(lower(parameters.loginAccountType), 'local_sql') }}:
+    - task: PowerShell@2
+      displayName: Run SQL Script - Local SQL User
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "Running SQL script: ${{ parameters.sqlFullFileName }} on ${{ parameters.fqdnServerName }} / ${{ parameters.runInDatabase }}"
+
+          # Install SqlServer module if not present
+          if (-not (Get-Module -ListAvailable -Name SqlServer)) {
+            Install-Module -Name SqlServer -Force -AllowClobber -Scope CurrentUser
+          }
+          Import-Module SqlServer
+
+          Invoke-Sqlcmd -ServerInstance "${{ parameters.fqdnServerName }}" `
+            -Database "${{ parameters.runInDatabase }}" `
+            -Username "${{ parameters.sqlAdminUser }}" `
+            -Password "${{ parameters.sqlAdminPassword }}" `
+            -InputFile "${{ parameters.sqlFullFileName }}" `
+            -Verbose | Out-File -FilePath "${{ parameters.logFullFileName }}"
+        errorActionPreference: 'continue'
+      continueOnError: true
+
+  # ------------------------------------------------------------------------------------------------------------------------
+  # Run SQL Script with Service Principal Access Token (using Invoke-Sqlcmd)
+  #   See: https://learn.microsoft.com/en-us/powershell/module/sqlserver/invoke-sqlcmd?view=sqlserver-ps
+  # ------------------------------------------------------------------------------------------------------------------------
+  - ${{ if eq(lower(parameters.loginAccountType), 'svc_principal') }}:
+    - task: AzureCLI@2
+      displayName: Run SQL Script - Service Principal
+      inputs:
+        azureSubscription: ${{ parameters.serviceConnectionName }}
+        scriptType: pscore
+        scriptLocation: inlineScript
+        inlineScript: |
+          Write-Host "Running SQL script: ${{ parameters.sqlFullFileName }} on ${{ parameters.fqdnServerName }} / ${{ parameters.runInDatabase }}"
+
+          # Get access token for Azure SQL
+          $accessToken = az account get-access-token --resource=https://database.windows.net/ --query accessToken -o tsv
+
+          # Install SqlServer module if not present
+          if (-not (Get-Module -ListAvailable -Name SqlServer)) {
+            Install-Module -Name SqlServer -Force -AllowClobber -Scope CurrentUser
+          }
+          Import-Module SqlServer
+
+          Invoke-Sqlcmd -ServerInstance "${{ parameters.fqdnServerName }}" `
+            -Database "${{ parameters.runInDatabase }}" `
+            -AccessToken $accessToken `
+            -InputFile "${{ parameters.sqlFullFileName }}" `
+            -Verbose | Out-File -FilePath "${{ parameters.logFullFileName }}"
+        errorActionPreference: 'continue'
+      continueOnError: true

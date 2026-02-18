@@ -247,21 +247,12 @@ module webSiteModule './modules/webapp/website.bicep' = {
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
     appServicePlanName: appServicePlanModule.outputs.name
     appServicePlanResourceGroupName: appServicePlanModule.outputs.resourceGroupName
-  }
-}
-
-// In a Linux app service, any nested JSON app key like AppSettings:MyKey needs to be 
-// configured in App Service as AppSettings__MyKey for the key name. 
-// In other words, any : should be replaced by __ (double underscore).
-// NOTE: See https://learn.microsoft.com/en-us/azure/app-service/configure-common?tabs=portal  
-module webSiteAppSettingsModule './modules/webapp/websiteappsettings.bicep' = {
-  name: 'webSiteAppSettings${deploymentSuffix}'
-  params: {
-    webAppName: webSiteModule.outputs.name
-    appInsightsKey: webSiteModule.outputs.appInsightsKey
+    // In a Linux app service, any nested JSON app key like AppSettings:MyKey needs to be 
+    // configured in App Service as AppSettings__MyKey for the key name. 
+    // In other words, any : should be replaced by __ (double underscore).
+    // NOTE: See https://learn.microsoft.com/en-us/azure/app-service/configure-common?tabs=portal
     customAppSettings: {
-      AppSettings__AppInsights_InstrumentationKey: webSiteModule.outputs.appInsightsKey
-      APPLICATIONINSIGHTS_CONNECTION_STRING: webSiteModule.outputs.appInsightsConnectionString
+      AppSettings__AppInsights_InstrumentationKey: '' // Will be set by base settings
       AppSettings__DefaultConnection: sqlDbModule.outputs.identityConnectionString
       AppSettings__ProjectEntities: sqlDbModule.outputs.identityConnectionString
       AppSettings__EnvironmentName: environmentCode

@@ -40,8 +40,8 @@ jobs:
       script: |
         $environmentSpecificAppName=$(environmentSpecificAppName)
         if ([string]::IsNullOrEmpty($environmentSpecificAppName)) {
-          echo "Using environment coded app name: $(appName)-$(environmentName)"
-          $functionAppName="$(appName)-$(environmentName)".ToLower()
+          echo "Using environment coded app name: $(APP_NAME)-$(environmentName)"
+          $functionAppName="$(APP_NAME)-$(environmentName)".ToLower()
         } else {
           echo "Using environment specific hard-coded name: $environmentSpecificAppName"
           $functionAppName="$environmentSpecificAppName".ToLower()
@@ -54,7 +54,7 @@ jobs:
     inputs:
       script: |
         echo "environmentSpecificAppName=$(environmentSpecificAppName)"
-        echo "appName=$(appName)"
+        echo "appName=$(APP_NAME)"
         echo "environmentName=$(environmentName)"
         echo "functionAppName=$(functionAppName)"
 
@@ -121,7 +121,7 @@ jobs:
         echo "environmentSpecificAppName=$(environmentSpecificAppName)"
         echo "functionAppName=$(functionAppName)"
         echo "serviceConnectionName=$(serviceConnectionName)"
-        echo "appName=$(appName)"
+        echo "appName=$(APP_NAME)"
         echo "environmentName=$(environmentName)"
         echo "Directory of pipeline workspace:"
         tree -L 4 $(Pipeline.Workspace)

@@ -3,7 +3,7 @@
 # ------------------------------------------------------------------------------------------------------------------------
 name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r)
 pool:
-  vmImage: windows-latest
+  vmImage: ubuntu-latest
 
 # ------------------------------------------------------------------------------------------------------------------------
 trigger:
@@ -18,14 +18,19 @@ schedules:
 
 # ----------------------------------------------------------------------------------------------------
 parameters:
-  - name: runGHASScan
-    displayName: Run GHAS Scan
-    type: boolean
-    default: true
   - name: runMSDevSecOpsScan
     displayName: Run MS DevSecOps Scan
     type: boolean
+    default: true
+  - name: runGHASScan
+    displayName: Run GHAS Scan
+    type: boolean
     default: false
+
+# ----------------------------------------------------------------------------------------------------
+variables:
+  - group: Dadabase.Demo
+  - template: vars/var-service-connections.yml
 
 # ----------------------------------------------------------------------------------------------------
 stages:

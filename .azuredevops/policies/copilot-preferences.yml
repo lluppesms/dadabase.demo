@@ -1,0 +1,13 @@
+# PR using GHCP is failing because I need two reviewers to approve it.
+# See https://eng.ms/docs/coreai/devdiv/one-engineering-system-1es/1es-jacekcz/startrightgitops/ado-swe-agent/how-tos/configure-draft-pr-mode
+# metadata
+name: Copilot draft PR configuration
+description: Configure SWE Agent to keep PRs in draft mode
+
+# filters
+resource: repository
+
+# primitive configuration
+configuration:
+    copilotPreferences:
+        publishFinalPrAsDraft: true

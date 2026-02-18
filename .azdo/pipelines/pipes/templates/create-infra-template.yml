@@ -60,13 +60,13 @@ jobs:
         $environmentNameLower="${{ parameters.environmentName }}".ToLower()
         echo "##vso[task.setvariable variable=environmentNameLower]$environmentNameLower"
 
-        $appNameLower="$(appName)".ToLower()
+        $appNameLower="$(APP_NAME)".ToLower()
         echo "##vso[task.setvariable variable=appNameLower]$appNameLower"
 
-        $appNameLowerNoDashes="$(appName)".ToLower().Replace("-", "")
+        $appNameLowerNoDashes="$(APP_NAME)".ToLower().Replace("-", "")
         echo "##vso[task.setvariable variable=appNameLowerNoDashes]$appNameLowerNoDashes"
 
-        $resourceGroupName="$(resourceGroupPrefix)-$environmentNameLower".ToLower()
+        $resourceGroupName="$(RESOURCE_GROUP_PREFIX)-$(INSTANCE_NUMBER)-$environmentNameLower".ToLower()
         echo "##vso[task.setvariable variable=resourceGroupName]$resourceGroupName"
 
         $runDateTime=(Get-Date).ToString("yyyyMMdd-HHmmss")
@@ -87,7 +87,7 @@ jobs:
         echo "parameterFile=$(parameterFile)"
         echo "deploymentMode=${{ parameters.deploymentMode }}"
         echo "resourceGroupName=$(resourceGroupName)"
-        echo "appName=$(appName)"
+        echo "appName=$(APP_NAME)"
         echo "appNameLower=$(appNameLower)"
         echo "appNameLowerNoDashes=$(appNameLowerNoDashes)"
         echo "runDateTime=$(runDateTime)"
@@ -163,7 +163,7 @@ jobs:
         echo "bicepOutputs: $(bicepOutputs)"
         echo "bicepOutputs-SUBSCRIPTION_ID:     $(bicepOutputs-SUBSCRIPTION_ID)"
         echo "bicepOutputs-RESOURCE_GROUP_NAME: $(bicepOutputs-RESOURCE_GROUP_NAME)"
-        echo "bicepOutputs-HOST_NAME: $(bicepOutputs-HOST_NAME)"
+        echo "bicepOutputs-WEB_HOST_NAME: $(bicepOutputs-WEB_HOST_NAME)"
 
   # creates a markdown summary that will be visible in the pipeline "Extensions" tab
   - task: CmdLine@2
@@ -171,16 +171,16 @@ jobs:
     continueOnError: true
     inputs:
       script: |
-        echo "Writing to Summary File $(System.DefaultWorkingDirectory)\bicep_deploy_summary.md"
-        echo Deployed Bicep File:        ${{ parameters.templateFolderName }}/${{ parameters.templateFileName }}  >> $(System.DefaultWorkingDirectory)\bicep_deploy_summary.md
-        echo With Parameter File:        ${{ parameters.templateFolderName }}/${{ parameters.parameterFileName }} >> $(System.DefaultWorkingDirectory)\bicep_deploy_summary.md
-        echo Deployed to Environment:    $(environmentName)                                                       >> $(System.DefaultWorkingDirectory)\bicep_deploy_summary.md
-        echo Deployed In Subscription:   $(bicepOutputs-SUBSCRIPTION_ID)                                          >> $(System.DefaultWorkingDirectory)\bicep_deploy_summary.md
-        echo Deployed To Resource Group: $(bicepOutputs-RESOURCE_GROUP_NAME)                                      >> $(System.DefaultWorkingDirectory)\bicep_deploy_summary.md
-        echo Created Website:            [https://$(bicepOutputs-HOST_NAME)](https://$(bicepOutputs-HOST_NAME))   >> $(System.DefaultWorkingDirectory)\bicep_deploy_summary.md
+        echo "Writing to Summary File $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md"
+        echo "Deployed Bicep File:        ${{ parameters.templateFolderName }}/${{ parameters.templateFileName }}"        >> $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
+        echo "With Parameter File:        ${{ parameters.templateFolderName }}/${{ parameters.parameterFileName }}"       >> $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
+        echo "Deployed to Environment:    $(environmentName)"                                                             >> $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
+        echo "Deployed In Subscription:   $(bicepOutputs-SUBSCRIPTION_ID)"                                                >> $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
+        echo "Deployed To Resource Group: $(bicepOutputs-RESOURCE_GROUP_NAME)"                                            >> $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
+        echo "Created Website:            [https://$(bicepOutputs-WEB_HOST_NAME)](https://$(bicepOutputs-WEB_HOST_NAME))" >> $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
 
-        echo "Publishing Summary File: $(System.DefaultWorkingDirectory)\bicep_deploy_summary.md"
-        echo ##vso[task.uploadsummary]$(System.DefaultWorkingDirectory)\bicep_deploy_summary.md
+        echo "Publishing Summary File: $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md"
+        echo ##vso[task.uploadsummary]$(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
 
   - task: CmdLine@2
     displayName: 'Wipe Parameter File'

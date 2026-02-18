@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------------------------------
-# Template to build Azure WebApi and create artifacts
+# Template to build Azure WebApp and create artifacts
 # ----------------------------------------------------------------------------------------------------
 parameters: 
 - name: environmentName
@@ -9,12 +9,12 @@ parameters:
 
 # ------------------------------------------------------------------------------------------------------------------------
 jobs:
-- deployment: InitializeBuild${{ parameters.environmentName }}WebApi
-  displayName: Initialize ${{ parameters.environmentName }} Build WebApi
+- deployment: InitializeBuild${{ parameters.environmentName }}WebApp
+  displayName: Initialize ${{ parameters.environmentName }} Build WebApp
   environment: ${{ parameters.environmentName }}
 
-- job: Build${{ parameters.environmentName }}WebApi
-  displayName: Build ${{ parameters.environmentName }} WebApi
+- job: Build${{ parameters.environmentName }}WebApp
+  displayName: Build ${{ parameters.environmentName }} WebApp
   
   variables:
     - name: environmentName
@@ -22,26 +22,28 @@ jobs:
     - template: ../../vars/var-common.yml
 
     - name: rootDirectory
-      value: '$(System.DefaultWorkingDirectory)\$(appFolderName)\'
-    - name: projectDirectory
-      value: '$(System.DefaultWorkingDirectory)\$(appFolderName)\$(appProjectFolderName)\'
-    - name: testDirectory
-      value: '$(System.DefaultWorkingDirectory)\$(appFolderName)\$(testFolderName)\'
+      value: '$(System.DefaultWorkingDirectory)/$(webAppFolderName)/'
     - name: workingDirectory
-      value: '$(System.DefaultWorkingDirectory)\$(appFolderName)\$(appProjectFolderName)\'
+      value: '$(System.DefaultWorkingDirectory)/$(webAppFolderName)$(webAppProjectFolderName)/'
+    - name: projectDirectory
+      value: '$(System.DefaultWorkingDirectory)/$(webAppFolderName)$(webAppProjectFolderName)/'
+    - name: testDirectory
+      value: '$(System.DefaultWorkingDirectory)/$(webAppFolderName)$(webTestFolderName)/'
 
     - name: projectFullName
-      value: '$(appFolderName)\$(appProjectFolderName)\$(appProjectName).$(appProjectExtension)'
+      value: '$(webAppFolderName)$(webAppProjectFolderName)/$(webAppProjectName).$(webAppProjectExtension)'
     - name: projectFullPath
-      value: '$(System.DefaultWorkingDirectory)\$(projectFullName)'
+      value: '$(System.DefaultWorkingDirectory)/$(projectFullName)'
 
     - name: testFullName
-      value: '$(appFolderName)\$(testFolderName)\$(testProjectName).$(appProjectExtension)'
+      value: '$(webAppFolderName)$(webTestFolderName)/$(webTestProjectName).$(webAppProjectExtension)'
     - name: testFullPath
-      value: '$(System.DefaultWorkingDirectory)\$(testFullName)'
+      value: '$(System.DefaultWorkingDirectory)/$(testFullName)'
 
     - name: appVersion
       value: $(Build.BuildNumber)
+    - name: buildInfoFilePath
+      value: '$(projectDirectory)wwwroot\buildinfo.json'
 
   steps:
   - task: Bash@3
@@ -49,14 +51,22 @@ jobs:
     inputs:
       targetType: 'inline'
       script: |
-        echo "Build.ArtifactStagingDirectory=$(Build.ArtifactStagingDirectory)"
-        echo "System.DefaultWorkingDirectory=$(System.DefaultWorkingDirectory)"
-        echo "Build.SourcesDirectory=$(Build.SourcesDirectory)"
-        echo "Build.BuildId=$(Build.BuildId)"
         echo "----------------------------------------"
         echo "##[group]Display All Environment Variables:"
         printenv | sort
         echo "##[endgroup]"
+
+        echo "Build.ArtifactStagingDirectory=$(Build.ArtifactStagingDirectory)"
+        echo "System.DefaultWorkingDirectory=$(System.DefaultWorkingDirectory)"
+        echo "Build.SourcesDirectory=$(Build.SourcesDirectory)"
+        echo "Build.BuildId=$(Build.BuildId)"
+
+        echo "rootDirectory=$(rootDirectory)"
+        echo "projectDirectory=$(projectDirectory)"
+        echo "workingDirectory=$(workingDirectory)"
+        echo "projectFullName=$(projectFullName)"
+        echo "projectFullPath=$(projectFullPath)"
+        echo "buildInfoFilePath=$(buildInfoFilePath)"
     continueOnError: true
 
   - task: CmdLine@2
@@ -64,8 +74,7 @@ jobs:
     inputs:
       script: |
         echo "Directory of Default Working Directory:"
-        tree $(System.DefaultWorkingDirectory)
-        dir $(System.DefaultWorkingDirectory) /s
+        tree -L 4 $(System.DefaultWorkingDirectory)
     continueOnError: true
 
   - task: NuGetToolInstaller@1
@@ -75,18 +84,13 @@ jobs:
     displayName: "Put Build Details in buildinfo.json"
     inputs:
       script: |
-        echo {"buildDate":"$(runDateTime)","buildNumber":"$(Build.BuildNumber)","buildId":"$(Build.BuildId)","branchName":"$(Build.SourceBranchName)","commitHash":"$(Build.SourceVersion)"} > $(projectDirectory)buildinfo.json
+        echo {"buildDate":"$(runDateTime)","buildNumber":"$(Build.BuildNumber)","buildId":"$(Build.BuildId)","branchName":"$(Build.SourceBranchName)","commitHash":"$(Build.SourceVersion)"} > $(buildInfoFilePath)
     continueOnError: true
-  # Not sure about the -e -n...  was that for Linux build server...?  It fails on Windows build server (adds the -e -n to the front of the file and all the quote marks)
-  # - script: |
-  #     echo -e -n "{\"buildDate\":\"$(runDateTime)\",\"buildNumber\":\"$(Build.BuildNumber)\",\"buildId\":\"$(Build.BuildId)\",\"branchName\":\"$(Build.SourceBranchName)\",\"commitHash\":\"$(Build.SourceVersion)\"}" > "$(projectDirectory)buildinfo.json"
-  #   displayName: "Put Build Details in buildinfo.json"
-  #   continueOnError: true
   
   - task: UseDotNet@2
-    displayName: 'Use dotnet 8.0'
+    displayName: 'Use dotnet 10.0'
     inputs:
-      version: 8.0.x
+      version: 10.0.x
 
   - task: Assembly-Info-NetCore@3
     displayName: 'Update Assembly Version'
@@ -114,7 +118,7 @@ jobs:
       command: 'build'
       projects: '$(projectFullName)'
       arguments: --configuration $(buildConfiguration) --no-restore
-      workingDirectory: '$(appFolderName)'
+      workingDirectory: '$(projectDirectory)'
 
   # ------------------------------------------------------------------------------------------------------------------------
   - ${{ if eq(lower(parameters.runUnitTests), 'true') }}:
@@ -150,7 +154,7 @@ jobs:
       projects: '$(projectFullName)'
       publishWebProjects: false
       arguments: --configuration $(buildConfiguration) --no-build --output $(System.DefaultWorkingDirectory)/_output
-      workingDirectory: '$(appFolderName)'
+      workingDirectory: '$(projectDirectory)'
 
   - task: PublishPipelineArtifact@1
     displayName: 'Publish Artifacts'
@@ -165,8 +169,8 @@ jobs:
     condition: succeededOrFailed()
     inputs:
       script: |
-        tree $(System.DefaultWorkingDirectory)
-        tree $(Build.ArtifactStagingDirectory)
+        tree -L 4 $(System.DefaultWorkingDirectory)
+        tree -L 4 $(Build.ArtifactStagingDirectory)
 
 # ------------------------------------------------------------------------------------------------------------------------
   - ${{ if eq(lower(parameters.runUnitTests), 'true') }}:
@@ -183,7 +187,7 @@ jobs:
       condition: succeededOrFailed()
       inputs:
         targetType: 'inline'
-        script: reportgenerator -reports:$(Build.SourcesDirectory)\**\coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)\CodeCoverage -reporttypes:HtmlInline_AzurePipelines
+        script: reportgenerator -reports:$(Build.SourcesDirectory)/**/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/CodeCoverage -reporttypes:HtmlInline_AzurePipelines
 
     - task: CmdLine@2
       displayName: 'Display Files'
@@ -191,8 +195,7 @@ jobs:
       inputs:
         script: |
           echo "Directory of Build.SourcesDirectory:"
-          tree $(Build.SourcesDirectory)
-          dir $(Build.SourcesDirectory) /s
+          tree -L 4 $(Build.SourcesDirectory)
       continueOnError: true
 
     - task: PublishCodeCoverageResults@2
@@ -200,4 +203,4 @@ jobs:
       condition: succeededOrFailed()
       inputs:
         codeCoverageTool: 'cobertura'
-        summaryFileLocation: '$(Build.SourcesDirectory)\**\coverage.cobertura.xml'
+        summaryFileLocation: '$(Build.SourcesDirectory)/**/coverage.cobertura.xml'
