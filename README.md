@@ -4,7 +4,7 @@ Where does a geeky Dad store all of his Dad jokes? In a dad-a-base, of course!
 
 ## Introduction
 
-This repository is an example of deploying a .NET 10 web app into an Azure Web App. The app itself is a very simple website (with APIs) that just reads a SQL database (or a JSON file!) and returns a random dad joke, along with a few other APIs like search and category list, but it has other features like enhancing the application with GenAI features.
+This repository is an example of deploying a .NET 10 web app into an Azure Web App. The app itself is a very simple website (with APIs) that just reads a SQL database (or a JSON file!) and returns a random dad joke, along with a few other APIs like search and category list, but it has other features such as GenAI enhancements for generating joke categories and drawing a custom image of what the AI thinks this joke scenario would look like!
 
 ---
 
