@@ -10,7 +10,7 @@ This repository is an example of deploying a .NET 10 web app into an Azure Web A
 
 This project is intended as a good example of using Infrastructure as Code (IaC) to deploy and manage the Azure resources, utilizing [Bicep](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/overview) to deploy Azure resources declaratively.
 
-The project also has fully automated CI/CD pipelines to deploy both the infrastructure and the application, so you can literally run one pipeline and have it create the Azure Resources, build the program, unit test the program, deploy the program to Azure, and run [Playwright](https://playwright.dev/dotnet/) smoke tests after it is deployed.
+The project also has fully automated CI/CD pipelines to deploy both the infrastructure and the application, so you can literally run one pipeline and have it create the Azure Resources, build the program, unit test the program, deploy the program to Azure, run a [SQL DACPAC](./Docs/SQL-DacPac.md) schema deploy, and then run [Playwright](https://playwright.dev/dotnet/) smoke tests after it is deployed, all with integrated test results and code coverage in the Azure DevOps pipelines.
 
 The pipelines and actions are all built modularly using templates, so you can snap them into new pipelines or use them in other projects.
 
