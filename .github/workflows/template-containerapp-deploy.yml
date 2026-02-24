@@ -1,0 +1,104 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# GHA Reusable Called Workflow to deploy a Container App
+# ------------------------------------------------------------------------------------------------------------------------
+name: z_template_containerapp_deploy
+run-name: Deploy Container App
+
+on:
+  workflow_call:
+    inputs:
+      envCode:
+        required: true
+        type: string
+      containerImage:
+        required: true
+        type: string
+        description: 'Full container image name (registry/image:tag)'
+
+# ------------------------------------------------------------------------------------------------------------------------
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.envCode }}
+
+    env:
+      generatedAppEnvName: "${{ inputs.envCode == 'prod' && format('{0}', vars.APP_NAME) || format('{0}{1}-{2}', vars.APP_NAME, vars.INSTANCE_NUMBER, inputs.envCode) }}"
+
+    steps:
+    - name: Display Variables
+      shell: bash
+      run: |
+        echo "envCode=${{ inputs.envCode }}"
+        echo "generatedAppEnvName=${{ env.generatedAppEnvName }}"
+        echo "containerImage=${{ inputs.containerImage }}"
+        echo "resourceGroupName(var)=${{ vars.RESOURCE_GROUP_NAME }}"
+      continue-on-error: true
+
+    - name: Login to Azure using OIDC
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: Resolve resource group
+      id: resolve-rg
+      shell: bash
+      run: |
+        RG_NAME="${{ vars.RESOURCE_GROUP_NAME }}"
+        if [ -z "$RG_NAME" ] && [ -n "${{ vars.RESOURCE_GROUP_PREFIX }}" ] && [ -n "${{ vars.INSTANCE_NUMBER }}" ]; then
+          RG_NAME="${{ vars.RESOURCE_GROUP_PREFIX }}-${{ vars.INSTANCE_NUMBER }}-${{ inputs.envCode }}"
+        fi
+
+        if [ -z "$RG_NAME" ]; then
+          echo "RESOURCE_GROUP_NAME is not set and could not be derived from RESOURCE_GROUP_PREFIX/INSTANCE_NUMBER/envCode."
+          exit 1
+        fi
+
+        echo "resourceGroupName=$RG_NAME" >> "$GITHUB_OUTPUT"
+        echo "Resource Group: $RG_NAME"
+
+    - name: Get Container App details
+      id: get-containerapp
+      shell: bash
+      run: |
+        CONTAINER_APP_NAME=$(az containerapp list --resource-group "${{ steps.resolve-rg.outputs.resourceGroupName }}" --query "[?contains(name, '${{ env.generatedAppEnvName }}')].name" -o tsv)
+
+        if [ -z "$CONTAINER_APP_NAME" ]; then
+          echo "No Container App found containing name '${{ env.generatedAppEnvName }}' in resource group '${{ steps.resolve-rg.outputs.resourceGroupName }}'."
+          exit 1
+        fi
+
+        echo "containerAppName=$CONTAINER_APP_NAME" >> $GITHUB_OUTPUT
+        echo "Container App Name: $CONTAINER_APP_NAME"
+
+    - name: Deploy to Azure Container Apps
+      shell: bash
+      run: |
+        echo "Deploying image: ${{ inputs.containerImage }}"
+        echo "To Container App: ${{ steps.get-containerapp.outputs.containerAppName }}"
+        echo "In Resource Group: ${{ steps.resolve-rg.outputs.resourceGroupName }}"
+        az containerapp update \
+          --name ${{ steps.get-containerapp.outputs.containerAppName }} \
+          --resource-group ${{ steps.resolve-rg.outputs.resourceGroupName }} \
+          --image ${{ inputs.containerImage }}
+
+    - name: Get Container App URL
+      shell: bash
+      run: |
+        FQDN=$(az containerapp show \
+          --name ${{ steps.get-containerapp.outputs.containerAppName }} \
+          --resource-group ${{ steps.resolve-rg.outputs.resourceGroupName }} \
+          --query properties.configuration.ingress.fqdn -o tsv)
+        echo "Container App URL: https://$FQDN"
+        echo "✅ Deployment successful!"
+
+    - name: Logout and cleanup
+      if: always()
+      shell: bash
+      run: |
+        az logout
+        az cache purge
+        az account clear

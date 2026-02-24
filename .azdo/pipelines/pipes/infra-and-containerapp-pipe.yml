@@ -1,0 +1,96 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Pipeline Template to build and deploy Azure Resources and Container App
+# ------------------------------------------------------------------------------------------------------------------------
+parameters:
+- name: environments
+  type: object
+  default: ['DEV']
+- name: deployBicep
+  default: false
+- name: parseBicepOutputs
+  default: false
+- name: runGHASScan
+  type: boolean
+  default: false
+- name: runMSDevSecOpsScan
+  type: boolean
+  default: false
+- name: runSmokeTest
+  type: boolean
+  default: false
+- name: dockerfilePath
+  default: 'src/web/Dockerfile'
+- name: dockerContext
+  default: 'src/web'
+- name: imageName
+  default: 'dadabase-web'
+
+# ----------------------------------------------------------------------------------------------------
+stages:
+- ${{ if or(eq(parameters.runMSDevSecOpsScan, true), eq(parameters.runGHASScan, true)) }}:
+  - stage: ScanApplication
+    displayName: Scan Application
+    jobs:
+    - template: templates/scan-code-template.yml
+      parameters:
+        environmentName: 'DEV'
+        runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
+        runGHASScan: ${{ parameters.runGHASScan }}
+
+# ----------------------------------------------------------------------------------------------------
+- ${{ each environmentName in parameters.environments }} :
+  - stage: CreateInfrastructure${{ environmentName }}
+    displayName: ${{ environmentName }} Container Infrastructure
+    ${{ if and(eq(length(parameters.environments), 3), eq(environmentName, 'QA'), eq(parameters.runSmokeTest, true)) }}:
+      dependsOn: BasicTestDEVContainerApp
+    ${{ if and(eq(length(parameters.environments), 3), eq(environmentName, 'QA'), ne(parameters.runSmokeTest, true)) }}:
+      dependsOn: DeployDEVContainerApp
+    ${{ if and(eq(length(parameters.environments), 3), eq(environmentName, 'PROD'), eq(parameters.runSmokeTest, true)) }}:
+      dependsOn: BasicTestQAContainerApp
+    ${{ if and(eq(length(parameters.environments), 3), eq(environmentName, 'PROD'), ne(parameters.runSmokeTest, true)) }}:
+      dependsOn: DeployQAContainerApp
+    condition: eq(${{ parameters.deployBicep }}, true)
+    jobs:
+    - template: templates/create-infra-template.yml
+      parameters:
+        environmentName: ${{ environmentName }}
+        parseBicepOutputs: ${{ parameters.parseBicepOutputs }}
+        parameterFileName: 'main.azdo.containerapp.bicepparam'
+
+  - stage: BuildAndPush${{ environmentName }}Container
+    displayName: Build & Push ${{ environmentName }} Container
+    dependsOn: CreateInfrastructure${{ environmentName }}
+    condition: or(and(succeeded('CreateInfrastructure${{ environmentName }}'), eq(${{ parameters.deployBicep }}, true)), eq(${{ parameters.deployBicep }}, false))
+    jobs:
+    - template: templates/build-container-template.yml
+      parameters:
+        environmentName: ${{ environmentName }}
+        dockerfilePath: ${{ parameters.dockerfilePath }}
+        dockerContext: ${{ parameters.dockerContext }}
+        imageName: ${{ parameters.imageName }}
+
+  - stage: Deploy${{ environmentName }}ContainerApp
+    displayName: Deploy ${{ environmentName }} Container App
+    dependsOn: BuildAndPush${{ environmentName }}Container
+    condition: succeeded('BuildAndPush${{ environmentName }}Container')
+    jobs:
+    - template: templates/deploy-containerapp-template.yml
+      parameters:
+        environmentName: ${{ environmentName }}
+        buildStageName: BuildAndPush${{ environmentName }}Container
+        buildJobName: 'Build${{ environmentName }}Container'
+
+  - ${{ if eq(parameters.runSmokeTest, true) }}:
+    - stage: BasicTest${{ environmentName }}ContainerApp
+      displayName: Basic Test ${{ environmentName }} Container App
+      dependsOn: Deploy${{ environmentName }}ContainerApp
+      condition: succeeded('Deploy${{ environmentName }}ContainerApp')
+      variables:
+        - template: ../vars/var-common.yml
+      jobs:
+      - template: templates/playwright-template.yml
+        parameters:
+          environment: ${{ environmentName }}
+          testType: ${{ variables.playwrightBasicTestType }}
+          testPath: ${{ variables.playwrightBasicTestPath }}
+          debug: true

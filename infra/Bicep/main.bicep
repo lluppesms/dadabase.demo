@@ -11,6 +11,20 @@ param environmentCode string = 'azd'
 param location string = resourceGroup().location
 param instanceNumber string = '1'
 
+@description('Deployment type for the web application')
+@allowed(['appservice', 'containerapp'])
+param deploymentType string = 'appservice'
+
+@description('Container image to deploy (required for containerapp deployment type)')
+param containerImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+
+@description('Container Registry SKU (Basic, Standard, Premium)')
+@allowed(['Basic', 'Standard', 'Premium'])
+param containerRegistrySku string = 'Basic'
+
+@description('Optional Object ID of the Azure DevOps service principal to grant AcrPush on the Container Registry')
+param pipelineServicePrincipalObjectId string = ''
+
 param servicePlanName string = ''
 param servicePlanResourceGroupName string = '' // if using an existing service plan in a different resource group
 
@@ -164,11 +178,20 @@ module appRoleAssignments './modules/iam/roleassignments.bicep' = if (addRoleAss
     keyVaultName:  keyVaultModule.outputs.name
   }
 }
-// also add rights to the web app storage account
-module appRoleAssignments2 './modules/iam/roleassignments.bicep' = if (addRoleAssignments) {
+// also add rights to the web app storage account (App Service only)
+module appRoleAssignments2 './modules/iam/roleassignments.bicep' = if (addRoleAssignments && deploymentType == 'appservice') {
   name: 'appRoleAssignments-webapp-storage${deploymentSuffix}'
   params: {
-    identityPrincipalId: webSiteModule.outputs.systemPrincipalId
+    identityPrincipalId: webSiteModule!.outputs.systemPrincipalId
+    principalType: 'ServicePrincipal'
+    storageAccountName: storageModule.outputs.name
+  }
+}
+// also add rights to the container app storage account (Container Apps only)
+module appRoleAssignments2Container './modules/iam/roleassignments.bicep' = if (addRoleAssignments && deploymentType == 'containerapp') {
+  name: 'appRoleAssignments-containerapp-storage${deploymentSuffix}'
+  params: {
+    identityPrincipalId: containerAppModule!.outputs.systemPrincipalId
     principalType: 'ServicePrincipal'
     storageAccountName: storageModule.outputs.name
   }
@@ -201,12 +224,15 @@ module keyVaultModule './modules/security/keyvault.bicep' = {
     commonTags: commonTags
     keyVaultOwnerUserId: adminUserId
     adminUserObjectIds: [ identity.outputs.managedIdentityPrincipalId ]
-    applicationUserObjectIds: [ webSiteModule.outputs.userManagedPrincipalId, webSiteModule.outputs.systemPrincipalId ]
+    applicationUserObjectIds: deploymentType == 'appservice' 
+      ? [ webSiteModule!.outputs.userManagedPrincipalId, webSiteModule!.outputs.systemPrincipalId ]
+      : [ containerAppModule!.outputs.userManagedPrincipalId, containerAppModule!.outputs.systemPrincipalId ]
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
     publicNetworkAccess: 'Enabled'
     allowNetworkAccess: 'Allow'
     useRBAC: true
   }
+  dependsOn: deploymentType == 'appservice' ? [ webSiteModule ] : [ containerAppModule ]
 }
 
 module keyVaultStorageSecret './modules/security/keyvaultsecretstorageconnection.bicep' = {
@@ -219,7 +245,80 @@ module keyVaultStorageSecret './modules/security/keyvaultsecretstorageconnection
 }
 
 // --------------------------------------------------------------------------------
-module appServicePlanModule './modules/webapp/websiteserviceplan.bicep' = {
+// Container Infrastructure (deployed when deploymentType == 'containerapp')
+// --------------------------------------------------------------------------------
+module containerRegistryModule './modules/container/containerregistry.bicep' = if (deploymentType == 'containerapp') {
+  name: 'containerRegistry${deploymentSuffix}'
+  params: {
+    containerRegistryName: resourceNames.outputs.containerRegistryName
+    location: location
+    commonTags: commonTags
+    sku: containerRegistrySku
+    adminUserEnabled: true
+    workspaceId: logAnalyticsWorkspaceModule.outputs.id
+    managedIdentityPrincipalId: identity.outputs.managedIdentityPrincipalId
+    pipelineServicePrincipalObjectId: pipelineServicePrincipalObjectId
+  }
+}
+
+module containerAppsEnvironmentModule './modules/container/containerappenvironment.bicep' = if (deploymentType == 'containerapp') {
+  name: 'containerAppsEnv${deploymentSuffix}'
+  params: {
+    environmentName: resourceNames.outputs.containerAppsEnvironmentName
+    location: location
+    commonTags: commonTags
+    workspaceId: logAnalyticsWorkspaceModule.outputs.id
+  }
+}
+
+module containerAppModule './modules/container/containerapp.bicep' = if (deploymentType == 'containerapp') {
+  name: 'containerApp${deploymentSuffix}'
+  params: {
+    containerAppName: resourceNames.outputs.containerAppName
+    location: location
+    environmentCode: environmentCode
+    commonTags: commonTags
+    containerAppsEnvironmentId: containerAppsEnvironmentModule!.outputs.id
+    containerImage: containerImage
+    containerRegistryServer: containerRegistryModule!.outputs.loginServer
+    managedIdentityId: identity.outputs.managedIdentityId
+    workspaceId: logAnalyticsWorkspaceModule.outputs.id
+    minReplicas: 1
+    maxReplicas: 3
+    cpu: '0.5'
+    memory: '1Gi'
+    // In Container Apps, environment variables use standard naming (no double underscores needed)
+    customAppSettings: {
+      AppSettings__DefaultConnection: sqlDbModule.outputs.identityConnectionString
+      AppSettings__ProjectEntities: sqlDbModule.outputs.identityConnectionString
+      AppSettings__EnvironmentName: environmentCode
+      AppSettings__EnableSwagger: appSwaggerEnabled
+      AppSettings__DataSource: appDataSource
+      AppSettings__ApiKey: webApiKey
+      AppSettings__AdminUserList: adminUserList
+      AppSettings__AzureOpenAI__Chat__Endpoint: azureOpenAIChatEndpoint
+      AppSettings__AzureOpenAI__Chat__DeploymentName: azureOpenAIChatDeploymentName
+      AppSettings__AzureOpenAI__Chat__ApiKey: azureOpenAIChatApiKey
+      AppSettings__AzureOpenAI__Chat__MaxTokens: azureOpenAIChatMaxTokens
+      AppSettings__AzureOpenAI__Chat__Temperature: azureOpenAIChatTemperature
+      AppSettings__AzureOpenAI__Chat__TopP: azureOpenAIChatTopP
+      AppSettings__AzureOpenAI__Image__Endpoint: azureOpenAIImageEndpoint
+      AppSettings__AzureOpenAI__Image__DeploymentName: azureOpenAIImageDeploymentName
+      AppSettings__AzureOpenAI__Image__ApiKey: azureOpenAIImageApiKey
+      AppSettings__BlobStorageAccountName: storageModule.outputs.name
+      AzureAD__Instance: adInstance
+      AzureAD__Domain: adDomain
+      AzureAD__TenantId: adTenantId
+      AzureAD__ClientId: adClientId
+      AzureAD__CallbackPath: adCallbackPath
+    }
+  }
+}
+
+// --------------------------------------------------------------------------------
+// App Service Infrastructure (deployed when deploymentType == 'appservice')
+// --------------------------------------------------------------------------------
+module appServicePlanModule './modules/webapp/websiteserviceplan.bicep' = if (deploymentType == 'appservice') {
   name: 'appService${deploymentSuffix}'
   params: {
     location: location
@@ -233,7 +332,7 @@ module appServicePlanModule './modules/webapp/websiteserviceplan.bicep' = {
   }
 }
 
-module webSiteModule './modules/webapp/website.bicep' = {
+module webSiteModule './modules/webapp/website.bicep' = if (deploymentType == 'appservice') {
   name: 'webSite${deploymentSuffix}'
   params: {
     webSiteName: resourceNames.outputs.webSiteName
@@ -245,8 +344,8 @@ module webSiteModule './modules/webapp/website.bicep' = {
     managedIdentityId: identity.outputs.managedIdentityId
     managedIdentityPrincipalId: identity.outputs.managedIdentityPrincipalId
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
-    appServicePlanName: appServicePlanModule.outputs.name
-    appServicePlanResourceGroupName: appServicePlanModule.outputs.resourceGroupName
+    appServicePlanName: appServicePlanModule!.outputs.name
+    appServicePlanResourceGroupName: appServicePlanModule!.outputs.resourceGroupName
     // In a Linux app service, any nested JSON app key like AppSettings:MyKey needs to be 
     // configured in App Service as AppSettings__MyKey for the key name. 
     // In other words, any : should be replaced by __ (double underscore).
@@ -328,6 +427,10 @@ module webSiteModule './modules/webapp/website.bicep' = {
 // --------------------------------------------------------------------------------
 output SUBSCRIPTION_ID string = subscription().subscriptionId
 output RESOURCE_GROUP_NAME string = resourceGroupName
-output WEB_HOST_NAME string = webSiteModule.outputs.hostName
+output DEPLOYMENT_TYPE string = deploymentType
+output WEB_HOST_NAME string = deploymentType == 'appservice' ? webSiteModule!.outputs.hostName : containerAppModule!.outputs.fqdn
+output WEB_URL string = deploymentType == 'appservice' ? 'https://${webSiteModule!.outputs.hostName}' : containerAppModule!.outputs.url
+output CONTAINER_REGISTRY_NAME string = deploymentType == 'containerapp' ? containerRegistryModule!.outputs.name : ''
+output CONTAINER_REGISTRY_LOGIN_SERVER string = deploymentType == 'containerapp' ? containerRegistryModule!.outputs.loginServer : ''
 //output FUNCTION_HOST_NAME string = functionModule.outputs.hostname
 
