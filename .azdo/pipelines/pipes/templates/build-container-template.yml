@@ -1,0 +1,136 @@
+# ----------------------------------------------------------------------------------------------------
+# Template to build Docker container and push to Azure Container Registry
+# ----------------------------------------------------------------------------------------------------
+parameters: 
+- name: environmentName
+  default:  'DEV'
+- name: dockerfilePath
+  default: 'src/web/Dockerfile'
+- name: dockerContext
+  default: 'src/web'
+- name: imageName
+  default: 'dadabase-web'
+- name: imageTag
+  default: 'latest'
+
+# ------------------------------------------------------------------------------------------------------------------------
+jobs:
+- deployment: InitializeBuild${{ parameters.environmentName }}Container
+  displayName: Initialize ${{ parameters.environmentName }} Build Container
+  environment: ${{ parameters.environmentName }}
+
+- job: Build${{ parameters.environmentName }}Container
+  displayName: Build ${{ parameters.environmentName }} Container
+  
+  variables:
+    - name: environmentName
+      value: ${{ parameters.environmentName }}
+    - name: environmentNameLower
+      value: ${{ lower(parameters.environmentName) }}
+    - name: fullAppName
+      value: '$(APP_NAME)$(INSTANCE_NUMBER)-$(environmentNameLower)'
+    - template: ../../vars/var-common.yml
+    - template: ../../vars/var-service-connections.yml
+    
+    - name: dockerfilePath
+      value: ${{ parameters.dockerfilePath }}
+    - name: dockerContext
+      value: ${{ parameters.dockerContext }}
+    - name: imageName
+      value: ${{ parameters.imageName }}
+    - name: imageTag
+      value: ${{ parameters.imageTag }}
+
+  steps:
+  - task: Bash@3
+    displayName: 'Display Variables'
+    inputs:
+      targetType: 'inline'
+      script: |
+        echo "----------------------------------------"
+        echo "##[group]Display All Environment Variables:"
+        printenv | sort
+        echo "##[endgroup]"
+        
+        echo "environmentName=$(environmentName)"
+        echo "environmentNameLower=$(environmentNameLower)"
+        echo "fullAppName=$(fullAppName)"
+        echo "dockerfilePath=$(dockerfilePath)"
+        echo "dockerContext=$(dockerContext)"
+        echo "imageName=$(imageName)"
+        echo "imageTag=$(imageTag)"
+    continueOnError: true
+
+  - task: CmdLine@2
+    displayName: 'Display Files'
+    inputs:
+      script: |
+        echo "Directory of Docker Context:"
+        tree -L 3 $(System.DefaultWorkingDirectory)/$(dockerContext)
+    continueOnError: true
+
+  - task: AzureCLI@2
+    displayName: 'Get ACR Information'
+    inputs:
+      azureSubscription: $(ADO_SERVICE_CONNECTION_NAME)
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        # Get resource group name
+        RESOURCE_GROUP_NAME=$(RESOURCE_GROUP_PREFIX)-$(INSTANCE_NUMBER)-$(environmentNameLower)
+        echo "Resource Group: $RESOURCE_GROUP_NAME"
+        
+        # Get ACR name and login server
+        ACR_NAME=$(az acr list --resource-group $RESOURCE_GROUP_NAME --query "[0].name" -o tsv)
+        ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --query "loginServer" -o tsv)
+        
+        echo "##vso[task.setvariable variable=acrName]$ACR_NAME"
+        echo "##vso[task.setvariable variable=acrLoginServer]$ACR_LOGIN_SERVER"
+        
+        echo "ACR Name: $ACR_NAME"
+        echo "ACR Login Server: $ACR_LOGIN_SERVER"
+
+  - task: PowerShell@2
+    displayName: 'Generate Image Tag'
+    inputs:
+      targetType: 'inline'
+      script: |
+        $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+        $shortSha = "$(Build.SourceVersion)".Substring(0, 7)
+        $generatedTag = "${{ parameters.imageTag }}-$timestamp-$shortSha"
+        
+        Write-Host "##vso[task.setvariable variable=generatedTag]$generatedTag"
+        Write-Host "Generated tag: $generatedTag"
+
+  - task: Docker@2
+    displayName: 'Build Docker Image'
+    inputs:
+      containerRegistry: '$(ADO_SERVICE_CONNECTION_NAME)'
+      repository: '$(imageName)'
+      command: 'build'
+      Dockerfile: '$(dockerfilePath)'
+      buildContext: '$(dockerContext)'
+      tags: |
+        $(generatedTag)
+        latest
+      arguments: '--build-arg BUILD_CONFIGURATION=Release'
+
+  - task: Docker@2
+    displayName: 'Push Docker Image to ACR'
+    inputs:
+      containerRegistry: '$(ADO_SERVICE_CONNECTION_NAME)'
+      repository: '$(imageName)'
+      command: 'push'
+      tags: |
+        $(generatedTag)
+        latest
+
+  - task: Bash@3
+    displayName: 'Set Output Variables'
+    inputs:
+      targetType: 'inline'
+      script: |
+        FULL_IMAGE_NAME="$(acrLoginServer)/$(imageName):$(generatedTag)"
+        echo "##vso[task.setvariable variable=fullImageName;isOutput=true]$FULL_IMAGE_NAME"
+        echo "Full image name: $FULL_IMAGE_NAME"
+    name: containerOutput

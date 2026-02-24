@@ -1,68 +1,71 @@
-#See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
-# Build in context of the src/Database.Web folder:
-#   docker build -t dbw -f Dockerfile . -t yymmddXX
-# Run the app
-#   docker run --rm -it -p 8000:8080 dbw yymmddXX
-# Browse or curl to http://localhost:8000
+# DadABase Web Application - Production Dockerfile
+# Build context: src/web
+# Build command: docker build -t dadabase-web:latest -f Dockerfile .
+# Run command: docker run --rm -p 8000:8080 -p 8001:8081 dadabase-web:latest
+# Browse to: http://localhost:8000
 
+# ============================================
+# Stage 1: Base runtime image
+# ============================================
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
-USER root
-RUN openssl s_client -showcerts -connect google.com:443 </dev/null | sed -n -e '/-.BEGIN/,/-.END/ p' > /usr/local/share/ca-certificates/ZscalerRootCertificate-2048-SHA256.crt && \
-    update-ca-certificates
 
-RUN apt-get update -y; apt-get install -y curl; curl -sL https://aka.ms/InstallAzureCLIDeb | bash
-LABEL hasazcli=true
+# Install required dependencies for Azure Identity MSAL runtime
+RUN apt-get update && apt-get install -y \
+    libdbus-1-3 \
+    libx11-6 \
+    libglib2.0-0 \
+    libgssapi-krb5-2 \
+    && rm -rf /var/lib/apt/lists/*
 
-# this fails because APK is not found here...?
-# ENV DOTNET_CLI_TELEMETRY_OPTOUT=true \
-#     AZ_INSTALLER=DOCKER
-# RUN apk add --no-cache py3-pip && \
-#     apk add --no-cache --virtual=build gcc musl-dev python3-dev libffi-dev openssl-dev cargo make && \
-#     pip install --no-cache-dir --break-system-packages azure-cli && \
-#     apk del --purge build
-# 1. Added Azure CLI installation following Microsoft's official installation instructions for Debian-based containers
-# 2. Added required dependencies: ca-certificates, curl, apt-transport-https, lsb-release, gnupg
-# 3. Added libdbus-1-3 for the Azure Identity MSAL runtime
-# 4. Cleaned up apt cache with rm -rf /var/lib/apt/lists/* to keep the image size smaller
-# RUN apt-get update && apt-get install -y \
-#     ca-certificates \
-#     curl \
-#     apt-transport-https \
-#     lsb-release \
-#     gnupg \
-#     libdbus-1-3 \
-#     libx11-6 \
-#     libglib2.0-0 \
-#     libgssapi-krb5-2 \
-#     && mkdir -p /etc/apt/keyrings \
-#     && curl -sLS https://packages.microsoft.com/keys/microsoft.asc | \
-#        gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg \
-#     && chmod go+r /etc/apt/keyrings/microsoft.gpg \
-#     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" | \
-#        tee /etc/apt/sources.list.d/azure-cli.list \
-#     && apt-get update \
-#     && apt-get install -y azure-cli \
-#     && rm -rf /var/lib/apt/lists/*
-USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
-EXPOSE 8081
 
+# ============================================
+# Stage 2: Build image
+# ============================================
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
-WORKDIR /src/web
-COPY ["Tests/", "Tests/"]
-COPY ["Website/", "Website/"]
-WORKDIR /src/web/Website
-RUN dotnet restore "DadABase.Web.csproj"
-RUN dotnet build "DadABase.Web.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
+WORKDIR /src
+
+# Copy project files for restore (in order of dependencies)
+COPY ["Data/DadABase.Data.csproj", "Data/"]
+COPY ["Website/DadABase.Web.csproj", "Website/"]
+
+# Restore dependencies
+RUN dotnet restore "Website/DadABase.Web.csproj"
+
+# Copy all source files
+COPY ["Data/", "Data/"]
+COPY ["Website/", "Website/"]
+
+# Build the application
+WORKDIR /src/Website
+RUN dotnet build "DadABase.Web.csproj" -c $BUILD_CONFIGURATION -o /app/build --no-restore
+
+# ============================================
+# Stage 3: Publish image
+# ============================================
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-WORKDIR /src/web/Website
-RUN dotnet publish "./DadABase.Web.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
+RUN dotnet publish "DadABase.Web.csproj" \
+    -c $BUILD_CONFIGURATION \
+    -o /app/publish \
+    /p:UseAppHost=false
+
+# ============================================
+# Stage 4: Final runtime image
+# ============================================
 FROM base AS final
+
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+# Set environment variables
+# Note: HTTPS is disabled in container. Use a reverse proxy (nginx, Azure App Service, etc.) for HTTPS termination.
+ENV ASPNETCORE_URLS=http://+:8080
+ENV DOTNET_RUNNING_IN_CONTAINER=true
+ENV ASPNETCORE_HTTP_PORTS=8080
+
 ENTRYPOINT ["dotnet", "DadABase.Web.dll"]

@@ -38,6 +38,11 @@ output sqlServerName string              = toLower('${sanitizedAppNameInstance}$
 
 output userAssignedIdentityName string   = toLower('${sanitizedAppNameInstance}-app-${resourceAbbreviations.managedIdentity}')
 
+// Container resources
+output containerRegistryName string      = toLower(take('${sanitizedAppNameInstance}${resourceAbbreviations.containerRegistry}${sanitizedEnvironment}', 50))
+output containerAppName string           = webSiteName
+output containerAppsEnvironmentName string = toLower('${sanitizedAppInstanceNameWithDashes}-${resourceAbbreviations.containerAppEnvironment}-${sanitizedEnvironment}')
+
 // Key Vaults and Storage Accounts can only be 24 characters long
 output keyVaultName string               = take('${sanitizedAppNameInstance}${resourceAbbreviations.keyVaultAbbreviation}${sanitizedEnvironment}', 24)
 output storageAccountName string         = take('${sanitizedAppNameInstance}${resourceAbbreviations.storageAccountSuffix}${sanitizedEnvironment}', 24)

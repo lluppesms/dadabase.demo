@@ -1,10 +1,10 @@
 # ------------------------------------------------------------------------------------------------------------------------
-# GHA Workflow to deploy Azure Resources and WebApp
+# GHA Workflow to deploy Azure Resources and Container App
 # ------------------------------------------------------------------------------------------------------------------------
-# FYI: You need to set up some secrets before running this workflows - see CreateGitHubSecrets.md for details.
+# This workflow deploys infrastructure with Container Apps and builds/deploys the containerized web application
 # ------------------------------------------------------------------------------------------------------------------------
-name: 3.bicep.build.deploy.webapp
-run-name: '3 - Deploy Bicep/Build & Deploy Web App: ${{ inputs.bicepDeploymentMode }} using ENV ${{ inputs.deployEnvironment }} ${{vars.INSTANCE_NUMBER}} by @${{ github.actor }}'
+name: 3.1.bicep.build.deploy.containerapp
+run-name: '3.1 - Deploy Bicep/Build & Deploy Container App: ${{ inputs.bicepDeploymentMode }} using ENV ${{ inputs.deployEnvironment }} ${{vars.INSTANCE_NUMBER}} by @${{ github.actor }}'
 
 on: 
   workflow_dispatch:
@@ -29,11 +29,11 @@ on:
           - create
           - whatIf
       runBuild:
-        description: Build Web App
+        description: Build & Push Docker Image
         default: true
         type: boolean
       runDeploy:
-        description: Deploy Web App
+        description: Deploy Container App
         default: true
         type: boolean
       runSecurityScan:
@@ -99,42 +99,39 @@ jobs:
       requestorName: ${{ github.actor }}
       createResourceGroup: ${{ inputs.createResourceGroup }}
       bicepDeploymentMode: ${{ inputs.bicepDeploymentMode }}
-      additionalParameters: 'deploymentType=appservice'
+      additionalParameters: 'deploymentType=containerapp'
 
-# ------------------------------------------------------------------------------------------------------------------------
-  build-web-app:
-    name: Build WebApp
-    uses: ./.github/workflows/template-webapp-build.yml
-    if: inputs.runBuild || inputs.runDeploy
-    needs: [load-config, create-infra]
+  # ------------------------------------------------------------------------------------------------------------------------
+  build-container:
+    name: Build Docker Image
+    needs: [create-infra]
+    uses: ./.github/workflows/template-container-build.yml
     secrets: inherit
+    if: inputs.runBuild
     with:
       envCode: ${{ inputs.deployEnvironment }}
-      rootDirectory: '${{ needs.load-config.outputs.web_rootDirectory }}'
-      projectName: '${{ needs.load-config.outputs.web_projectName }}'
-      testDirectory: '${{ needs.load-config.outputs.web_testDirectory }}'
-      testProjectName: '${{ needs.load-config.outputs.web_testProjectName }}'
-      testApplication: true
-      listFilesAfterBuild: true
+      dockerfilePath: 'src/web/Dockerfile'
+      dockerContext: 'src/web'
+      imageName: 'dadabase-web'
+      imageTag: 'latest'
 
-# ------------------------------------------------------------------------------------------------------------------------
-  deploy-web-app:
-    name: Deploy WebApp ${{ inputs.deployEnvironment }}
-    uses: ./.github/workflows/template-webapp-deploy.yml
+  # ------------------------------------------------------------------------------------------------------------------------
+  deploy-containerapp:
+    name: Deploy Container App
+    needs: [build-container]
+    uses: ./.github/workflows/template-containerapp-deploy.yml
+    secrets: inherit
     if: inputs.runDeploy
-    needs: build-web-app
-    secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}
+      containerImage: ${{ needs.build-container.outputs.imageFullName }}
 
-# ------------------------------------------------------------------------------------------------------------------------
-  run-smoke-test:
-    name: Smoke Test ${{ inputs.deployEnvironment }}
+  # ------------------------------------------------------------------------------------------------------------------------
+  smoke-test:
+    name: Smoke Test
+    needs: [deploy-containerapp]
     uses: ./.github/workflows/template-smoke-test.yml
-    if: inputs.runSmokeTest
-    needs: deploy-web-app
     secrets: inherit
+    if: inputs.runSmokeTest
     with:
       envCode: ${{ inputs.deployEnvironment }}
-      testPath: 'playwright/ui-tests'
-      testType: 'ui'

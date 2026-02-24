@@ -1,0 +1,127 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# GHA Reusable Called Workflow to build and push Docker image to Azure Container Registry
+# ------------------------------------------------------------------------------------------------------------------------
+name: z_template_container_build
+run-name: Build Docker Image
+
+on:
+  workflow_call:
+    inputs:
+      envCode:
+        required: true
+        type: string
+      dockerfilePath:
+        required: false
+        type: string
+        default: 'src/web/Dockerfile'
+      dockerContext:
+        required: false
+        type: string
+        default: 'src/web'
+      imageName:
+        required: false
+        type: string
+        default: 'dadabase-web'
+      imageTag:
+        required: false
+        type: string
+        default: 'latest'
+      listFilesBeforeBuild:
+        required: false
+        type: boolean
+        default: false
+    outputs:
+      imageFullName:
+        description: "Full image name with tag"
+        value: ${{ jobs.build.outputs.imageFullName }}
+
+# ------------------------------------------------------------------------------------------------------------------------
+jobs:
+  build:
+    name: Build & Push
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.envCode }}
+    
+    outputs:
+      imageFullName: ${{ steps.build-push.outputs.imageFullName }}
+
+    env:
+      generatedAppEnvName: "${{ inputs.envCode == 'prod' && format('{0}', vars.APP_NAME) || format('{0}{1}-{2}', vars.APP_NAME, vars.INSTANCE_NUMBER, inputs.envCode) }}"
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: List Files Before Build
+      if: inputs.listFilesBeforeBuild == true
+      run: tree ${{ github.workspace }}
+      continue-on-error: true
+
+    - name: Login to Azure using OIDC
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: Get ACR login server
+      id: get-acr
+      shell: bash
+      run: |
+        ACR_NAME=$(az acr list --resource-group ${{ vars.RESOURCE_GROUP_NAME }} --query "[0].name" -o tsv)
+        ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --query "loginServer" -o tsv)
+        echo "acrName=$ACR_NAME" >> $GITHUB_OUTPUT
+        echo "acrLoginServer=$ACR_LOGIN_SERVER" >> $GITHUB_OUTPUT
+        echo "ACR Name: $ACR_NAME"
+        echo "ACR Login Server: $ACR_LOGIN_SERVER"
+
+    - name: Login to Azure Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ steps.get-acr.outputs.acrLoginServer }}
+        username: ${{ secrets.AZURE_CLIENT_ID }}
+        password: ${{ secrets.AZURE_CLIENT_SECRET }}
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Generate image tag
+      id: tag
+      shell: bash
+      run: |
+        TIMESTAMP=$(date +'%Y%m%d-%H%M%S')
+        SHORT_SHA=${GITHUB_SHA::7}
+        TAG="${{ inputs.imageTag }}-${TIMESTAMP}-${SHORT_SHA}"
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
+        echo "Generated tag: $TAG"
+
+    - name: Build and push Docker image
+      id: build-push
+      uses: docker/build-push-action@v6
+      with:
+        context: ${{ inputs.dockerContext }}
+        file: ${{ inputs.dockerfilePath }}
+        push: true
+        tags: |
+          ${{ steps.get-acr.outputs.acrLoginServer }}/${{ inputs.imageName }}:${{ steps.tag.outputs.tag }}
+          ${{ steps.get-acr.outputs.acrLoginServer }}/${{ inputs.imageName }}:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          BUILD_CONFIGURATION=Release
+
+    - name: Set output
+      shell: bash
+      run: |
+        FULL_IMAGE="${{ steps.get-acr.outputs.acrLoginServer }}/${{ inputs.imageName }}:${{ steps.tag.outputs.tag }}"
+        echo "imageFullName=$FULL_IMAGE" >> $GITHUB_OUTPUT
+        echo "Full image name: $FULL_IMAGE"
+
+    - name: Logout and cleanup
+      if: always()
+      shell: bash
+      run: |
+        az logout
+        az cache purge
+        az account clear
