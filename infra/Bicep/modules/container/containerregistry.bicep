@@ -18,6 +18,9 @@ param workspaceId string = ''
 @description('Managed identity for pull/push access')
 param managedIdentityPrincipalId string = ''
 
+@description('Optional Object ID of pipeline service principal to grant AcrPush')
+param pipelineServicePrincipalObjectId string = ''
+
 // --------------------------------------------------------------------------------
 var templateTag = { TemplateFile: '~containerregistry.bicep' }
 var tags = union(commonTags, templateTag)
@@ -70,6 +73,17 @@ resource acrPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d') // AcrPull
     principalId: managedIdentityPrincipalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Assign AcrPush role to pipeline service principal (optional)
+resource acrPushRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(pipelineServicePrincipalObjectId)) {
+  name: guid(containerRegistry.id, pipelineServicePrincipalObjectId, 'AcrPush')
+  scope: containerRegistry
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '8311e382-0749-4cb8-b61a-304f252e45ec') // AcrPush
+    principalId: pipelineServicePrincipalObjectId
     principalType: 'ServicePrincipal'
   }
 }

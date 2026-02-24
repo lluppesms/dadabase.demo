@@ -6,6 +6,8 @@ parameters:
   default:  'DEV'
 - name: containerImage
   default: ''
+- name: buildStageName
+  default: ''
 - name: buildJobName
   default: ''
 
@@ -17,9 +19,6 @@ jobs:
 
 - job: Deploy${{ parameters.environmentName }}ContainerApp
   displayName: Deploy ${{ parameters.environmentName }} Container App
-  
-  ${{ if ne(parameters.buildJobName, '') }}:
-    dependsOn: ${{ parameters.buildJobName }}
   
   variables:
     - name: environmentName
@@ -33,10 +32,10 @@ jobs:
     - template: ../../vars/var-common.yml
     - template: ../../vars/var-service-connections.yml
     
-    ${{ if ne(parameters.buildJobName, '') }}:
+    - ${{ if ne(parameters.buildJobName, '') }}:
       - name: containerImage
-        value: $[ dependencies.${{ parameters.buildJobName }}.outputs['containerOutput.fullImageName'] ]
-    ${{ if eq(parameters.buildJobName, '') }}:
+        value: $[ stageDependencies.${{ parameters.buildStageName }}.${{ parameters.buildJobName }}.outputs['containerOutput.fullImageName'] ]
+    - ${{ if eq(parameters.buildJobName, '') }}:
       - name: containerImage
         value: ${{ parameters.containerImage }}
 
@@ -58,7 +57,7 @@ jobs:
   - task: AzureCLI@2
     displayName: 'Get Container App Name'
     inputs:
-      azureSubscription: $(ADO_SERVICE_CONNECTION_NAME)
+      azureSubscription: $(serviceConnectionName)
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
@@ -78,7 +77,7 @@ jobs:
   - task: AzureCLI@2
     displayName: 'Deploy to Container App'
     inputs:
-      azureSubscription: $(ADO_SERVICE_CONNECTION_NAME)
+      azureSubscription: $(serviceConnectionName)
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
@@ -94,7 +93,7 @@ jobs:
   - task: AzureCLI@2
     displayName: 'Get Container App URL'
     inputs:
-      azureSubscription: $(ADO_SERVICE_CONNECTION_NAME)
+      azureSubscription: $(serviceConnectionName)
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |

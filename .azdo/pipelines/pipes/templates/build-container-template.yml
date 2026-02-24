@@ -72,7 +72,7 @@ jobs:
   - task: AzureCLI@2
     displayName: 'Get ACR Information'
     inputs:
-      azureSubscription: $(ADO_SERVICE_CONNECTION_NAME)
+      azureSubscription: $(serviceConnectionName)
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
@@ -102,28 +102,31 @@ jobs:
         Write-Host "##vso[task.setvariable variable=generatedTag]$generatedTag"
         Write-Host "Generated tag: $generatedTag"
 
-  - task: Docker@2
-    displayName: 'Build Docker Image'
+  - task: AzureCLI@2
+    displayName: 'Build and Push Docker Image to ACR'
     inputs:
-      containerRegistry: '$(ADO_SERVICE_CONNECTION_NAME)'
-      repository: '$(imageName)'
-      command: 'build'
-      Dockerfile: '$(dockerfilePath)'
-      buildContext: '$(dockerContext)'
-      tags: |
-        $(generatedTag)
-        latest
-      arguments: '--build-arg BUILD_CONFIGURATION=Release'
+      azureSubscription: $(serviceConnectionName)
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        set -euo pipefail
 
-  - task: Docker@2
-    displayName: 'Push Docker Image to ACR'
-    inputs:
-      containerRegistry: '$(ADO_SERVICE_CONNECTION_NAME)'
-      repository: '$(imageName)'
-      command: 'push'
-      tags: |
-        $(generatedTag)
-        latest
+        echo "Logging in to ACR: $(acrName)"
+        az acr login --name $(acrName)
+
+        FULL_REPOSITORY_NAME="$(acrLoginServer)/$(imageName)"
+        echo "Building image: $FULL_REPOSITORY_NAME"
+
+        docker build \
+          --build-arg BUILD_CONFIGURATION=Release \
+          -f "$(dockerfilePath)" \
+          -t "$FULL_REPOSITORY_NAME:$(generatedTag)" \
+          -t "$FULL_REPOSITORY_NAME:latest" \
+          "$(dockerContext)"
+
+        echo "Pushing tags $(generatedTag) and latest"
+        docker push "$FULL_REPOSITORY_NAME:$(generatedTag)"
+        docker push "$FULL_REPOSITORY_NAME:latest"
 
   - task: Bash@3
     displayName: 'Set Output Variables'

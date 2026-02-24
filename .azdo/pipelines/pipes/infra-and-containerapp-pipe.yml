@@ -41,8 +41,14 @@ stages:
 - ${{ each environmentName in parameters.environments }} :
   - stage: CreateInfrastructure${{ environmentName }}
     displayName: ${{ environmentName }} Container Infrastructure
-    ${{ if gt(indexOf(parameters.environments, environmentName), 0) }}:
-      dependsOn: BasicTest${{ parameters.environments[sub(indexOf(parameters.environments, environmentName), 1)] }}ContainerApp
+    ${{ if and(eq(length(parameters.environments), 3), eq(environmentName, 'QA'), eq(parameters.runSmokeTest, true)) }}:
+      dependsOn: BasicTestDEVContainerApp
+    ${{ if and(eq(length(parameters.environments), 3), eq(environmentName, 'QA'), ne(parameters.runSmokeTest, true)) }}:
+      dependsOn: DeployDEVContainerApp
+    ${{ if and(eq(length(parameters.environments), 3), eq(environmentName, 'PROD'), eq(parameters.runSmokeTest, true)) }}:
+      dependsOn: BasicTestQAContainerApp
+    ${{ if and(eq(length(parameters.environments), 3), eq(environmentName, 'PROD'), ne(parameters.runSmokeTest, true)) }}:
+      dependsOn: DeployQAContainerApp
     condition: eq(${{ parameters.deployBicep }}, true)
     jobs:
     - template: templates/create-infra-template.yml
@@ -71,6 +77,7 @@ stages:
     - template: templates/deploy-containerapp-template.yml
       parameters:
         environmentName: ${{ environmentName }}
+        buildStageName: BuildAndPush${{ environmentName }}Container
         buildJobName: 'Build${{ environmentName }}Container'
 
   - ${{ if eq(parameters.runSmokeTest, true) }}:

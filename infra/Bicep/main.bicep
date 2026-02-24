@@ -22,6 +22,9 @@ param containerImage string = 'mcr.microsoft.com/azuredocs/containerapps-hellowo
 @allowed(['Basic', 'Standard', 'Premium'])
 param containerRegistrySku string = 'Basic'
 
+@description('Optional Object ID of the Azure DevOps service principal to grant AcrPush on the Container Registry')
+param pipelineServicePrincipalObjectId string = ''
+
 param servicePlanName string = ''
 param servicePlanResourceGroupName string = '' // if using an existing service plan in a different resource group
 
@@ -254,6 +257,7 @@ module containerRegistryModule './modules/container/containerregistry.bicep' = i
     adminUserEnabled: true
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
     managedIdentityPrincipalId: identity.outputs.managedIdentityPrincipalId
+    pipelineServicePrincipalObjectId: pipelineServicePrincipalObjectId
   }
 }
 
