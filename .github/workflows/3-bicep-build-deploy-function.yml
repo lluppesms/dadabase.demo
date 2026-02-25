@@ -114,10 +114,10 @@ jobs:
       testProjectName: '${{ needs.load-config.outputs.function_testProjectName }}'
       testApplication: true
       listFilesAfterBuild: true
-
+      
 # ------------------------------------------------------------------------------------------------------------------------
-  deploy-function:
-    name: Deploy Function App
+  deploy-flex:
+    name: Deploy Function
     uses: ./.github/workflows/template-function-deploy.yml
     if: inputs.runDeploy
     needs: build-function
@@ -126,24 +126,12 @@ jobs:
       envCode: ${{ inputs.deployEnvironment }}
       functionType: 'func'
 
-      
-# ------------------------------------------------------------------------------------------------------------------------
-  deploy-flex:
-    name: Deploy Flex Function
-    uses: ./.github/workflows/template-function-deploy.yml
-    if: inputs.runDeploy
-    needs: build-function
-    secrets: inherit
-    with:
-      envCode: ${{ inputs.deployEnvironment }}
-      functionType: 'flex'
-
 # ------------------------------------------------------------------------------------------------------------------------
   run-smoke-test:
     name: Smoke Test ${{ inputs.deployEnvironment }}
     uses: ./.github/workflows/template-smoke-test.yml
     if: inputs.runSmokeTest
-    needs: deploy-function
+    needs: deploy-flex
     secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}
