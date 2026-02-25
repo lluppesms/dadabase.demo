@@ -58,8 +58,15 @@ jobs:
       run: tree ${{ github.workspace }}
       continue-on-error: true
 
-    - name: Login to Azure using OIDC
-      uses: azure/login@v2
+    # - name: Login to Azure using OIDC
+    #   uses: azure/login@v2
+    #   with:
+    #     client-id: ${{ secrets.AZURE_CLIENT_ID }}
+    #     tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+    #     subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: Azure Login (Reusable Action)
+      uses: ./.github/actions/login-action
       with:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -77,18 +84,12 @@ jobs:
         echo "env.generatedResourceGroupName=${{ env.generatedResourceGroupName }}"
 
         ACR_NAME=$(az acr list --resource-group ${{ env.generatedResourceGroupName }} --query "[0].name" -o tsv)
-        ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --query "loginServer" -o tsv)
         echo "acrName=$ACR_NAME" >> $GITHUB_OUTPUT
-        echo "acrLoginServer=$ACR_LOGIN_SERVER" >> $GITHUB_OUTPUT
         echo "ACR Name: $ACR_NAME"
-        echo "ACR Login Server: $ACR_LOGIN_SERVER"
 
-    - name: Azure Login (Reusable Action)
-      uses: ./.github/actions/login-action
-      with:
-        client-id: ${{ secrets.AZURE_CLIENT_ID }}
-        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --query "loginServer" -o tsv)
+        echo "acrLoginServer=$ACR_LOGIN_SERVER" >> $GITHUB_OUTPUT
+        echo "ACR Login Server: $ACR_LOGIN_SERVER"
 
     # - name: Login to Azure Container Registry
     #   uses: docker/login-action@v3
