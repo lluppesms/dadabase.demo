@@ -127,10 +127,12 @@ jobs:
 
   # ------------------------------------------------------------------------------------------------------------------------
   smoke-test:
-    name: Smoke Test
+    name: Smoke Test ${{ inputs.deployEnvironment }}
     needs: [deploy-containerapp]
     uses: ./.github/workflows/template-smoke-test.yml
     secrets: inherit
     if: inputs.runSmokeTest
     with:
       envCode: ${{ inputs.deployEnvironment }}
+      testPath: 'playwright/ui-tests'
+      testType: 'ui'
