@@ -34,28 +34,51 @@ This document outlines the structured approach to Azure DevOps YAML pipelines us
 ```
 .azdo/
 ├── pipelines/
-│   ├── infra-and-webapp-pipeline.yml        # All-in-one infrastructure and application deployment
-│   ├── infra-only-pipeline.yml              # Infrastructure-only deployment
-│   ├── build-webapp-only-pipeline.yml       # Build and deploy application only
-│   ├── deploy-webapp-only-pipeline.yml      # Deploy previously built application
-│   ├── scan-pipeline.yml                    # Security scanning pipeline
-│   ├── auto-test-pipeline.yml               # Automated testing pipeline
-│   ├── smoke-test-pipeline.yml              # Smoke testing pipeline
+│   ├── 1-deploy-bicep.yml                   # Infrastructure-only deployment
+│   ├── 3.1-bicep-build-deploy-webapp.yml    # App Service infrastructure and application deployment
+│   ├── 3.2-bicep-build-deploy-containerapp.yml # Container Apps infrastructure and container deployment
+│   ├── 4-build-deploy-dacpac.yml            # SQL Database deployment
+│   ├── 5-run-sql.yml                        # SQL script execution
+│   ├── 6-pr-scan-build.yml                  # Pull request scan and build
+│   ├── 7-scan-code.yml                      # Security scanning pipeline
+│   ├── 8-smoke-test-webapp.yml              # Smoke testing pipeline
+│   ├── 9-build-deploy-webapp.yml            # Build and deploy web application
+│   ├── 9-deploy-webapp-only-pipeline.yml    # Deploy previously built application
+│   ├── 10-auto-test-pipeline.yml            # Automated testing pipeline
+│   ├── 10-infra-build-deploy-dacpac.yml     # Infrastructure and database deployment
 │   ├── readme.md                            # Pipeline documentation
 │   │
 │   ├── pipes/                               # Modular pipeline components
-│   │   ├── deploy-only-pipe.yml             # Deploy-only stage template
-│   │   ├── infra-and-webapp-pipe.yml        # Combined infrastructure and app stage template
+│   │   ├── infra-and-webapp-pipe.yml        # App Service infrastructure and app stage template
+│   │   ├── infra-and-containerapp-pipe.yml  # Container Apps infrastructure and container stage template
+│   │   ├── infra-and-function-pipe.yml      # Azure Functions infrastructure and function stage template
+│   │   ├── infra-and-schema-pipe.yml        # Infrastructure and database schema stage template
 │   │   ├── infra-only-pipe.yml              # Infrastructure-only stage template
-│   │   ├── webapp-only-pipe.yml             # Web app-only stage template
+│   │   ├── webapp-build-deploy-pipe.yml     # Web app build and deploy stage template
+│   │   ├── webapp-build-pipe.yml            # Web app build stage template
+│   │   ├── webapp-deploy-pipe.yml           # Web app deploy-only stage template
+│   │   ├── function-only-pipe.yml           # Azure Functions-only stage template
+│   │   ├── schema-only-pipe.yml             # Database schema-only stage template
+│   │   ├── run-sql-pipe.yml                 # SQL script execution stage template
+│   │   ├── scan-code-pipe.yml               # Code scanning stage template
 │   │   │
 │   │   └── templates/                       # Reusable job templates
-│   │       ├── webapp-build.yml             # Web app build job template
 │   │       ├── bicep-deploy-template.yml    # Infrastructure creation job template
+│   │       ├── steps-bicep-deploy-template.yml # Bicep deployment steps
+│   │       ├── webapp-build.yml             # Web app build job template
 │   │       ├── webapp-deploy.yml            # Web app deployment job template
+│   │       ├── containerapp-build.yml       # Container build and push job template
+│   │       ├── containerapp-deploy.yml      # Container app deployment job template
+│   │       ├── function-build.yml           # Azure Functions build job template
+│   │       ├── function-deploy.yml          # Azure Functions deployment job template
+│   │       ├── dacpac-build-template.yml    # Database DacPac build job template
+│   │       ├── dacpac-deploy-template.yml   # Database DacPac deployment job template
+│   │       ├── steps-dacpac-deploy-template.yml # DacPac deployment steps
+│   │       ├── run-sql-template.yml         # SQL script execution job template
+│   │       ├── steps-run-sql-template.yml   # SQL execution steps
+│   │       ├── steps-run-dbcopy-template.yml # Database copy steps
 │   │       ├── playwright-template.yml      # UI testing job template
-│   │       ├── scan-code-template.yml       # Code scanning job template
-│   │       └── steps-bicep-deploy-template.yml # Bicep deployment steps
+│   │       └── scan-code-template.yml       # Code scanning job template
 │   │
 │   └── vars/                                # Variable definitions
 │       ├── var-common.yml                   # Common variables across environments
@@ -67,31 +90,55 @@ This document outlines the structured approach to Azure DevOps YAML pipelines us
 
 ## Pipeline Types
 
-### 1. Infrastructure and Application Pipeline
-- **Purpose**: Complete deployment of both infrastructure and application
-- **Entry Point**: `infra-and-webapp-pipeline.yml`
+### 1. App Service Deployment Pipeline
+- **Purpose**: Complete deployment of infrastructure and web application to Azure App Service
+- **Entry Point**: `3.1-bicep-build-deploy-webapp.yml`
+- **Uses Pipe**: `infra-and-webapp-pipe.yml`
 - **Stages**:
-  - Infrastructure provisioning
+  - Optional: Security scanning
+  - Infrastructure provisioning (App Service mode)
   - Application build
   - Application deployment
-  - Optional: Testing and scanning
+  - Optional: Smoke testing
 
-### 2. Infrastructure-Only Pipeline
+### 2. Container Apps Deployment Pipeline
+- **Purpose**: Complete deployment of infrastructure and containerized application to Azure Container Apps
+- **Entry Point**: `3.2-bicep-build-deploy-containerapp.yml`
+- **Uses Pipe**: `infra-and-containerapp-pipe.yml`
+- **Stages**:
+  - Optional: Security scanning
+  - Infrastructure provisioning (Container Apps mode)
+  - Container image build and push to ACR
+  - Container app deployment
+  - Optional: Smoke testing
+
+### 3. Infrastructure-Only Pipeline
 - **Purpose**: Deploy only the Azure infrastructure
-- **Entry Point**: `infra-only-pipeline.yml`
+- **Entry Point**: `1-deploy-bicep.yml`
+- **Uses Pipe**: `infra-only-pipe.yml`
 - **Stages**:
   - Infrastructure provisioning
 
-### 3. Application-Only Pipeline
-- **Purpose**: Build and deploy only the application
-- **Entry Point**: `build-webapp-only-pipeline.yml` or `deploy-webapp-only-pipeline.yml`
+### 4. Application-Only Pipeline
+- **Purpose**: Build and deploy only the application (no infrastructure changes)
+- **Entry Points**: `9-build-deploy-webapp.yml` or `9-deploy-webapp-only-pipeline.yml`
+- **Uses Pipe**: `webapp-build-deploy-pipe.yml` or `webapp-deploy-pipe.yml`
 - **Stages**:
   - Application build (optional)
   - Application deployment
 
-### 4. Scanning and Testing Pipelines
+### 5. Database Deployment Pipelines
+- **Purpose**: Deploy database schema and data
+- **Entry Points**: `4-build-deploy-dacpac.yml`, `10-infra-build-deploy-dacpac.yml`, `5-run-sql.yml`
+- **Uses Pipes**: `infra-and-schema-pipe.yml`, `schema-only-pipe.yml`, `run-sql-pipe.yml`
+- **Stages**:
+  - Optional: Infrastructure provisioning
+  - DacPac build and deployment or SQL script execution
+
+### 6. Scanning and Testing Pipelines
 - **Purpose**: Security scanning and testing
-- **Entry Points**: `scan-pipeline.yml`, `auto-test-pipeline.yml`, `smoke-test-pipeline.yml`
+- **Entry Points**: `7-scan-code.yml`, `10-auto-test-pipeline.yml`, `8-smoke-test-webapp.yml`
+- **Uses Pipes**: `scan-code-pipe.yml`
 - **Stages**:
   - Code scanning
   - Unit testing

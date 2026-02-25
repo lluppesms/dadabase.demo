@@ -53,7 +53,7 @@ variables:
 # ----------------------------------------------------------------------------------------------------
 stages:
 - ${{ if ne(parameters.deployToEnvironment, 'MULTIPLE') }}:
-  - template: pipes/webapp-only-pipe.yml
+  - template: pipes/webapp-build-deploy-pipe.yml
     parameters:
       environments: ['${{ parameters.deployToEnvironment }}']
       runUnitTests: ${{ parameters.runUnitTests }}
@@ -62,7 +62,7 @@ stages:
       runGHASScan: ${{ parameters.runGHASScan }}
 
 - ${{ if eq(parameters.deployToEnvironment, 'MULTIPLE') }}:
-  - template: pipes/webapp-only-pipe.yml
+  - template: pipes/webapp-build-deploy-pipe.yml
     parameters:
       environments: ['DEV','PROD']
       runUnitTests: ${{ parameters.runUnitTests }}
