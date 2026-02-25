@@ -7,7 +7,7 @@ using './main.bicep'
 param deploymentType = 'containerapp'
 param containerImage = '#{CONTAINER_IMAGE}#'
 param containerRegistrySku = 'Basic'
-// param pipelineServicePrincipalObjectId = '#{PIPELINE_SERVICE_PRINCIPAL_OBJECT_ID}#'
+param pipelineServicePrincipalObjectId = '#{PIPELINE_SERVICE_PRINCIPAL_OBJECT_ID}#'
 
 param appName = '#{APP_NAME}#'
 param environmentCode = '#{ENVCODE}#'
