@@ -38,7 +38,7 @@ stages:
 - stage: BuildWebApp
   displayName: Build WebApp
   jobs:
-  - template: templates/build-webapp-template.yml
+  - template: templates/webapp-build.yml
     parameters:
       environmentName: 'DEV'
       runUnitTests: ${{ parameters.runUnitTests }}
@@ -50,7 +50,7 @@ stages:
     dependsOn: BuildWebApp
     condition: and(succeeded('BuildWebApp'), eq(${{ parameters.deployBicep }}, true))
     jobs:
-    - template: templates/create-infra-template.yml
+    - template: templates/bicep-deploy-template.yml
       parameters:
         environmentName: ${{ environmentName }}
         parseBicepOutputs: ${{ parameters.parseBicepOutputs }}
@@ -60,7 +60,7 @@ stages:
     dependsOn: CreateInfrastructure${{ environmentName }}
     condition: or(and(succeeded('CreateInfrastructure${{ environmentName }}'), eq(${{ parameters.deployBicep }}, true)), eq(${{ parameters.deployBicep }}, false))
     jobs:
-    - template: templates/deploy-webapp-template.yml
+    - template: templates/webapp-deploy.yml
       parameters:
         environmentName: ${{ environmentName }}
 

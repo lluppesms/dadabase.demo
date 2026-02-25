@@ -50,12 +50,12 @@ This document outlines the structured approach to Azure DevOps YAML pipelines us
 │   │   ├── webapp-only-pipe.yml             # Web app-only stage template
 │   │   │
 │   │   └── templates/                       # Reusable job templates
-│   │       ├── build-webapp-template.yml    # Web app build job template
-│   │       ├── create-infra-template.yml    # Infrastructure creation job template
-│   │       ├── deploy-webapp-template.yml   # Web app deployment job template
+│   │       ├── webapp-build.yml             # Web app build job template
+│   │       ├── bicep-deploy-template.yml    # Infrastructure creation job template
+│   │       ├── webapp-deploy.yml            # Web app deployment job template
 │   │       ├── playwright-template.yml      # UI testing job template
 │   │       ├── scan-code-template.yml       # Code scanning job template
-│   │       └── steps-deploy-bicep-template.yml # Bicep deployment steps
+│   │       └── steps-bicep-deploy-template.yml # Bicep deployment steps
 │   │
 │   └── vars/                                # Variable definitions
 │       ├── var-common.yml                   # Common variables across environments

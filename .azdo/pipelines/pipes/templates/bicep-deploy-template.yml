@@ -139,17 +139,17 @@ jobs:
   # they need to be defined and available at YML pre-compile time, so use this technique.
   # this switch allows you to dynamically select a 'hard-coded' service connection
   - ${{ if eq(variables.environmentNameUpper, 'DEV') }}:
-    - template: steps-deploy-bicep-template.yml
+    - template: steps-bicep-deploy-template.yml
       parameters:
         serviceConnectionName: $(serviceConnectionDEV)
         parseBicepOutputs: ${{ parameters.parseBicepOutputs }}
   - ${{ if eq(variables.environmentNameUpper, 'QA') }}:
-    - template: steps-deploy-bicep-template.yml
+    - template: steps-bicep-deploy-template.yml
       parameters:
         serviceConnectionName: $(serviceConnectionQA)
         parseBicepOutputs: ${{ parameters.parseBicepOutputs }}
   - ${{ if eq(variables.environmentNameUpper, 'PROD') }}:
-    - template: steps-deploy-bicep-template.yml
+    - template: steps-bicep-deploy-template.yml
       parameters:
         serviceConnectionName: $(serviceConnectionPROD)
         parseBicepOutputs: ${{ parameters.parseBicepOutputs }}

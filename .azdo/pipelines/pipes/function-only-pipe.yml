@@ -36,7 +36,7 @@ stages:
   displayName: Build Application
   dependsOn: ScanApplication
   jobs:
-  - template: templates/build-function-template.yml
+  - template: templates/function-build.yml
     parameters:
       environmentName: 'DEV'
       runUnitTests: ${{ parameters.runUnitTests }}
@@ -49,7 +49,7 @@ stages:
     condition: or(eq(${{ parameters.singleEnvironment }}, 'true'), and(eq(upper('${{ environmentName }}'), 'DEV'), succeeded('BuildApp')), and(eq(upper('${{ environmentName }}'), 'QA'), succeeded('DeployAppDEV')), and(eq(upper('${{ environmentName }}'), 'PROD'), succeeded('DeployAppQA')))
     displayName: Deploy ${{ environmentName }} Application
     jobs:
-    - template: templates/deploy-function-template.yml
+    - template: templates/function-deploy.yml
       parameters:
         environmentName: ${{ environmentName }}
 

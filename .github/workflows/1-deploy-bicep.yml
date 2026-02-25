@@ -56,7 +56,7 @@ jobs:
 # ------------------------------------------------------------------------------------------------------------------------
   Deploy_Bicep:
     name: Deploy ${{ inputs.deployEnvironment }} Bicep (${{ inputs.bicepDeploymentMode }})
-    uses: ./.github/workflows/template-create-infra.yml
+    uses: ./.github/workflows/template-deploy-bicep.yml
     secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}

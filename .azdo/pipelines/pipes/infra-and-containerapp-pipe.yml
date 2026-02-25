@@ -51,7 +51,7 @@ stages:
       dependsOn: DeployQAContainerApp
     condition: eq(${{ parameters.deployBicep }}, true)
     jobs:
-    - template: templates/create-infra-template.yml
+    - template: templates/bicep-deploy-template.yml
       parameters:
         environmentName: ${{ environmentName }}
         parseBicepOutputs: ${{ parameters.parseBicepOutputs }}
@@ -62,7 +62,7 @@ stages:
     dependsOn: CreateInfrastructure${{ environmentName }}
     condition: or(and(succeeded('CreateInfrastructure${{ environmentName }}'), eq(${{ parameters.deployBicep }}, true)), eq(${{ parameters.deployBicep }}, false))
     jobs:
-    - template: templates/build-container-template.yml
+    - template: templates/containerapp-build.yml
       parameters:
         environmentName: ${{ environmentName }}
         dockerfilePath: ${{ parameters.dockerfilePath }}
@@ -74,7 +74,7 @@ stages:
     dependsOn: BuildAndPush${{ environmentName }}Container
     condition: succeeded('BuildAndPush${{ environmentName }}Container')
     jobs:
-    - template: templates/deploy-containerapp-template.yml
+    - template: templates/containerapp-deploy.yml
       parameters:
         environmentName: ${{ environmentName }}
         buildStageName: BuildAndPush${{ environmentName }}Container

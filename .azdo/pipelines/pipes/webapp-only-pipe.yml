@@ -30,7 +30,7 @@ stages:
 - stage: BuildWebApp
   displayName: Build WebApp
   jobs:
-  - template: templates/build-webapp-template.yml
+  - template: templates/webapp-build.yml
     parameters:
       environmentName: 'DEV'
       runUnitTests: ${{ parameters.runUnitTests }}
@@ -40,7 +40,7 @@ stages:
   - stage: DeployApp${{ environmentName }}
     displayName: Deploy ${{ environmentName }} Application
     jobs:
-    - template: templates/deploy-webapp-template.yml
+    - template: templates/webapp-deploy.yml
       parameters:
         environmentName: ${{ environmentName }}
 

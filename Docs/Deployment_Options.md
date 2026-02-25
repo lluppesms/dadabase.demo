@@ -51,7 +51,7 @@ param deploymentType = 'appservice'
 
 **CI/CD Workflows:**
 - **GitHub Actions:** `.github/workflows/3-bicep-build-deploy-webapp.yml` (Workflow: **3.bicep.build.deploy.webapp**)
-- **Azure DevOps:** `.azdo/pipelines/3-bicep-build-deploy-webapp.yml` (Pipeline: **3-bicep-build-deploy-webapp**)
+- **Azure DevOps:** `.azdo/pipelines/3.1-bicep-build-deploy-webapp.yml` (Pipeline: **3.1-bicep-build-deploy-webapp**)
 
 Both use parameter file `infra/Bicep/main.{gha|azdo}.bicepparam` with `deploymentType='appservice'`.
 
@@ -80,7 +80,7 @@ param containerImage = 'your-registry.azurecr.io/dadabase-web:latest'
 
 **CI/CD Workflows:**
 - **GitHub Actions:** `.github/workflows/3.1-bicep-build-deploy-containerapp.yml` (Workflow: **3.1.bicep.build.deploy.containerapp**)
-- **Azure DevOps:** `.azdo/pipelines/3.1-bicep-build-deploy-containerapp.yml` (Pipeline: **3.1-bicep-build-deploy-containerapp**)
+- **Azure DevOps:** `.azdo/pipelines/3.2-bicep-build-deploy-containerapp.yml` (Pipeline: **3.2-bicep-build-deploy-containerapp**)
 
 Both use parameter file `infra/Bicep/main.{gha|azdo}.containerapp.bicepparam` with `deploymentType='containerapp'`.
 
@@ -155,7 +155,7 @@ Both use parameter file `infra/Bicep/main.{gha|azdo}.containerapp.bicepparam` wi
 #### Via Azure DevOps
 
 1. Go to **Pipelines** in your Azure DevOps project
-2. Select pipeline: **3-bicep-build-deploy-webapp**
+2. Select pipeline: **3.1-bicep-build-deploy-webapp**
 3. Click **Run pipeline**
 4. Configure parameters:
    - Deploy To: `DEV`, `QA`, `PROD`, or `DEV-QA-PROD`
@@ -224,7 +224,7 @@ The workflow will:
 #### Via Azure DevOps
 
 1. Go to **Pipelines** in your Azure DevOps project
-2. Select pipeline: **3.1-bicep-build-deploy-containerapp**
+2. Select pipeline: **3.2-bicep-build-deploy-containerapp**
 3. Click **Run pipeline**
 4. Configure parameters:
    - Deploy To: `DEV`, `QA`, `PROD`, or `DEV-QA-PROD`

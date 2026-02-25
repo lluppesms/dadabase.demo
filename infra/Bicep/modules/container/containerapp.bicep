@@ -17,6 +17,7 @@ param containerRegistryServer string
 
 @description('Managed Identity for pulling images from ACR.')
 param managedIdentityId string
+param managedIdentityPrincipalId string
 
 @description('The workspace for diagnostic logs.')
 param workspaceId string = ''
@@ -147,16 +148,17 @@ resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-pr
   scope: containerApp
   properties: {
     workspaceId: workspaceId
-    logs: [
-      {
-        category: 'ContainerAppConsoleLogs'
-        enabled: true
-      }
-      {
-        category: 'ContainerAppSystemLogs'
-        enabled: true
-      }
-    ]
+    // logs: [
+    //   // it says this is not supported...
+    //   // {
+    //   //   category: 'ContainerAppConsoleLogs'
+    //   //   enabled: true
+    //   // }
+    //   {
+    //     category: 'ContainerAppSystemLogs'
+    //     enabled: true
+    //   }
+    // ]
     metrics: [
       {
         category: 'AllMetrics'
@@ -172,4 +174,4 @@ output name string = containerApp.name
 output fqdn string = containerApp.properties.configuration.ingress.fqdn
 output url string = 'https://${containerApp.properties.configuration.ingress.fqdn}'
 output systemPrincipalId string = containerApp.identity.principalId
-output userManagedPrincipalId string = managedIdentityId
+output userManagedPrincipalId string = managedIdentityPrincipalId

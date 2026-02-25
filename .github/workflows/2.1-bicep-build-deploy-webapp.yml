@@ -3,8 +3,8 @@
 # ------------------------------------------------------------------------------------------------------------------------
 # FYI: You need to set up some secrets before running this workflows - see CreateGitHubSecrets.md for details.
 # ------------------------------------------------------------------------------------------------------------------------
-name: 3.bicep.build.deploy.webapp
-run-name: '3 - Deploy Bicep/Build & Deploy Web App: ${{ inputs.bicepDeploymentMode }} using ENV ${{ inputs.deployEnvironment }} ${{vars.INSTANCE_NUMBER}} by @${{ github.actor }}'
+name: 2.1.bicep.build.deploy.webapp
+run-name: '2.1 - Deploy Bicep/Build & Deploy Web App: ${{ inputs.bicepDeploymentMode }} using ENV ${{ inputs.deployEnvironment }} ${{vars.INSTANCE_NUMBER}} by @${{ github.actor }}'
 
 on: 
   workflow_dispatch:
@@ -87,7 +87,7 @@ jobs:
   # ------------------------------------------------------------------------------------------------------------------------
   create-infra:
     name: Create Infra ${{ inputs.deployEnvironment }}
-    uses: ./.github/workflows/template-create-infra.yml
+    uses: ./.github/workflows/template-deploy-bicep.yml
     secrets: inherit
     with:
       runCreateInfra: ${{ inputs.runCreateInfra }}
