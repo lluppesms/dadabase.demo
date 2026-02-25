@@ -82,12 +82,11 @@ jobs:
         
         # Get ACR name and login server
         ACR_NAME=$(az acr list --resource-group $RESOURCE_GROUP_NAME --query "[0].name" -o tsv)
-        ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --query "loginServer" -o tsv)
-        
         echo "##vso[task.setvariable variable=acrName]$ACR_NAME"
-        echo "##vso[task.setvariable variable=acrLoginServer]$ACR_LOGIN_SERVER"
-        
         echo "ACR Name: $ACR_NAME"
+
+        ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --query "loginServer" -o tsv)
+        echo "##vso[task.setvariable variable=acrLoginServer]$ACR_LOGIN_SERVER"
         echo "ACR Login Server: $ACR_LOGIN_SERVER"
 
   - task: PowerShell@2
