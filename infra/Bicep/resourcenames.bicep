@@ -40,7 +40,7 @@ output userAssignedIdentityName string   = toLower('${sanitizedAppNameInstance}-
 
 // Container resources
 output containerRegistryName string      = toLower(take('${sanitizedAppNameInstance}${resourceAbbreviations.containerRegistry}${sanitizedEnvironment}', 50))
-output containerAppName string           = webSiteName
+output containerAppName string           = environmentCode == 'prod' ? toLower('${sanitizedAppNameWithDashes}${resourceAbbreviations.containerApp}') : toLower('${sanitizedAppInstanceNameWithDashes}-${resourceAbbreviations.containerApp}-${sanitizedEnvironment}')
 output containerAppsEnvironmentName string = toLower('${sanitizedAppInstanceNameWithDashes}-${resourceAbbreviations.containerAppEnvironment}-${sanitizedEnvironment}')
 
 // Key Vaults and Storage Accounts can only be 24 characters long

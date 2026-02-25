@@ -15,7 +15,7 @@
 #
 #     build-function:
 #       needs: load-config
-#       uses: ./.github/workflows/template-function-app-build.yml
+#       uses: ./.github/workflows/template-function-build.yml
 #       with:
 #         rootDirectory: ${{ needs.load-config.outputs.function_rootDirectory }}
 #         projectName: ${{ needs.load-config.outputs.function_projectName }}

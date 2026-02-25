@@ -86,7 +86,7 @@ jobs:
   # ------------------------------------------------------------------------------------------------------------------------
   create-infra:
     name: Create Infra ${{ inputs.deployEnvironment }}
-    uses: ./.github/workflows/template-create-infra.yml
+    uses: ./.github/workflows/template-deploy-bicep.yml
     secrets: inherit
     with:
       runCreateInfra: ${{ inputs.runCreateInfra }}
@@ -102,7 +102,7 @@ jobs:
 # ------------------------------------------------------------------------------------------------------------------------
   build-function:
     name: Build Function App
-    uses: ./.github/workflows/template-function-app-build.yml
+    uses: ./.github/workflows/template-function-build.yml
     if: inputs.runBuild || inputs.runDeploy
     needs: [load-config, create-infra]
     secrets: inherit
@@ -118,7 +118,7 @@ jobs:
 # ------------------------------------------------------------------------------------------------------------------------
   deploy-function:
     name: Deploy Function App
-    uses: ./.github/workflows/template-function-app-deploy.yml
+    uses: ./.github/workflows/template-function-deploy.yml
     if: inputs.runDeploy
     needs: build-function
     secrets: inherit
@@ -130,7 +130,7 @@ jobs:
 # ------------------------------------------------------------------------------------------------------------------------
   deploy-flex:
     name: Deploy Flex Function
-    uses: ./.github/workflows/template-function-app-deploy.yml
+    uses: ./.github/workflows/template-function-deploy.yml
     if: inputs.runDeploy
     needs: build-function
     secrets: inherit

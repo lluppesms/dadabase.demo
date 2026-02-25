@@ -94,6 +94,9 @@ variables:
   - name: runtime 
     value: 'win-x64'
 
+  - name: CONTAINER_IMAGE
+    value: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+
   - name: playwrightUITestType
     value: 'ui'
   - name: playwrightUITestPath

@@ -7,8 +7,9 @@ The GitHub workflows in this project require several secrets set at the reposito
 ## Workflow Definitions
 
 - **[1-deploy-bicep.yml](./workflows/1-deploy-bicep.yml):** Deploys the main.bicep template with all new resources and does nothing else
-- **[2-bicep-build-deploy-function.yml](./workflows/2-bicep-build-deploy-function.yml):** Builds an Azure Function and deploys it to Azure
-- **[3-bicep-build-deploy-webapp.yml](./workflows/3-bicep-build-deploy-webapp.yml):** Builds an Azure Web App and deploys it to Azure
+- **[2.1-bicep-build-deploy-webapp.yml](./workflows/2.1-bicep-build-deploy-webapp.yml):** Builds an Azure Web App and deploys it to Azure
+- **[2.2-bicep-build-deploy-containerapp.yml](./workflows/2.2-bicep-build-deploy-containerapp.yml):** Builds a Docker image and deploys it to Azure Container Apps
+- **[3-bicep-build-deploy-function.yml](./workflows/3-bicep-build-deploy-function.yml):** Builds an Azure Function and deploys it to Azure
 - **[4-build-deploy-dacpac.yml](./workflows/4-build-deploy-dacpac.yml):** Builds the database schema and deploys it to the SQL database
 - **[5-run-sql-script.yml](./workflows/5-run-sql-script.yml):** Runs a SQL script against the Azure SQL Database
 - **[6-pr-scan-build.yml](./workflows/6-pr-scan-build.yml):** Runs a build every pull request to ensure the code builds and passes all tests

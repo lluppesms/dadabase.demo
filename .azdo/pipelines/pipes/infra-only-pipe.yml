@@ -34,7 +34,7 @@ stages:
     condition: or(eq(${{ parameters.singleEnvironment }}, 'true'), and(eq(upper('${{ environmentName }}'), 'DEV'), succeeded('ScanApplication')), and(eq(upper('${{ environmentName }}'), 'QA'), succeeded('CreateInfraDEV')), and(eq(upper('${{ environmentName }}'), 'PROD'), succeeded('CreateInfraQA')))
     displayName: Create ${{ environmentName }} Resources
     jobs:
-    - template: templates/create-infra-template.yml
+    - template: templates/bicep-deploy-template.yml
       parameters:
         environmentName: ${{ environmentName }}
         parseBicepOutputs: ${{ parameters.parseBicepOutputs }}

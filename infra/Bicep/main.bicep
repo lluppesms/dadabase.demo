@@ -82,6 +82,10 @@ param runDateTime string = utcNow()
 
 // --------------------------------------------------------------------------------
 var deploymentSuffix = '-${runDateTime}'
+var defaultContainerImage = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+var effectiveContainerImage = empty(trim(containerImage)) || contains(containerImage, '#{')
+  ? defaultContainerImage
+  : containerImage
 var commonTags = {         
   LastDeployed: runDateTime
   Application: appName
@@ -279,9 +283,10 @@ module containerAppModule './modules/container/containerapp.bicep' = if (deploym
     environmentCode: environmentCode
     commonTags: commonTags
     containerAppsEnvironmentId: containerAppsEnvironmentModule!.outputs.id
-    containerImage: containerImage
+    containerImage: effectiveContainerImage
     containerRegistryServer: containerRegistryModule!.outputs.loginServer
     managedIdentityId: identity.outputs.managedIdentityId
+    managedIdentityPrincipalId: identity.outputs.managedIdentityPrincipalId
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
     minReplicas: 1
     maxReplicas: 3

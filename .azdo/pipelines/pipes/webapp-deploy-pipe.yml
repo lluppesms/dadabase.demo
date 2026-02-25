@@ -17,7 +17,7 @@ stages:
     displayName: Deploy ${{ environmentName }} App
     condition: or(eq(${{ parameters.singleEnvironment }}, 'true'), eq(upper('${{ environmentName }}'), 'DEV'), and(eq(upper('${{ environmentName }}'), 'QA'), succeeded('DeployAppDEV')), and(eq(upper('${{ environmentName }}'), 'PROD'), succeeded('DeployAppQA')))
     jobs:
-    - template: templates/deploy-webapp-template.yml
+    - template: templates/webapp-deploy.yml
       parameters:
         environmentName: ${{ environmentName }}
         pipelineResourceIdentifier: ${{ parameters.pipelineResourceIdentifier }}

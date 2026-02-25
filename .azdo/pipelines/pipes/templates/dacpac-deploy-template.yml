@@ -99,7 +99,7 @@ jobs:
   # they need to be defined and available at YML pre-compile time, so use this technique.
   # this switch allows you to dynamically select a 'hard-coded' service connection
   - ${{ if eq(variables.environmentNameUpper, 'DEV') }}:
-    - template: steps-deploy-dacpac-template.yml
+    - template: steps-dacpac-deploy-template.yml
       parameters:
         serviceConnectionName: $(serviceConnectionDEV)
         loginAccountType: ${{ parameters.loginAccountType }}
@@ -110,7 +110,7 @@ jobs:
         sqlAdminUser: $(SQLADMIN_LOGIN_USERID)
         sqlAdminPassword: $(SQL_DATABASE_PASSWORD)
   - ${{ if eq(variables.environmentNameUpper, 'QA') }}:
-    - template: steps-deploy-dacpac-template.yml
+    - template: steps-dacpac-deploy-template.yml
       parameters:
         serviceConnectionName: $(serviceConnectionQA)
         loginAccountType: ${{ parameters.loginAccountType }}
@@ -121,7 +121,7 @@ jobs:
         sqlAdminUser: $(SQLADMIN_LOGIN_USERID)
         sqlAdminPassword: $(SQL_DATABASE_PASSWORD)
   - ${{ if eq(variables.environmentNameUpper, 'PROD') }}:
-    - template: steps-deploy-dacpac-template.yml
+    - template: steps-dacpac-deploy-template.yml
       parameters:
         serviceConnectionName: $(serviceConnectionPROD)
         loginAccountType: ${{ parameters.loginAccountType }}

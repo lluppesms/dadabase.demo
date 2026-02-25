@@ -42,8 +42,8 @@ az containerapp update --name $CONTAINER_APP --resource-group rg-dadabase-dev \
 
 | Pipeline | File | Purpose |
 |----------|------|---------|
-| **App Service** | `.azdo/pipelines/3-bicep-build-deploy-webapp.yml` | Deploy to Azure App Service |
-| **Container Apps** | `.azdo/pipelines/3.1-bicep-build-deploy-containerapp.yml` | Deploy to Azure Container Apps |
+| **App Service** | `.azdo/pipelines/3.1-bicep-build-deploy-webapp.yml` | Deploy to Azure App Service |
+| **Container Apps** | `.azdo/pipelines/3.2-bicep-build-deploy-containerapp.yml` | Deploy to Azure Container Apps |
 
 ## Key Files
 
@@ -61,12 +61,12 @@ az containerapp update --name $CONTAINER_APP --resource-group rg-dadabase-dev \
 - `src/web/.dockerignore` - Files excluded from Docker build
 
 ### GitHub Actions Workflows
-- `.github/workflows/template-container-build.yml` - Build & push Docker image
+- `.github/workflows/template-containerapp-build.yml` - Build & push Docker image
 - `.github/workflows/template-containerapp-deploy.yml` - Deploy to Container Apps
 - `.github/workflows/template-webapp-deploy.yml` - Deploy to App Service
 
 ### Azure DevOps Pipelines
-- `.azdo/pipelines/pipes/templates/build-container-template.yml` - Build & push Docker image
+- `.azdo/pipelines/pipes/templates/containerapp-build.yml` - Build & push Docker image
 ### GitHub Actions
 
 | File | Purpose |

@@ -56,30 +56,37 @@ jobs:
 
 ### Workflow File Types
 1. **Main Workflows**: Main entry points
-   - `bicep-only.yml`: Infrastructure deployment only
-   - `build-app-only.yml`: Application build only
-   - `build-deploy-app.yml`: Application build and deployment
-   - `bicep-build-deploy-app.yml`: Full stack deployment
-   - `smoke-test.yml`: Post-deployment validation
-   - `scan-build-pr.yml`: PR validation and scanning
-   - `scan-devsecops.yml`: Security scanning (scheduled)
-   - `scan-codeql.yml`: Code quality scanning (scheduled)
+   - `1-deploy-bicep.yml`: Infrastructure deployment only
+   - `2.1-bicep-build-deploy-webapp.yml`: App Service infrastructure and web app deployment
+   - `2.2-bicep-build-deploy-containerapp.yml`: Container Apps infrastructure and container deployment
+   - `3-bicep-build-deploy-function.yml`: Azure Functions infrastructure and function deployment
+   - `4-build-deploy-dacpac.yml`: Database deployment using DacPac
+   - `5-run-sql-script.yml`: SQL script execution
+   - `6-pr-scan-build.yml`: PR validation and scanning
+   - `7-scan-code.yml`: Security scanning
+   - `8-smoke-test-webapp.yml`: Post-deployment validation
+   - `azure-dev.yml`: Integration with Azure Developer CLI
 
 2. **Template Workflows**: Reusable components
-   - `template-create-infra.yml`: Infrastructure deployment
-   - `template-webapp-build.yml`: Web application build
-   - `template-webapp-deploy.yml`: Web application deployment
+   - `template-containerapp-build.yml`: Container image build and push
+   - `template-containerapp-deploy.yml`: Container app deployment
+   - `template-dacpac-build.yml`: Database DacPac build
+   - `template-dacpac-deploy.yml`: Database DacPac deployment
+   - `template-deploy-bicep.yml`: Infrastructure deployment
+   - `template-function-build.yml`: Azure Functions build
+   - `template-function-deploy.yml`: Azure Functions deployment
+   - `template-load-config.yml`: Configuration loading helper
+   - `template-run-sql.yml`: SQL script execution
    - `template-scan-code.yml`: Security scanning
    - `template-smoke-test.yml`: Post-deployment testing
-
-3. **Special-Purpose Workflows**:
-   - `azure-dev.yml`: Integration with Azure Developer CLI
+   - `template-webapp-build.yml`: Web application build
+   - `template-webapp-deploy.yml`: Web application deployment
 
 ## Workflow Types
 
 ### 1. Infrastructure Deployment Workflows
 - **Purpose**: Deploy Azure resources using Bicep templates
-- **Key Workflows**: `bicep-only.yml`, `template-create-infra.yml`
+- **Key Workflows**: `1-deploy-bicep.yml`, `template-deploy-bicep.yml`
 - **Features**:
   - Parameterized environment selection
   - Bicep template and parameter file inputs
@@ -88,38 +95,41 @@ jobs:
 
 ### 2. Application Build Workflows
 - **Purpose**: Build, test, and package application code
-- **Key Workflows**: `build-app-only.yml`, `template-webapp-build.yml`
+- **Key Workflows**: `template-webapp-build.yml`, `template-containerapp-build.yml`, `template-function-build.yml`
 - **Features**:
   - .NET build and test
+  - Container image build and push
   - Artifact packaging
   - Optional test coverage reporting
   - Build validation
 
 ### 3. Application Deployment Workflows
 - **Purpose**: Build and deploy application to Azure
-- **Key Workflows**: `build-deploy-app.yml`, `template-webapp-deploy.yml`
+- **Key Workflows**: `2.1-bicep-build-deploy-webapp.yml`, `2.2-bicep-build-deploy-containerapp.yml`, `template-webapp-deploy.yml`, `template-containerapp-deploy.yml`
 - **Features**:
   - Environment-specific configuration
   - Azure authentication
-  - Deployment slot management
+  - App Service or Container Apps deployment
+  - Container image deployment
   - Post-deployment validation
 
 ### 4. End-to-End Workflows
 - **Purpose**: Comprehensive deployment of infrastructure and application
-- **Key Workflows**: `bicep-build-deploy-app.yml`
+- **Key Workflows**: `2.1-bicep-build-deploy-webapp.yml`, `2.2-bicep-build-deploy-containerapp.yml`, `3-bicep-build-deploy-function.yml`
 - **Features**:
   - Orchestration of multiple template workflows
   - Sequential job dependencies
   - Optional component selection (security scan, infrastructure, application)
   - Smoke testing
+  - Support for App Service, Container Apps, or Azure Functions deployments
 
 ### 5. Security and Compliance Workflows
 - **Purpose**: Code scanning, security validation, and compliance checks
-- **Key Workflows**: `scan-build-pr.yml`, `scan-devsecops.yml`, `scan-codeql.yml`
+- **Key Workflows**: `6-pr-scan-build.yml`, `7-scan-code.yml`, `template-scan-code.yml`
 - **Features**:
-  - CodeQL analysis
-  - DevSecOps scanning
-  - Scheduled execution
+  - Microsoft Security DevOps scanning
+  - GitHub Advanced Security scanning
+  - PR validation
   - Security report generation
 
 ## Variable Management
@@ -295,7 +305,7 @@ on:
 
 jobs:
   deploy-infra:
-    uses: ./.github/workflows/template-create-infra.yml
+    uses: ./.github/workflows/template-deploy-bicep.yml
     with:
       envCode: ${{ inputs.environmentName }}
       templatePath: './infra/Bicep/'
@@ -328,7 +338,7 @@ jobs:
 
   deploy-infrastructure:
     needs: security-scan
-    uses: ./.github/workflows/template-create-infra.yml
+    uses: ./.github/workflows/template-deploy-bicep.yml
     with:
       envCode: ${{ inputs.environmentName || 'dev' }}
     secrets: inherit
@@ -354,6 +364,7 @@ jobs:
     uses: ./.github/workflows/template-smoke-test.yml
     with:
       envCode: ${{ inputs.environmentName || 'dev' }}
+      testType: 'ui'
     secrets: inherit
 ```
 

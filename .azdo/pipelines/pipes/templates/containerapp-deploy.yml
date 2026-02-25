@@ -28,7 +28,7 @@ jobs:
     - name: environmentNameLower
       value: ${{ lower(parameters.environmentName) }}
     - name: fullAppName
-      value: '$(APP_NAME)$(INSTANCE_NUMBER)-$(environmentNameLower)'
+      value: '$(APP_NAME)$(INSTANCE_NUMBER)-ca-$(environmentNameLower)'
     - template: ../../vars/var-common.yml
     - template: ../../vars/var-service-connections.yml
     
@@ -64,6 +64,7 @@ jobs:
         # Get resource group name
         RESOURCE_GROUP_NAME=$(RESOURCE_GROUP_PREFIX)-$(INSTANCE_NUMBER)-$(environmentNameLower)
         echo "Resource Group: $RESOURCE_GROUP_NAME"
+        echo "fullAppName: $(fullAppName)"
         
         # Get Container App name
         CONTAINER_APP_NAME=$(az containerapp list \
