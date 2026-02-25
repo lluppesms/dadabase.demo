@@ -72,7 +72,7 @@ jobs:
    - `template-containerapp-deploy.yml`: Container app deployment
    - `template-dacpac-build.yml`: Database DacPac build
    - `template-dacpac-deploy.yml`: Database DacPac deployment
-   - `template-deploy-bicep.yml`: Infrastructure deployment
+   - `template-bicep-deploy.yml`: Infrastructure deployment
    - `template-function-build.yml`: Azure Functions build
    - `template-function-deploy.yml`: Azure Functions deployment
    - `template-load-config.yml`: Configuration loading helper
@@ -86,7 +86,7 @@ jobs:
 
 ### 1. Infrastructure Deployment Workflows
 - **Purpose**: Deploy Azure resources using Bicep templates
-- **Key Workflows**: `1-deploy-bicep.yml`, `template-deploy-bicep.yml`
+- **Key Workflows**: `1-deploy-bicep.yml`, `template-bicep-deploy.yml`
 - **Features**:
   - Parameterized environment selection
   - Bicep template and parameter file inputs
@@ -305,7 +305,7 @@ on:
 
 jobs:
   deploy-infra:
-    uses: ./.github/workflows/template-deploy-bicep.yml
+    uses: ./.github/workflows/template-bicep-deploy.yml
     with:
       envCode: ${{ inputs.environmentName }}
       templatePath: './infra/Bicep/'
@@ -338,7 +338,7 @@ jobs:
 
   deploy-infrastructure:
     needs: security-scan
-    uses: ./.github/workflows/template-deploy-bicep.yml
+    uses: ./.github/workflows/template-bicep-deploy.yml
     with:
       envCode: ${{ inputs.environmentName || 'dev' }}
     secrets: inherit

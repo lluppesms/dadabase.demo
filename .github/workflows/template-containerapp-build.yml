@@ -47,7 +47,7 @@ jobs:
       imageFullName: ${{ steps.set-output.outputs.imageFullName }}
 
     env:
-      generatedAppEnvName: "${{ inputs.envCode == 'prod' && format('{0}', vars.APP_NAME) || format('{0}{1}-{2}', vars.APP_NAME, vars.INSTANCE_NUMBER, inputs.envCode) }}"
+      generatedResourceGroupName: ${{ vars.RESOURCE_GROUP_NAME || format('{0}-{1}-{2}', vars.RESOURCE_GROUP_PREFIX, inputs.envCode, vars.INSTANCE_NUMBER) }}
 
     steps:
     - name: Checkout code
@@ -69,7 +69,7 @@ jobs:
       id: get-acr
       shell: bash
       run: |
-        ACR_NAME=$(az acr list --resource-group ${{ vars.RESOURCE_GROUP_NAME }} --query "[0].name" -o tsv)
+        ACR_NAME=$(az acr list --resource-group ${{ env.generatedResourceGroupName }} --query "[0].name" -o tsv)
         ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --query "loginServer" -o tsv)
         echo "acrName=$ACR_NAME" >> $GITHUB_OUTPUT
         echo "acrLoginServer=$ACR_LOGIN_SERVER" >> $GITHUB_OUTPUT
