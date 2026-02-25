@@ -31,8 +31,8 @@ jobs:
 
     env:
       artifactName: functionapp
-      generatedAppEnvName: "${{ inputs.envCode == 'prod' && format('{0}-{1}', vars.APP_NAME, inputs.functionType) || format('{0}-{1}-{2}-{3}', vars.APP_NAME, vars.INSTANCE_NUMBER, inputs.functionType, inputs.envCode) }}"
-
+      generatedAppEnvName: "${{ inputs.envCode == 'prod' && format('{0}-{1}', vars.APP_NAME, inputs.functionType) || format('{0}{1}-{2}-{3}', vars.APP_NAME, vars.INSTANCE_NUMBER, inputs.functionType, inputs.envCode) }}"
+ 
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
