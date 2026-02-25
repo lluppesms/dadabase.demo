@@ -115,16 +115,16 @@ jobs:
       testApplication: true
       listFilesAfterBuild: true
 
-# ------------------------------------------------------------------------------------------------------------------------
-  deploy-function:
-    name: Deploy Function App
-    uses: ./.github/workflows/template-function-deploy.yml
-    if: inputs.runDeploy
-    needs: build-function
-    secrets: inherit
-    with:
-      envCode: ${{ inputs.deployEnvironment }}
-      functionType: 'func'
+# # ------------------------------------------------------------------------------------------------------------------------
+#   deploy-function:
+#     name: Deploy Function App
+#     uses: ./.github/workflows/template-function-deploy.yml
+#     if: inputs.runDeploy
+#     needs: build-function
+#     secrets: inherit
+#     with:
+#       envCode: ${{ inputs.deployEnvironment }}
+#       functionType: 'func'
 
       
 # ------------------------------------------------------------------------------------------------------------------------
@@ -143,7 +143,7 @@ jobs:
     name: Smoke Test ${{ inputs.deployEnvironment }}
     uses: ./.github/workflows/template-smoke-test.yml
     if: inputs.runSmokeTest
-    needs: deploy-function
+    needs: deploy-flex
     secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}
