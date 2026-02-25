@@ -29,7 +29,7 @@ on:
       listFilesBeforeBuild:
         required: false
         type: boolean
-        default: false
+        default: true
     outputs:
       imageFullName:
         description: "Full image name with tag"
@@ -65,10 +65,17 @@ jobs:
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-    - name: Get ACR login server
-      id: get-acr
+    - name: Create Variables
+      id: create-variables
       shell: bash
       run: |
+        echo "inputs.envCode=${{ inputs.envCode }}"
+        echo "inputs.dockerfilePath=${{ inputs.dockerfilePath }}"
+        echo "inputs.dockerContext=${{ inputs.dockerContext }}"
+        echo "inputs.imageName=${{ inputs.imageName }}"
+        echo "inputs.imageTag=${{ inputs.imageTag }}"
+        echo "env.generatedResourceGroupName=${{ env.generatedResourceGroupName }}"
+
         ACR_NAME=$(az acr list --resource-group ${{ env.generatedResourceGroupName }} --query "[0].name" -o tsv)
         ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --query "loginServer" -o tsv)
         echo "acrName=$ACR_NAME" >> $GITHUB_OUTPUT
@@ -76,12 +83,19 @@ jobs:
         echo "ACR Name: $ACR_NAME"
         echo "ACR Login Server: $ACR_LOGIN_SERVER"
 
-    - name: Login to Azure Container Registry
-      uses: docker/login-action@v3
+    - name: Azure Login (Reusable Action)
+      uses: ./.github/actions/login-action
       with:
-        registry: ${{ steps.get-acr.outputs.acrLoginServer }}
-        username: ${{ secrets.AZURE_CLIENT_ID }}
-        password: ${{ secrets.AZURE_CLIENT_SECRET }}
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    # - name: Login to Azure Container Registry
+    #   uses: docker/login-action@v3
+    #   with:
+    #     registry: ${{ steps.create-variables.outputs.acrLoginServer }}
+    #     username: ${{ secrets.AZURE_CLIENT_ID }}
+    #     password: ${{ secrets.AZURE_CLIENT_SECRET }}
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -104,8 +118,8 @@ jobs:
         file: ${{ inputs.dockerfilePath }}
         push: true
         tags: |
-          ${{ steps.get-acr.outputs.acrLoginServer }}/${{ inputs.imageName }}:${{ steps.tag.outputs.tag }}
-          ${{ steps.get-acr.outputs.acrLoginServer }}/${{ inputs.imageName }}:latest
+          ${{ steps.create-variables.outputs.acrLoginServer }}/${{ inputs.imageName }}:${{ steps.tag.outputs.tag }}
+          ${{ steps.create-variables.outputs.acrLoginServer }}/${{ inputs.imageName }}:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
         build-args: |
@@ -115,7 +129,7 @@ jobs:
       id: set-output
       shell: bash
       run: |
-        FULL_IMAGE="${{ steps.get-acr.outputs.acrLoginServer }}/${{ inputs.imageName }}:${{ steps.tag.outputs.tag }}"
+        FULL_IMAGE="${{ steps.create-variables.outputs.acrLoginServer }}/${{ inputs.imageName }}:${{ steps.tag.outputs.tag }}"
         echo "imageFullName=$FULL_IMAGE" >> $GITHUB_OUTPUT
         echo "Full image name: $FULL_IMAGE"
 
