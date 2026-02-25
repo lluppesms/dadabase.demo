@@ -140,7 +140,6 @@ Both methods are production-ready and follow Azure best practices. The infrastru
 #### **Updated App Service Workflow**
 **File:** [.github/workflows/3-bicep-build-deploy-webapp.yml](../.github/workflows/3-bicep-build-deploy-webapp.yml)
 
-- Added `additionalParameters: 'deploymentType=appservice'`
 - Ensures App Service infrastructure is deployed explicitly
 - No changes to deployment steps
 

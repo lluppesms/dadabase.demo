@@ -7,6 +7,7 @@ param appName = '#{APP_NAME}#'
 param environmentCode = '#{ENVCODE}#'
 param location = '#{RESOURCE_GROUP_LOCATION}#'
 param instanceNumber = '#{INSTANCE_NUMBER}#'
+param deploymentType = 'appservice'
 
 param adminUserList = '#{ADMIN_USER_LIST}#'
 param adInstance = '#{LOGIN_INSTANCEENDPOINT}#'

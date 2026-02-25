@@ -99,7 +99,6 @@ jobs:
       requestorName: ${{ github.actor }}
       createResourceGroup: ${{ inputs.createResourceGroup }}
       bicepDeploymentMode: ${{ inputs.bicepDeploymentMode }}
-      additionalParameters: 'deploymentType=appservice'
 
 # ------------------------------------------------------------------------------------------------------------------------
   build-web-app:
