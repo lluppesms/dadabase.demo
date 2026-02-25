@@ -65,25 +65,6 @@ jobs:
     #     tenant-id: ${{ secrets.AZURE_TENANT_ID }}
     #     subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-    - name: Create Variables
-      id: create-variables
-      shell: bash
-      run: |
-        echo "inputs.envCode=${{ inputs.envCode }}"
-        echo "inputs.dockerfilePath=${{ inputs.dockerfilePath }}"
-        echo "inputs.dockerContext=${{ inputs.dockerContext }}"
-        echo "inputs.imageName=${{ inputs.imageName }}"
-        echo "inputs.imageTag=${{ inputs.imageTag }}"
-        echo "env.generatedResourceGroupName=${{ env.generatedResourceGroupName }}"
-
-        ACR_NAME=$(az acr list --resource-group ${{ env.generatedResourceGroupName }} --query "[0].name" -o tsv)
-        echo "acrName=$ACR_NAME" >> $GITHUB_OUTPUT
-        echo "ACR Name: $ACR_NAME"
-
-        ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --query "loginServer" -o tsv)
-        echo "acrLoginServer=$ACR_LOGIN_SERVER" >> $GITHUB_OUTPUT
-        echo "ACR Login Server: $ACR_LOGIN_SERVER"
-
     - name: Generate image tag
       id: tag
       shell: bash
@@ -107,6 +88,25 @@ jobs:
         registry: ${{ steps.create-variables.outputs.acrLoginServer }}
         #username: ${{ secrets.AZURE_CLIENT_ID }}
         #password: ${{ secrets.AZURE_CLIENT_SECRET }}
+
+    - name: Create Variables
+      id: create-variables
+      shell: bash
+      run: |
+        echo "inputs.envCode=${{ inputs.envCode }}"
+        echo "inputs.dockerfilePath=${{ inputs.dockerfilePath }}"
+        echo "inputs.dockerContext=${{ inputs.dockerContext }}"
+        echo "inputs.imageName=${{ inputs.imageName }}"
+        echo "inputs.imageTag=${{ inputs.imageTag }}"
+        echo "env.generatedResourceGroupName=${{ env.generatedResourceGroupName }}"
+
+        ACR_NAME=$(az acr list --resource-group ${{ env.generatedResourceGroupName }} --query "[0].name" -o tsv)
+        echo "acrName=$ACR_NAME" >> $GITHUB_OUTPUT
+        echo "ACR Name: $ACR_NAME"
+
+        ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --query "loginServer" -o tsv)
+        echo "acrLoginServer=$ACR_LOGIN_SERVER" >> $GITHUB_OUTPUT
+        echo "ACR Login Server: $ACR_LOGIN_SERVER"
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
