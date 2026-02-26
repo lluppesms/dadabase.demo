@@ -7,6 +7,8 @@ parameters:
   default: ['DEV']
 - name: singleEnvironment
   default: 'false'
+- name: deployBicep
+  default: false
 - name: parseBicepOutputs
   default: false
 - name: runUnitTests
@@ -48,9 +50,9 @@ stages:
   - stage: CreateInfra${{ environmentName }}
     displayName: ${{ environmentName }} Infrastructure
     dependsOn: BuildApp
-    # Condition is build complete and a single environment is being deployed, 
-    # or the environment is 'dev', or if qa/prod, the previous stage (dev->qa or qa->prod) succeeded
-    condition: or(eq(${{ parameters.singleEnvironment }}, 'true'), and(eq(upper('${{ environmentName }}'), 'DEV'), succeeded('BuildApp')), and(eq(upper('${{ environmentName }}'), 'QA'), succeeded('DeployAppDEV')), and(eq(upper('${{ environmentName }}'), 'PROD'), succeeded('DeployAppQA')))
+    # Condition is deployBicep is true AND (build complete and a single environment is being deployed, 
+    # or the environment is 'dev', or if qa/prod, the previous stage (dev->qa or qa->prod) succeeded)
+    condition: and(eq(${{ parameters.deployBicep }}, true), or(eq(${{ parameters.singleEnvironment }}, 'true'), and(eq(upper('${{ environmentName }}'), 'DEV'), succeeded('BuildApp')), and(eq(upper('${{ environmentName }}'), 'QA'), succeeded('DeployAppDEV')), and(eq(upper('${{ environmentName }}'), 'PROD'), succeeded('DeployAppQA'))))
     jobs:
     - template: templates/bicep-deploy-template.yml
       parameters:
@@ -60,6 +62,8 @@ stages:
   - stage: DeployApp${{ environmentName }}
     displayName: Deploy ${{ environmentName }} App
     dependsOn: CreateInfra${{ environmentName }}
+    # Run if infrastructure deployment succeeded (when deployBicep=true) OR if deployBicep=false (skip infra)
+    condition: or(and(succeeded('CreateInfra${{ environmentName }}'), eq(${{ parameters.deployBicep }}, true)), eq(${{ parameters.deployBicep }}, false))
     jobs:
     - template: templates/function-deploy.yml
       parameters:
