@@ -32,7 +32,54 @@ These Azure DevOps YML files were designed to run as multi-stage environment dep
 
 ---
 
-## 4. These pipelines needs a variable group named "DadABaseDemo"
+## 4. Troubleshooting: "Already Assigned" – Finding Existing GitHub ↔ Azure DevOps Connections
+
+When you try to link a GitHub organization or repository to Azure DevOps (via **Azure Boards** or **Azure Pipelines** GitHub Apps) and you see a message such as *"already assigned"* or *"already connected"*, it means the GitHub organization is already authorized to a **different Azure DevOps organization**.
+
+Each GitHub organization (or personal account) can only be linked to **one Azure DevOps organization** at a time through a given GitHub App installation.
+
+### Where to Look
+
+#### 1. GitHub – Installed GitHub Apps (Org level)
+
+Navigate to your GitHub organization (or personal account) settings to see which apps are installed and which Azure DevOps organization they are pointing to:
+
+| Account type | URL |
+|---|---|
+| **Organization** | `https://github.com/organizations/<YOUR_ORG>/settings/installations` |
+| **Personal account** | `https://github.com/settings/installations` |
+
+Look for **Azure Boards** and/or **Azure Pipelines** in the list and click **Configure** to see which repositories are authorized and which Azure DevOps organization they connect to.
+
+#### 2. Azure DevOps – GitHub Connections (Org level)
+
+In every Azure DevOps organization, administrators can see which GitHub repositories and organizations are connected:
+
+```
+https://dev.azure.com/<YOUR_AZDO_ORG>/_settings/githubconnection
+```
+
+If another DevOps organization already holds the connection, you will need to check each AzDO org you have access to.
+
+#### 3. Azure DevOps – GitHub Connections (Project level – Azure Boards)
+
+Within an individual Azure DevOps project, the Azure Boards GitHub connection is visible under:
+
+```
+https://dev.azure.com/<YOUR_AZDO_ORG>/<YOUR_PROJECT>/_settings/boards-external-integration
+```
+
+### How to Resolve the Conflict
+
+1. Identify the Azure DevOps organization currently holding the GitHub App authorization (follow the steps above).
+2. **Option A – Reuse the existing connection:** Create or use the existing Azure DevOps project in that organization and import the pipelines there.
+3. **Option B – Move the connection:** In the **GitHub – Installed GitHub Apps** settings (section 1 above), revoke or uninstall the existing Azure Boards / Azure Pipelines app from the GitHub organization, then reinstall and authorize it against your desired Azure DevOps organization.
+   > ⚠️ Revoking an existing connection will disconnect any pipelines or board integrations that rely on it. Notify any other teams using the connection before removing it.
+4. **Option C – Contact your admin:** If you do not have admin access on the GitHub organization or the other Azure DevOps organization, ask an administrator to either reassign or create a separate GitHub App installation for your project.
+
+---
+
+## 5. These pipelines needs a variable group named "DadABaseDemo"
 
 To create this variable groups, customize and run this command in the Azure Cloud Shell.
 

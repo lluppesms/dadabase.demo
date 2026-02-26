@@ -271,6 +271,53 @@ DadABase.Web
 
 ---
 
+## Troubleshooting: "Already Assigned" GitHub ↔ Azure DevOps Connection
+
+When trying to link a GitHub organization (or repository) to Azure DevOps via **Azure Boards** or **Azure Pipelines**, you may encounter a message such as:
+
+> *"This organization is already connected to a different Azure DevOps account"* or *"already assigned"*
+
+This happens because each GitHub organization can only be authorized to **one Azure DevOps organization** at a time through a given GitHub App.
+
+### Finding the Existing Connection
+
+#### GitHub – Installed App Settings
+
+Check which Azure DevOps organization currently holds the GitHub App authorization:
+
+| Account Type | URL |
+|---|---|
+| **GitHub Organization** | `https://github.com/organizations/<YOUR_ORG>/settings/installations` |
+| **Personal Account** | `https://github.com/settings/installations` |
+
+Look for **Azure Boards** or **Azure Pipelines** in the list, then click **Configure** to view the authorized repositories and the Azure DevOps organization they connect to.
+
+#### Azure DevOps – Organization-Level GitHub Connections
+
+Check each Azure DevOps organization you have access to:
+
+```
+https://dev.azure.com/<YOUR_AZDO_ORG>/_settings/githubconnection
+```
+
+#### Azure DevOps – Project-Level Azure Boards Connection
+
+For Azure Boards specifically, the per-project setting is at:
+
+```
+https://dev.azure.com/<YOUR_AZDO_ORG>/<YOUR_PROJECT>/_settings/boards-external-integration
+```
+
+### Resolving the Conflict
+
+1. Identify the Azure DevOps organization that currently holds the connection.
+2. **Option A – Reuse the existing connection:** Use the Azure DevOps organization that already has the GitHub connection and import your pipelines there.
+3. **Option B – Move the connection:** Go to the GitHub App settings (GitHub Installed App Settings URL from the **Finding the Existing Connection** section above), uninstall or revoke the existing **Azure Boards** / **Azure Pipelines** app from your GitHub organization, then reinstall and point it to the desired Azure DevOps organization.
+   > ⚠️ This will break any existing pipelines or board integrations that use the old connection. Coordinate with other teams first.
+4. **Option C – Request admin assistance:** If you lack admin rights on the GitHub organization or the other Azure DevOps organization, ask an administrator to reassign or create a separate installation for your project.
+
+---
+
 ## Example Usage
 
 ### 1. All-in-One Deployment
