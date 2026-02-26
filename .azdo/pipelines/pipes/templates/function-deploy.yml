@@ -41,12 +41,17 @@ jobs:
         $environmentSpecificAppName=$(environmentSpecificAppName)
         if ([string]::IsNullOrEmpty($environmentSpecificAppName)) {
           echo "Using environment coded app name: $(APP_NAME)-$(environmentName)"
-          $functionAppName="$(APP_NAME)-$(environmentName)".ToLower()
+          $functionAppName="$(APP_NAME)$(INSTANCE_NUMBER)-func-$(environmentName)".ToLower()
         } else {
           echo "Using environment specific hard-coded name: $environmentSpecificAppName"
           $functionAppName="$environmentSpecificAppName".ToLower()
         }
         echo "##vso[task.setvariable variable=functionAppName]$functionAppName"
+        
+        # Calculate resource group name
+        $environmentNameLower="$(environmentName)".ToLower()
+        $resourceGroupName="$(RESOURCE_GROUP_PREFIX)-$(INSTANCE_NUMBER)-$environmentNameLower".ToLower()
+        echo "##vso[task.setvariable variable=resourceGroupName]$resourceGroupName"
 
   - task: CmdLine@2
     displayName: Display Variables and Files
@@ -57,6 +62,7 @@ jobs:
         echo "appName=$(APP_NAME)"
         echo "environmentName=$(environmentName)"
         echo "functionAppName=$(functionAppName)"
+        echo "resourceGroupName=$(resourceGroupName)"
 
         echo "##[group]Display All Environment Variables:"
         printenv | sort
@@ -128,11 +134,21 @@ jobs:
     displayName: 'Display Variables and Tree'
     continueOnError: true
 
-  - task: AzureFunctionApp@1
-    displayName: 'Function App Deploy'
+  # Note: Flex functions require Azure CLI deployment, not the AzureFunctionApp task
+  - task: AzureCLI@2
+    displayName: 'Function App Deploy (Flex)'
     retryCountOnTaskFailure: 2
     inputs:
       azureSubscription: $(serviceConnectionName)
-      appType: functionAppLinux
-      appName: $(functionAppName)
-      package: $(Pipeline.Workspace)/*.zip
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "Deploying to Flex Function: $(functionAppName)"
+        cd $(Pipeline.Workspace)
+        zipFile=$(ls *.zip | head -n 1)
+        echo "Zip file: $zipFile"
+        az functionapp deployment source config-zip \
+          --resource-group $(resourceGroupName) \
+          --name $(functionAppName) \
+          --src $zipFile \
+          --build-remote false

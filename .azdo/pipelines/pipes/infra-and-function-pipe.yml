@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------------------------------------------------
-# Pipeline Template to build and deploy Azure Resources and Application
+# Pipeline Template to build and deploy Azure Resources and Function
 # ------------------------------------------------------------------------------------------------------------------------
 parameters:
 - name: environments
@@ -36,8 +36,8 @@ stages:
       displayName: Skipping Scan
 
 # ----------------------------------------------------------------------------------------------------
-- stage: BuildApp
-  displayName: Build Application
+- stage: BuildFunction
+  displayName: Build Function
   dependsOn: ScanApplication
   jobs:
   - template: templates/function-build.yml
@@ -49,18 +49,18 @@ stages:
 - ${{ each environmentName in parameters.environments }} :
   - stage: CreateInfra${{ environmentName }}
     displayName: ${{ environmentName }} Infrastructure
-    dependsOn: BuildApp
+    dependsOn: BuildFunction
     # Condition is deployBicep is true AND (build complete and a single environment is being deployed, 
     # or the environment is 'dev', or if qa/prod, the previous stage (dev->qa or qa->prod) succeeded)
-    condition: and(eq(${{ parameters.deployBicep }}, true), or(eq(${{ parameters.singleEnvironment }}, 'true'), and(eq(upper('${{ environmentName }}'), 'DEV'), succeeded('BuildApp')), and(eq(upper('${{ environmentName }}'), 'QA'), succeeded('DeployAppDEV')), and(eq(upper('${{ environmentName }}'), 'PROD'), succeeded('DeployAppQA'))))
+    condition: and(eq(${{ parameters.deployBicep }}, true), or(eq(${{ parameters.singleEnvironment }}, 'true'), and(eq(upper('${{ environmentName }}'), 'DEV'), succeeded('BuildFunction')), and(eq(upper('${{ environmentName }}'), 'QA'), succeeded('DeployFunctionDEV')), and(eq(upper('${{ environmentName }}'), 'PROD'), succeeded('DeployFunctionQA'))))
     jobs:
     - template: templates/bicep-deploy-template.yml
       parameters:
         environmentName: ${{ environmentName }}
         parseBicepOutputs: ${{ parameters.parseBicepOutputs }}
 
-  - stage: DeployApp${{ environmentName }}
-    displayName: Deploy ${{ environmentName }} App
+  - stage: DeployFunction${{ environmentName }}
+    displayName: Deploy ${{ environmentName }} Function
     dependsOn: CreateInfra${{ environmentName }}
     # Run if infrastructure deployment succeeded (when deployBicep=true) OR if deployBicep=false (skip infra)
     condition: or(and(succeeded('CreateInfra${{ environmentName }}'), eq(${{ parameters.deployBicep }}, true)), eq(${{ parameters.deployBicep }}, false))
@@ -70,10 +70,10 @@ stages:
         environmentName: ${{ environmentName }}
 
   - ${{ if eq(lower(parameters.runSmokeTests), 'true') }}:
-    - stage: SmokeTest${{ environmentName }}App
+    - stage: SmokeTest${{ environmentName }}Function
       displayName: Smoke Test ${{ environmentName }}
-      dependsOn: DeployApp${{ environmentName }}
-      condition: succeeded('DeployApp${{ environmentName }}')
+      dependsOn: DeployFunction${{ environmentName }}
+      condition: succeeded('DeployFunction${{ environmentName }}')
       variables:
         - template: ../vars/var-common.yml
       jobs:

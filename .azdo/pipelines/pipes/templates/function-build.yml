@@ -30,23 +30,23 @@ jobs:
       - template: ../../vars/var-prod.yml
 
     - name: rootDirectory
-      value: '$(System.DefaultWorkingDirectory)/$(appFolderName)/'
+      value: '$(System.DefaultWorkingDirectory)/$(functionFolderName)/'
     - name: projectRelativeDirectory
-      value: '$(appFolderName)/$(appProjectFolderName)'
+      value: '$(functionFolderName)/$(functionProjectFolderName)'
     - name: projectDirectory
-      value: '$(System.DefaultWorkingDirectory)/$(appFolderName)/$(appProjectFolderName)/'
+      value: '$(System.DefaultWorkingDirectory)/$(functionFolderName)/$(functionProjectFolderName)/'
     - name: testDirectory
-      value: '$(System.DefaultWorkingDirectory)/$(appFolderName)/$(testFolderName)/'
+      value: '$(System.DefaultWorkingDirectory)/$(functionFolderName)/$(functionTestFolderName)/'
 
     - name: projectFullName
-      value: '$(appFolderName)/$(appProjectFolderName)/$(appProjectName).$(appProjectExtension)'
+      value: '$(functionFolderName)/$(functionProjectFolderName)/$(functionProjectName).$(functionProjectExtension)'
     - name: projectFullPath
       value: '$(System.DefaultWorkingDirectory)/$(projectFullName)'
 
     - name: testRelativeDirectory
-      value: '$(appFolderName)/$(testFolderName)'
+      value: '$(functionFolderName)/$(functionTestFolderName)'
     - name: testFullName
-      value: '$(appFolderName)/$(testFolderName)/$(testProjectName).$(appProjectExtension)'
+      value: '$(functionFolderName)/$(functionTestFolderName)/$(functionTestProjectName).$(functionProjectExtension)'
     - name: testFullPath
       value: '$(System.DefaultWorkingDirectory)/$(testFullName)'
 
@@ -58,14 +58,14 @@ jobs:
       targetType: 'inline'
       script: |
         echo "projectDirectory=$(projectDirectory)"
-        echo "appFolderName=$(appFolderName)"
-        echo "appProjectName=$(appProjectName)"
+        echo "functionFolderName=$(functionFolderName)"
+        echo "functionProjectName=$(functionProjectName)"
         echo "projectFullName=$(projectFullName)"
         echo "projectFullPath=$(projectFullPath)"
 
         echo "testDirectory=$(testDirectory)"
-        echo "testFolderName=$(testFolderName)"
-        echo "testProjectName=$(testProjectName)"
+        echo "functionTestFolderName=$(functionTestFolderName)"
+        echo "functionTestProjectName=$(functionTestProjectName)"
         echo "testFullName=$(testFullName)"
         echo "testFullPath=$(testFullPath)"
 
@@ -89,9 +89,9 @@ jobs:
     displayName: 'Install Nuget'
 
   - task: UseDotNet@2
-    displayName: Use dotnet 8.0
+    displayName: Use dotnet 10.0
     inputs:
-      version: 8.0.x
+      version: 10.0.x
 
   - task: DotNetCoreCLI@2
     displayName: Restore Project

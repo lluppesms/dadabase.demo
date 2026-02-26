@@ -45,22 +45,23 @@ variables:
   - name: functionKind
     value: 'functionapp,linux'
 
+#  src\function\Function\DadABase.Function.csproj
   - name: functionFolderName
     value: 'src/function'
   - name: functionSolutionName
-    value: 'DadABase.Function'
+    value: 'dadabase.net10.function.sln'
 
   - name: functionProjectFolderName
-    value: 'DadABase.Function'
+    value: 'Function'
   - name: functionProjectName
     value: 'DadABase.Function'
   - name: functionProjectExtension
     value: 'csproj'
 
   - name: functionTestFolderName 
-    value: 'DadABase.Function.Tests'
+    value: 'Tests'
   - name: functionTestProjectName
-    value: 'DadABase.Tests'
+    value: 'DadABase.Function.Tests'
 
   # SQL Deploy must run on Windows
   - name: sqlAppFolderName
