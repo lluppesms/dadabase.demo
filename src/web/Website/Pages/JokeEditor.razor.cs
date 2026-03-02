@@ -233,7 +233,7 @@ public partial class JokeEditor : ComponentBase
     }
 
     /// <summary>
-    /// Advance to the next wizard step, triggering AI tasks as needed
+    /// Advance to the next wizard step - validates and reveals the image section
     /// </summary>
     private async Task NextWizardStep()
     {
@@ -248,27 +248,15 @@ public partial class JokeEditor : ComponentBase
                 StateHasChanged();
                 return;
             }
-            currentWizardStep = 1;
-            StateHasChanged();
-            await AnalyzeJokeAsync();
-        }
-        else if (currentWizardStep == 1)
-        {
             if (!selectedCategoryIds.Any())
             {
-                editMessage = "At least one category must be selected.";
-                editAlertClass = "alert-danger";
+                editMessage = "Please select at least one category, or click Auto-Assign to have AI suggest categories.";
+                editAlertClass = "alert-warning";
                 StateHasChanged();
                 return;
             }
-            currentWizardStep = 2;
+            currentWizardStep = 1;
             StateHasChanged();
-        }
-        else if (currentWizardStep == 2)
-        {
-            currentWizardStep = 3;
-            StateHasChanged();
-            // Don't auto-generate image - let user choose to generate or skip
         }
     }
 
@@ -433,13 +421,33 @@ public partial class JokeEditor : ComponentBase
     }
 
     /// <summary>
-    /// Regenerate the wizard image
+    /// Regenerate the wizard image (clears current and regenerates from existing description)
     /// </summary>
     private async Task RegenerateWizardImageAsync()
     {
         jokeImageUrl = string.Empty;
         StateHasChanged();
         await GenerateImageAsync();
+    }
+
+    /// <summary>
+    /// Create an image for the joke: generates scene description then image in one action
+    /// </summary>
+    private async Task CreateJokeImageAsync()
+    {
+        editMessage = string.Empty;
+
+        // Step 1: Generate scene description if not already set
+        if (string.IsNullOrWhiteSpace(editingJoke.ImageTxt))
+        {
+            await GenerateScenarioAsync();
+        }
+
+        // Step 2: Generate image from the description
+        if (!string.IsNullOrWhiteSpace(editingJoke.ImageTxt))
+        {
+            await GenerateImageAsync();
+        }
     }
 
     /// <summary>

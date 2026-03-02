@@ -17,200 +17,183 @@
         }
         else if (editingJoke != null && isAddingNew)
         {
-            <!-- Add New Joke Wizard -->
+            <!-- Add New Joke - Vertical Layout -->
             <MudPaper Elevation="1" Class="pa-4">
                 <MudText Typo="Typo.h5" Class="mb-4">Add New Joke</MudText>
 
-                <!-- Step indicator chips -->
-                <MudStack Row="true" Spacing="2" Class="wizard-steps mb-4">
-                    <MudChip T="string" Color="@GetStepColor(0)" Variant="Variant.Filled">1. Joke</MudChip>
-                    <MudChip T="string" Color="@GetStepColor(1)" Variant="Variant.Filled">2. Categories</MudChip>
-                    <MudChip T="string" Color="@GetStepColor(2)" Variant="Variant.Filled">3. Scenario</MudChip>
-                    <MudChip T="string" Color="@GetStepColor(3)" Variant="Variant.Filled">4. Image</MudChip>
+                <!-- Joke Text -->
+                <MudTextField @bind-Value="editingJoke.JokeTxt"
+                              Label="Joke Text"
+                              Variant="Variant.Outlined"
+                              Lines="4"
+                              Required="true"
+                              Class="mb-4" />
+
+                <!-- Attribution -->
+                <MudTextField @bind-Value="editingJoke.Attribution"
+                              Label="Attribution (optional)"
+                              Variant="Variant.Outlined"
+                              Class="mb-4" />
+
+                <!-- Categories with Auto-Assign button -->
+                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mb-1">
+                    <div class="flex-grow-1">
+                        <MudSelect T="int"
+                                   Label="Categories"
+                                   Variant="Variant.Outlined"
+                                   MultiSelection="true"
+                                   @bind-SelectedValues="selectedCategoryIds"
+                                   MultiSelectionTextFunc="@(new Func<List<string>, string>(GetSelectedCategoriesText))">
+                            @foreach (var category in allCategories)
+                            {
+                                <MudSelectItem T="int" Value="@category.JokeCategoryId">@category.JokeCategoryTxt</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </div>
+                    <MudTooltip Text="Let AI suggest categories for this joke">
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Secondary"
+                                   StartIcon="@Icons.Material.Filled.AutoAwesome"
+                                   OnClick="SuggestCategoriesAsync"
+                                   Disabled="@(isSuggestingCategories || string.IsNullOrWhiteSpace(editingJoke.JokeTxt))">
+                            Auto-Assign
+                        </MudButton>
+                    </MudTooltip>
                 </MudStack>
+                @if (isSuggestingCategories)
+                {
+                    <div class="d-flex align-center mb-3">
+                        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Small" Class="mr-2" />
+                        <MudText Typo="Typo.body2">Asking AI to suggest categories...</MudText>
+                    </div>
+                }
+                else
+                {
+                    <div class="mb-4"></div>
+                }
 
-                <div class="wizard-step-content">
-                    @if (currentWizardStep == 0)
-                    {
-                        <!-- Step 0: Joke Text -->
-                        <MudTextField @bind-Value="editingJoke.JokeTxt"
-                                      Label="Joke Text"
-                                      Variant="Variant.Outlined"
-                                      Lines="4"
-                                      Required="true"
-                                      Class="mb-4" />
+                @if (!string.IsNullOrEmpty(editMessage) && currentWizardStep == 0)
+                {
+                    <MudAlert Severity="@GetAlertSeverity()" Class="mb-3">@editMessage</MudAlert>
+                }
 
-                        <MudTextField @bind-Value="editingJoke.Attribution"
-                                      Label="Attribution (optional)"
-                                      Variant="Variant.Outlined"
-                                      Class="mb-4" />
-                    }
-                    else if (currentWizardStep == 1)
+                @if (currentWizardStep == 0)
+                {
+                    <!-- Initial navigation: Next to reveal image section -->
+                    <MudStack Row="true" Spacing="2">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   OnClick="NextWizardStep"
+                                   Disabled="@(isSuggestingCategories)">
+                            Next
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Default"
+                                   OnClick="CancelEdit">
+                            Cancel
+                        </MudButton>
+                    </MudStack>
+                }
+                else
+                {
+                    <!-- Image section (revealed after Next) -->
+                    <MudDivider Class="my-4" />
+                    <MudText Typo="Typo.h6" Class="mb-3">Joke Image</MudText>
+
+                    @if (isGeneratingScenario || isGeneratingImage)
                     {
-                        <!-- Step 1: Categories -->
-                        @if (isSuggestingCategories)
-                        {
-                            <div class="d-flex flex-column align-center my-5">
-                                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-                                <MudText Typo="Typo.body2" Class="mt-2">Asking AI to suggest categories...</MudText>
-                            </div>
-                        }
-                        else
-                        {
-                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">
-                                AI has suggested the highlighted categories - feel free to add or remove.
+                        <div class="d-flex flex-column align-center my-5">
+                            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                            <MudText Typo="Typo.body2" Class="mt-2">
+                                @(isGeneratingScenario ? "Creating scene description..." : "Asking artist AI to create an image...")
                             </MudText>
-                            <MudSelect T="int"
-                                       Label="Categories"
-                                       Variant="Variant.Outlined"
-                                       MultiSelection="true"
-                                       @bind-SelectedValues="selectedCategoryIds"
-                                       MultiSelectionTextFunc="@(new Func<List<string>, string>(GetSelectedCategoriesText))"
-                                       Class="mb-4">
-                                @foreach (var category in allCategories)
-                                {
-                                    <MudSelectItem T="int" Value="@category.JokeCategoryId">@category.JokeCategoryTxt</MudSelectItem>
-                                }
-                            </MudSelect>
-                        }
+                        </div>
                     }
-                    else if (currentWizardStep == 2)
+                    else if (!string.IsNullOrEmpty(jokeImageUrl) && jokeImageUrl != "skipped")
                     {
-                        <!-- Step 2: Scenario -->
-                        @if (isGeneratingScenario)
+                        <!-- Image generated: show preview and description -->
+                        <div class="mb-4">
+                            <img src="@jokeImageUrl" alt="Generated joke image" class="joke-image-preview" />
+                        </div>
+                        @if (!string.IsNullOrEmpty(editingJoke.ImageTxt))
                         {
-                            <div class="d-flex flex-column align-center my-5">
-                                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-                                <MudText Typo="Typo.body2" Class="mt-2">Asking AI to create a scene description...</MudText>
-                            </div>
-                        }
-                        else
-                        {
-                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">
-                                This scenario description will be used to generate an image for the joke.
-                            </MudText>
                             <MudTextField @bind-Value="editingJoke.ImageTxt"
                                           Label="Scene Description"
                                           Variant="Variant.Outlined"
-                                          Lines="4"
-                                          Class="mb-4" />
+                                          Lines="3"
+                                          Class="mb-3" />
                         }
+                        <MudStack Row="true" Spacing="2" Class="mb-4">
+                            <MudButton Variant="Variant.Outlined"
+                                       Size="Size.Small"
+                                       Color="Color.Secondary"
+                                       OnClick="RegenerateWizardImageAsync"
+                                       StartIcon="@Icons.Material.Filled.Refresh">
+                                Regenerate Image
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined"
+                                       Size="Size.Small"
+                                       Color="Color.Default"
+                                       OnClick="ClearWizardImage"
+                                       StartIcon="@Icons.Material.Filled.Clear">
+                                Remove Image
+                            </MudButton>
+                        </MudStack>
                     }
-                    else if (currentWizardStep == 3)
+                    else
                     {
-                        <!-- Step 3: Image -->
-                        @if (isGeneratingImage)
+                        <!-- No image yet: offer to create one -->
+                        <MudStack Row="true" Spacing="2" Class="mb-4">
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Image"
+                                       OnClick="CreateJokeImageAsync">
+                                Create an Image of this Joke
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Default"
+                                       StartIcon="@Icons.Material.Filled.SkipNext"
+                                       OnClick="SkipImageGeneration">
+                                Skip Image
+                            </MudButton>
+                        </MudStack>
+                    }
+
+                    @if (!string.IsNullOrEmpty(editMessage))
+                    {
+                        <MudAlert Severity="@GetAlertSeverity()" Class="mb-3">@editMessage</MudAlert>
+                    }
+
+                    <!-- Save / Back / Cancel -->
+                    <MudStack Row="true" Spacing="2">
+                        @if (!string.IsNullOrEmpty(jokeImageUrl))
                         {
-                            <div class="d-flex flex-column align-center my-5">
-                                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-                                <MudText Typo="Typo.body2" Class="mt-2">Asking artist AI to create an image...</MudText>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="joke-preview-card mb-4">
-                                <MudText Typo="Typo.subtitle1" Class="mb-2"><strong>Joke:</strong> @editingJoke.JokeTxt</MudText>
-                                @if (!string.IsNullOrEmpty(editingJoke.Attribution))
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Success"
+                                       OnClick="SaveJoke"
+                                       Disabled="@(isSaving || isGeneratingImage || isGeneratingScenario)"
+                                       StartIcon="@Icons.Material.Filled.Save">
+                                @if (isSaving)
                                 {
-                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">— @editingJoke.Attribution</MudText>
+                                    <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
                                 }
-                                <MudText Typo="Typo.body2" Class="mb-2"><strong>Categories:</strong> @GetSelectedCategoriesText(null)</MudText>
-                                <MudText Typo="Typo.body2" Class="mb-2"><strong>Scenario:</strong> @editingJoke.ImageTxt</MudText>
-                            </div>
-                            @if (!string.IsNullOrEmpty(jokeImageUrl) && jokeImageUrl != "skipped")
-                            {
-                                <div class="mb-4">
-                                    <img src="@jokeImageUrl" alt="Generated joke image" class="joke-image-preview" />
-                                    <MudStack Row="true" Spacing="2" Class="mt-2">
-                                        <MudButton Variant="Variant.Outlined"
-                                                   Size="Size.Small"
-                                                   Color="Color.Secondary"
-                                                   OnClick="RegenerateWizardImageAsync"
-                                                   StartIcon="@Icons.Material.Filled.Refresh">
-                                            Regenerate
-                                        </MudButton>
-                                        <MudButton Variant="Variant.Outlined"
-                                                   Size="Size.Small"
-                                                   Color="Color.Default"
-                                                   OnClick="ClearWizardImage"
-                                                   StartIcon="@Icons.Material.Filled.Clear">
-                                            Clear
-                                        </MudButton>
-                                    </MudStack>
-                                </div>
-                            }
-                            else
-                            {
-                                <MudAlert Severity="Severity.Info" Class="mb-4">
-                                    <MudText Typo="Typo.body2">Would you like to generate an AI image for this joke?</MudText>
-                                </MudAlert>
-                                <MudStack Row="true" Spacing="2" Class="mb-4">
-                                    <MudButton Variant="Variant.Filled"
-                                               Color="Color.Primary"
-                                               OnClick="GenerateImageAsync"
-                                               StartIcon="@Icons.Material.Filled.Image">
-                                        Generate Image
-                                    </MudButton>
-                                    <MudText Typo="Typo.body2" Class="d-flex align-center">or</MudText>
-                                    <MudButton Variant="Variant.Outlined"
-                                               Color="Color.Secondary"
-                                               OnClick="SkipImageGeneration"
-                                               StartIcon="@Icons.Material.Filled.SkipNext">
-                                        Skip Image
-                                    </MudButton>
-                                </MudStack>
-                            }
+                                Save Joke
+                            </MudButton>
                         }
-                    }
-                </div>
-
-                @if (!string.IsNullOrEmpty(editMessage))
-                {
-                    <MudAlert Severity="@GetAlertSeverity()" Class="mt-3 mb-3">@editMessage</MudAlert>
-                }
-
-                <!-- Navigation buttons -->
-                <MudStack Row="true" Spacing="2">
-                    @if (currentWizardStep > 0)
-                    {
                         <MudButton Variant="Variant.Outlined"
                                    Color="Color.Secondary"
                                    OnClick="PreviousWizardStep"
                                    Disabled="@(isSuggestingCategories || isGeneratingScenario || isGeneratingImage || isSaving)">
                             Back
                         </MudButton>
-                    }
-                    @if (currentWizardStep < 3)
-                    {
-                        <MudButton Variant="Variant.Filled"
-                                   Color="Color.Primary"
-                                   OnClick="NextWizardStep"
-                                   Disabled="@(isSuggestingCategories || isGeneratingScenario || isGeneratingImage)">
-                            Next
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Default"
+                                   OnClick="CancelEdit"
+                                   Disabled="@(isSaving)">
+                            Cancel
                         </MudButton>
-                    }
-                    else if (!string.IsNullOrEmpty(jokeImageUrl))
-                    {
-                        <!-- Show Save button only after image is generated or skipped -->
-                        <MudButton Variant="Variant.Filled"
-                                   Color="Color.Success"
-                                   OnClick="SaveJoke"
-                                   Disabled="@(isSaving || isGeneratingImage)"
-                                   StartIcon="@Icons.Material.Filled.Save">
-                            @if (isSaving)
-                            {
-                                <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
-                            }
-                            Save Joke
-                        </MudButton>
-                    }
-                    <MudButton Variant="Variant.Outlined"
-                               Color="Color.Default"
-                               OnClick="CancelEdit"
-                               Disabled="@(isSaving)">
-                        Cancel
-                    </MudButton>
-                </MudStack>
+                    </MudStack>
+                }
             </MudPaper>
         }
         else if (editingJoke != null && !isAddingNew)
