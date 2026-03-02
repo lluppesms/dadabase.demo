@@ -34,4 +34,12 @@ public interface IAIHelper
     /// <param name="jokeId">Joke ID</param>
     /// <returns>Image file path if exists, empty string otherwise</returns>
     string GetJokeImagePath(int jokeId);
+
+    /// <summary>
+    /// Suggest relevant categories for a joke
+    /// </summary>
+    /// <param name="jokeText">The joke text</param>
+    /// <param name="availableCategories">All available category names</param>
+    /// <returns>Tuple with list of suggested category names, success flag, and message</returns>
+    Task<(List<string> suggestedCategories, bool success, string message)> SuggestCategories(string jokeText, IEnumerable<string> availableCategories);
 }

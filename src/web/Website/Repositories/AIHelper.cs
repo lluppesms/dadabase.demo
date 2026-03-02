@@ -27,6 +27,7 @@ public class AIHelper : IAIHelper
     private readonly string openaiImageApiKey = string.Empty;
 
     private AIAgent jokeDescriptionAgent = null;
+    private AIAgent jokeCategoryAgent = null;
     private ImageClient imageGenerator = null;
 
     private readonly string vsTenantId = string.Empty;
@@ -34,6 +35,12 @@ public class AIHelper : IAIHelper
     private readonly string blobContainerName = "joke-images";
     private readonly DefaultAzureCredential azureCredential;
     #endregion
+
+    private const string JokeCategoryClassifierPrompt =
+        "You are a joke classification assistant. Given a joke, identify which categories from a provided list best describe it. " +
+        "Return ONLY the names of matching categories as a comma-separated list with no other text. " +
+        "Only return categories that are actually in the provided list - do not invent new ones. " +
+        "If no categories match well, return the most appropriate one from the list.";
 
     private const string JokeImageGeneratorPrompt =
         "You are going to be told a funny joke or a humorous line or an insightful quote. " +
@@ -71,6 +78,47 @@ public class AIHelper : IAIHelper
             var msg = Utilities.GetExceptionMessage(ex);
             Console.WriteLine($"Error during description generation: {msg}");
             return (imageDescription, false, "Could not generate an image description - see log for details!");
+        }
+    }
+
+    /// <summary>
+    /// Suggest relevant categories for a joke using AI
+    /// </summary>
+    /// <param name="jokeText">The joke text</param>
+    /// <param name="availableCategories">All available category names</param>
+    /// <returns>Tuple with list of suggested category names, success flag, and message</returns>
+    public async Task<(List<string> suggestedCategories, bool success, string message)> SuggestCategories(string jokeText, IEnumerable<string> availableCategories)
+    {
+        var suggestedCategories = new List<string>();
+        try
+        {
+            if (!InitializeCategoryAgent())
+            {
+                return (suggestedCategories, false, "AI Chat Keys not found!");
+            }
+
+            var message = $"Joke: {jokeText}\n\nAvailable categories: {string.Join(", ", availableCategories)}\n\nWhich categories from the list above best fit this joke? Return only the matching category names as a comma-separated list.";
+            var response = await jokeCategoryAgent.RunAsync(message);
+            var responseText = response.ToString();
+
+            var categoryList = availableCategories.ToList();
+            var suggestions = responseText.Split(',')
+                .Select(s => s.Trim())
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Where(s => categoryList.Any(c => c.Equals(s, StringComparison.OrdinalIgnoreCase)))
+                .Select(s => categoryList.First(c => c.Equals(s, StringComparison.OrdinalIgnoreCase)))
+                .Distinct()
+                .ToList();
+
+            suggestedCategories = suggestions;
+            Console.WriteLine($"Category suggestions for joke: {responseText} -> matched: {string.Join(", ", suggestedCategories)}");
+            return (suggestedCategories, true, string.Empty);
+        }
+        catch (Exception ex)
+        {
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error during category suggestion: {msg}");
+            return (suggestedCategories, false, "Could not suggest categories - see log for details!");
         }
     }
 
@@ -348,6 +396,51 @@ public class AIHelper : IAIHelper
         {
             var msg = Utilities.GetExceptionMessage(ex);
             Console.WriteLine($"Error initializing Joke Agent: {msg}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Initialize the Joke Category Classifier Agent using Microsoft Agent Framework
+    /// </summary>
+    private bool InitializeCategoryAgent()
+    {
+        if (jokeCategoryAgent != null) return true;
+
+        if (string.IsNullOrEmpty(openaiEndpointUrl) || string.IsNullOrEmpty(openaiDeploymentName))
+        {
+            Console.WriteLine("No OpenAI API keys available");
+            return false;
+        }
+
+        try
+        {
+            AzureOpenAIClient azureClient;
+
+            if (string.IsNullOrEmpty(openaiApiKey))
+            {
+                Console.WriteLine("Using Azure AD credentials for OpenAI Chat Client");
+                azureClient = new AzureOpenAIClient(openaiEndpoint, Utilities.GetCredentials(vsTenantId));
+            }
+            else
+            {
+                Console.WriteLine("Using API Key for OpenAI Chat Client");
+                azureClient = new AzureOpenAIClient(openaiEndpoint, new ApiKeyCredential(openaiApiKey));
+            }
+
+            var chatClient = azureClient.GetChatClient(openaiDeploymentName);
+
+            jokeCategoryAgent = chatClient.AsAIAgent(
+                name: "JokeCategoryClassifier",
+                instructions: JokeCategoryClassifierPrompt
+            );
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error initializing Category Agent: {msg}");
             return false;
         }
     }
