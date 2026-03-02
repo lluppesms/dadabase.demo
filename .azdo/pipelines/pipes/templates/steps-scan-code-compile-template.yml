@@ -1,0 +1,45 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Pipeline Steps Template -- Compile steps for code scanning (Web, Function, and DacPac projects)
+# ------------------------------------------------------------------------------------------------------------------------
+# This template contains the build steps used during GHAS code scanning.
+# These steps replace the AutoBuild task to provide more control over the build process,
+# especially for SQL DACPAC projects that don't work well with AutoBuild.
+# ------------------------------------------------------------------------------------------------------------------------
+steps:
+  - task: DotNetCoreCLI@2
+    displayName: 'Restore project'
+    inputs:
+      command: 'restore'
+      projects: '$(Build.SourcesDirectory)/$(webAppFolderName)/$(webAppProjectFolderName)/*.$(webAppProjectExtension)'
+  
+  - task: DotNetCoreCLI@2
+    displayName: Build Web Project
+    continueOnError: true
+    inputs:
+      projects: '$(Build.SourcesDirectory)/$(webAppFolderName)/$(webAppProjectFolderName)/*.$(webAppProjectExtension)'
+      arguments: '--output publish_output --configuration Release'
+  
+  - task: DotNetCoreCLI@2
+    displayName: Build Function Project
+    continueOnError: true
+    inputs:
+      projects: '$(Build.SourcesDirectory)/$(functionFolderName)/$(functionProjectFolderName)/*.$(functionProjectExtension)'
+      arguments: '--output publish_output --configuration Release'
+  
+  - task: NuGetToolInstaller@1
+    displayName: Setup NuGet
+  
+  - task: NuGetCommand@2
+    displayName: Restore DacPac NuGet Packages
+    inputs:
+      restoreSolution: '$(Build.SourcesDirectory)/$(sqlAppFolderName)/$(sqlAppProjectName).sqlproj'
+      command: 'restore'
+  
+  - task: VSBuild@1
+    displayName: Build DacPac Project
+    continueOnError: true
+    inputs:
+      solution: '$(Build.SourcesDirectory)/$(sqlAppFolderName)/$(sqlAppProjectName).sqlproj'
+      platform: 'Any CPU'
+      configuration: 'Release'
+      msbuildArgs: /p:DropObjectsNotInSource=False

@@ -25,6 +25,15 @@ jobs:
   environment: ${{ parameters.environmentName }}
 
 # ----------------------------------------------------------------------------------------------------
+- ${{ if and(eq(lower(parameters.runGHASScan), 'false'), eq(lower(parameters.runMSDevSecOpsScan), 'false')) }}:
+  - job: NoScanJob
+    displayName: No Scan Requested
+    steps:
+      - bash: |
+          echo "No MS DevOps or GHAS scan requested!"
+        displayName: 'Stub Step'
+
+# ----------------------------------------------------------------------------------------------------
 - ${{ if eq(lower(parameters.runGHASScan), 'true') }}:
   - job: GHASScanJob
     displayName: GHAS Scan Job
@@ -34,7 +43,7 @@ jobs:
       - template: ../../vars/var-common.yml
 
     steps:
-    # Very basic simple example that might work sometimes...
+    # Simplest example that sometimes works...
     # - task: AdvancedSecurity-Codeql-Init@1
     #   inputs:
     #     languages: 'csharp'
@@ -44,28 +53,41 @@ jobs:
     # - task: AdvancedSecurity-Dependency-Scanning@1
     # - task: AdvancedSecurity-Codeql-Autobuild@1
     # - task: AdvancedSecurity-Codeql-Analyze@1
-    # - task: AdvancedSecurity-Publish@1 
+    # - task: AdvancedSecurity-Publish@1
 
     - task: CmdLine@2
       displayName: 'Display Variables and Tree'
       inputs:
         script: |
           echo "parameters.continueOnScanError=${{ parameters.continueOnScanError }}"
-          echo "appFolderName=$(webAppFolderName)"
-          echo "appSolutionName=$(webAppSolutionName)"
-          echo "appProjectName=$(webAppProjectName)"
-          echo "appProjectFolderName=$(webAppProjectFolderName)"
+
+          echo "webAppFolderName=$(webAppFolderName)"
+          echo "webAppSolutionName=$(webAppSolutionName)"
+          echo "webAppProjectName=$(webAppProjectName)"
+          echo "webAppProjectFolderName=$(webAppProjectFolderName)"
+          echo "Web Project Path: $(Build.SourcesDirectory)/$(webAppProjectFolderName)/*.$(webAppProjectExtension)"
+
+          echo "functionFolderName=$(functionFolderName)"
+          echo "functionSolutionName=$(functionSolutionName)"
+          echo "functionProjectName=$(functionProjectName)"
+          echo "functionProjectFolderName=$(functionProjectFolderName)"
+          echo "Function Project Path: $(Build.SourcesDirectory)/$(functionProjectFolderName)/*.$(functionProjectExtension)"
+
+          echo "sqlAppFolderName=$(sqlAppFolderName)"
+          echo "sqlAppSolutionName=$(sqlAppSolutionName)"
+          echo "sqlAppProjectName=$(sqlAppProjectName)"
+          echo "SQL Project Path: $(Build.SourcesDirectory)/$(sqlAppProjectFolderName)/*.$(sqlAppProjectExtension)"
+
           echo "workingDirectoryInfra=$(workingDirectoryInfra)"
           echo "workingDirectoryIgnore=$(workingDirectoryIgnore)"
-          echo "Project Path: $(Build.SourcesDirectory)/$(webAppProjectFolderName)/*.$(webAppProjectExtension)"
           echo "Build.SourcesDirectory=$(Build.SourcesDirectory)"
           echo "----------------------------------------"
           echo "##[group]Display All Environment Variables:"
           printenv | sort
           echo "##[endgroup]"
           echo "------------------------------------------------"
-          echo "##[group]Directory of Project Files: $(Build.SourcesDirectory)/$(webAppProjectFolderName)"
-            tree -L 4 $(Build.SourcesDirectory)/$(webAppProjectFolderName)
+          echo "##[group]Directory of Project Files: $(Build.SourcesDirectory)/src"
+          tree -L 4 $(Build.SourcesDirectory)/src
           echo "##[endgroup]"
           echo "------------------------------------------------"
           echo "##[group]Directory of Full Staging Directory: $(Build.SourcesDirectory)"
@@ -82,57 +104,43 @@ jobs:
       #   codeqlpathstoinclude: $(webAppProjectFolderName)
       #   codeqlpathstoignore: $(workingDirectoryIgnore)
 
-    - task: DotNetCoreCLI@2
-      displayName: 'Restore project'
-      inputs:
-        command: 'restore'
-        projects: '$(Build.SourcesDirectory)/$(webAppFolderName)/$(webAppProjectFolderName)/*.$(webAppProjectExtension)'
-
-    - ${{ if eq(lower(variables.appProjectExtension), 'csproj') }}:
-      - task: DotNetCoreCLI@2
-        displayName: Build CS Project
-        inputs:
-          projects: '$(Build.SourcesDirectory)/$(webAppFolderName)/$(webAppProjectFolderName)/*.$(webAppProjectExtension)'
-          arguments: '--output publish_output --configuration Release'
-
-    - ${{ if eq(lower(variables.appProjectExtension), 'sqlproj') }}:
-      - task: VSBuild@1
-        displayName: Build DacPac Project
-        inputs:
-          solution: '$(webAppFolderName)/$(webAppFolderName)/$(webAppSolutionName).sln'
-          platform: 'Any CPU'
-          configuration: 'Release'
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    # You may be able to use autobuild, but I replaced it with specific build steps in this pipeline 
+    # because of of multiple projects and the fact that SQL DACPAC projects that don't work well with the AutoBuild task.
+    # If your project builds successfully with AutoBuild, you can uncomment the following lines and remove the specific build steps.
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    #   - task: AdvancedSecurity-Codeql-Autobuild@1
+    #     displayName: GHAS AutoBuild
+    #     continueOnError: ${{ eq(parameters.continueOnScanError, 'true') }}
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    # Custom Build steps for this project (Web, Function, and DacPac projects)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    - template: steps-scan-code-compile-template.yml
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
     - task: AdvancedSecurity-Dependency-Scanning@1
       displayName: GHAS Dependency Scanning
       continueOnError: ${{ eq(parameters.continueOnScanError, 'true') }}
 
-      # If AutoBuild has failed, review the following troubleshooting steps.
-      # 1.  Verify that the language is set properly.
-      # 2.  Ensure that any configuration or dependencies are installed prior to the AutoBuild task.
-      # 3.  AutoBuild may not be suitable for your project. Replace the AutoBuild task in your pipeline with the normal build tasks
-      #     to build your project. This will give you more control over the build steps.
-      # I already built this in one of the previous steps, so I'm skipping this step.
-      # - ${{ if eq(lower(variables.appProjectExtension), 'csproj') }}:
-      #   - task: AdvancedSecurity-Codeql-Autobuild@1
-      #     displayName: GHAS AutoBuild
-      #     continueOnError: ${{ eq(parameters.continueOnScanError, 'true') }}
-
     - task: AdvancedSecurity-Codeql-Analyze@1
       displayName: GHAS Analyze
       continueOnError: ${{ eq(parameters.continueOnScanError, 'true') }}
 
-    - task: AdvancedSecurity-Publish@1 
+    - task: AdvancedSecurity-Publish@1
       displayName: GHAS Publish
       continueOnError: ${{ eq(parameters.continueOnScanError, 'true') }}
 
 # ----------------------------------------------------------------------------------------------------
 - ${{ if eq(lower(parameters.runMSDevSecOpsScan), 'true') }}:
-  - job: DevSecOpsScanJob
-    displayName: DevSecOps Scan Job
+  - job: MSDevSecOpsScanJob
+    displayName: MS DevSecOps Scan Job
     variables:
       - name: continueAfterScanErrors
         value: ${{ eq(parameters.continueOnScanError, 'true') }}
+      - name: nugetScanSolutionPattern
+        value: 'dadabase*.sln'
+      - name: nugetScanProjectPattern
+        value: 'dadabase*.csproj'
       - template: ../../vars/var-common.yml
     steps:
     - bash: |
@@ -157,19 +165,153 @@ jobs:
       displayName: 'Display Variables'
       continueOnError: true
 
-    # - task: UseDotNet@2
-    #   displayName: 'Use dotnet 3.1'
-    #   inputs:
-    #     version: 3.1.x        
-    # - task: UseDotNet@2
-    #   displayName: 'Use dotnet 6.0'
-    #   inputs:
-    #     version: 6.0.x
     - task: UseDotNet@2
       displayName: 'Use dotnet 8.0'
       inputs:
         version: 8.0.x
 
+    - task: UseDotNet@2
+      displayName: 'Use dotnet 10.0'
+      inputs:
+        version: 10.0.x
+
     - task: MicrosoftSecurityDevOps@1
       displayName: 'Run Microsoft Security DevOps'
+      continueOnError: true
+
+    - task: CmdLine@2
+      displayName: Install Additional Security Tools
+      inputs:
+        script: |
+          echo "Installing additional security tools..."
+          pip install safety semgrep
+
+    - task: PowerShell@2
+      displayName: Python Dependency Vulnerability Scan (Safety)
+      continueOnError: true
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "Scanning for known vulnerabilities in dependencies..."
+          if (Test-Path "requirements.txt") {
+            # Generate SARIF output for Advanced Security integration
+            safety check -r requirements.txt --output sarif --save-as safety-report.sarif
+            
+            # Generate JSON output for artifact archival
+            safety check -r requirements.txt --json --output safety-report.json
+            if ($LASTEXITCODE -ne 0) { Write-Host "Vulnerability scan completed with findings" }
+
+            if (Test-Path "safety-report.sarif") { 
+              Write-Host "Safety SARIF report generated"
+            } else { 
+              Write-Host "No Safety SARIF report generated, creating empty file";
+              "" | Out-File -FilePath "safety-report.sarif" -Encoding utf8 
+            }
+            if (Test-Path "safety-report.json") { 
+              Write-Host "Safety JSON report generated"
+              Get-Content safety-report.json 
+            } else { 
+              Write-Host "No Safety JSON report generated, creating empty file";
+              "" | Out-File -FilePath "safety-report.json" -Encoding utf8 
+            }
+          } else {
+            "" | Out-File -FilePath "safety-report.sarif" -Encoding utf8 
+            "" | Out-File -FilePath "safety-report.json" -Encoding utf8 
+            Write-Host "No requirements.txt found, skipping dependency scan"
+          }
+    - task: PowerShell@2
+      displayName: Secrets and Code Quality Scan (Semgrep)
+      continueOnError: true
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "Scanning for secrets and credentials..."
+          # Set UTF-8 encoding for Python to handle Unicode characters in source files
+          $env:PYTHONIOENCODING = "utf-8"
+          $env:PYTHONUTF8 = "1"
+          $files = Get-ChildItem -Recurse -Include *.cs,*.razor,*.yml,*.yaml,*.json,*.bicep,*.tf -File
+          if ($files) {
+            # Generate both SARIF (for Advanced Security) and JSON (for artifact) outputs
+            semgrep --config=auto --sarif --output=semgrep-report.sarif .
+            semgrep --config=auto --json --output=semgrep-report.json .
+            if ($LASTEXITCODE -ne 0) { Write-Host "Secret scan completed" }
+            if (Test-Path "semgrep-report.sarif") { 
+              Write-Host "SARIF report generated for Advanced Security"
+            } else { 
+              Write-Host "No semgrep SARIF report generated, creating empty file"
+              "" | Out-File -FilePath "semgrep-report.sarif" -Encoding utf8
+            }
+            if (Test-Path "semgrep-report.json") { 
+              Write-Host "JSON report generated for artifact"
+              Get-Content semgrep-report.json 
+            } else { 
+              Write-Host "No semgrep report generated, creating empty file"
+              "" | Out-File -FilePath "semgrep-report.json" -Encoding utf8
+            }
+          } else {
+            Write-Host "No files found for secret scanning"
+          }
+
+    - task: PowerShell@2
+      displayName: NuGet Package Vulnerability Scan
+      continueOnError: true
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "Scanning for known vulnerabilities in NuGet packages..."
+          $solutions = Get-ChildItem -Recurse -Filter $(nugetScanSolutionPattern)
+          foreach ($solution in $solutions) {
+            Write-Host "Restoring solution: $($solution.FullName)"
+            dotnet restore $solution.FullName 
+            Write-Host "Checking solution: $($solution.FullName)"
+            dotnet list $solution.FullName package --vulnerable --include-transitive 2>&1 | Tee-Object -Variable output
+            if ($output -match "has the following vulnerable packages") {
+              Write-Host "##vso[task.logissue type=warning]Vulnerable packages found in $($solution.Name)"
+            }
+          }
+          if (!$solutions) {
+            Write-Host "No solution files found, checking individual projects..."
+            $projects = Get-ChildItem -Recurse -Filter $(nugetScanProjectPattern)
+            foreach ($project in $projects) {
+              Write-Host "Restoring project: $($project.FullName)"
+              dotnet restore $project.FullName
+              Write-Host "Checking project: $($project.FullName)"
+              dotnet list $project.FullName package --vulnerable --include-transitive
+            }
+          }
+
+    - task: PowerShell@2
+      displayName: Display Files
+      continueOnError: true
+      inputs:
+        targetType: 'inline'
+        script: |
+          Get-ChildItem -Path $(System.DefaultWorkingDirectory) -Recurse -Depth 5 | Select-Object FullName
+
+    - task: AdvancedSecurity-Publish@1
+      displayName: Add Safety Results to Advanced Security
+      inputs:
+        SarifFiles: '$(System.DefaultWorkingDirectory)/safety-report.sarif'
+      continueOnError: true
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Safety Report
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/safety-report.json'
+        artifactName: 'safety-reports'
+        publishLocation: 'Container'
+      condition: always()
+      continueOnError: true
+
+    - task: AdvancedSecurity-Publish@1
+      displayName: Add Semgrep Results to Advanced Security
+      inputs:
+        SarifFiles: '$(System.DefaultWorkingDirectory)/semgrep-report.sarif'
+      continueOnError: true
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Semgrep Report
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/semgrep-report.json'
+        artifactName: 'semgrep-reports'
+        publishLocation: 'Container'
+      condition: always()
       continueOnError: true
