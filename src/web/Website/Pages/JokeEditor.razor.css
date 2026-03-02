@@ -60,3 +60,10 @@
     cursor: pointer;
 }
 
+.category-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px 0;
+}
+

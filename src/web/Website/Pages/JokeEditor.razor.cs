@@ -140,6 +140,20 @@ public partial class JokeEditor : ComponentBase
     }
 
     /// <summary>
+    /// Toggle a category in/out of the selected set
+    /// </summary>
+    private void ToggleCategory(int categoryId)
+    {
+        var ids = new HashSet<int>(selectedCategoryIds);
+        if (ids.Contains(categoryId))
+            ids.Remove(categoryId);
+        else
+            ids.Add(categoryId);
+        selectedCategoryIds = ids;
+        StateHasChanged();
+    }
+
+    /// <summary>
     /// Get alert severity based on alert class
     /// </summary>
     private Severity GetAlertSeverity()

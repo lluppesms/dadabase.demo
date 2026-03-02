@@ -36,19 +36,22 @@
                               Class="mb-4" />
 
                 <!-- Categories with Auto-Assign button -->
-                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mb-1">
+                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Start" Class="mb-1">
                     <div class="flex-grow-1">
-                        <MudSelect T="int"
-                                   Label="Categories"
-                                   Variant="Variant.Outlined"
-                                   MultiSelection="true"
-                                   @bind-SelectedValues="selectedCategoryIds"
-                                   MultiSelectionTextFunc="@(new Func<List<string>, string>(GetSelectedCategoriesText))">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">Categories — click to toggle</MudText>
+                        <div class="category-chips">
                             @foreach (var category in allCategories)
                             {
-                                <MudSelectItem T="int" Value="@category.JokeCategoryId">@category.JokeCategoryTxt</MudSelectItem>
+                                var isSelected = selectedCategoryIds.Contains(category.JokeCategoryId);
+                                <MudChip T="string"
+                                         Color="@(isSelected ? Color.Primary : Color.Default)"
+                                         Variant="@(isSelected ? Variant.Filled : Variant.Outlined)"
+                                         OnClick="@(() => ToggleCategory(category.JokeCategoryId))"
+                                         Class="ma-1">
+                                    @category.JokeCategoryTxt
+                                </MudChip>
                             }
-                        </MudSelect>
+                        </div>
                     </div>
                     <MudTooltip Text="Let AI suggest categories for this joke">
                         <MudButton Variant="Variant.Outlined"
@@ -236,18 +239,20 @@
                     </div>
                 }
 
-                <MudSelect T="int"
-                           Label="Categories"
-                           Variant="Variant.Outlined"
-                           MultiSelection="true"
-                           @bind-SelectedValues="selectedCategoryIds"
-                           MultiSelectionTextFunc="@(new Func<List<string>, string>(GetSelectedCategoriesText))"
-                           Class="mb-4">
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">Categories — click to toggle</MudText>
+                <div class="category-chips mb-4">
                     @foreach (var category in allCategories)
                     {
-                        <MudSelectItem T="int" Value="@category.JokeCategoryId">@category.JokeCategoryTxt</MudSelectItem>
+                        var isSelected = selectedCategoryIds.Contains(category.JokeCategoryId);
+                        <MudChip T="string"
+                                 Color="@(isSelected ? Color.Primary : Color.Default)"
+                                 Variant="@(isSelected ? Variant.Filled : Variant.Outlined)"
+                                 OnClick="@(() => ToggleCategory(category.JokeCategoryId))"
+                                 Class="ma-1">
+                            @category.JokeCategoryTxt
+                        </MudChip>
                     }
-                </MudSelect>
+                </div>
 
                 <!-- Image display -->
                 <MudPaper Class="pa-3 mb-4" Outlined="true">
