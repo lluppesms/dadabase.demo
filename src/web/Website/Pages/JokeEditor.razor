@@ -117,15 +117,48 @@
                                 <MudText Typo="Typo.body2" Class="mb-2"><strong>Categories:</strong> @GetSelectedCategoriesText(null)</MudText>
                                 <MudText Typo="Typo.body2" Class="mb-2"><strong>Scenario:</strong> @editingJoke.ImageTxt</MudText>
                             </div>
-                            @if (!string.IsNullOrEmpty(jokeImageUrl))
+                            @if (!string.IsNullOrEmpty(jokeImageUrl) && jokeImageUrl != "skipped")
                             {
                                 <div class="mb-4">
                                     <img src="@jokeImageUrl" alt="Generated joke image" class="joke-image-preview" />
+                                    <MudStack Row="true" Spacing="2" Class="mt-2">
+                                        <MudButton Variant="Variant.Outlined"
+                                                   Size="Size.Small"
+                                                   Color="Color.Secondary"
+                                                   OnClick="RegenerateWizardImageAsync"
+                                                   StartIcon="@Icons.Material.Filled.Refresh">
+                                            Regenerate
+                                        </MudButton>
+                                        <MudButton Variant="Variant.Outlined"
+                                                   Size="Size.Small"
+                                                   Color="Color.Default"
+                                                   OnClick="ClearWizardImage"
+                                                   StartIcon="@Icons.Material.Filled.Clear">
+                                            Clear
+                                        </MudButton>
+                                    </MudStack>
                                 </div>
                             }
                             else
                             {
-                                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">No image generated yet.</MudText>
+                                <MudAlert Severity="Severity.Info" Class="mb-4">
+                                    <MudText Typo="Typo.body2">Would you like to generate an AI image for this joke?</MudText>
+                                </MudAlert>
+                                <MudStack Row="true" Spacing="2" Class="mb-4">
+                                    <MudButton Variant="Variant.Filled"
+                                               Color="Color.Primary"
+                                               OnClick="GenerateImageAsync"
+                                               StartIcon="@Icons.Material.Filled.Image">
+                                        Generate Image
+                                    </MudButton>
+                                    <MudText Typo="Typo.body2" Class="d-flex align-center">or</MudText>
+                                    <MudButton Variant="Variant.Outlined"
+                                               Color="Color.Secondary"
+                                               OnClick="SkipImageGeneration"
+                                               StartIcon="@Icons.Material.Filled.SkipNext">
+                                        Skip Image
+                                    </MudButton>
+                                </MudStack>
                             }
                         }
                     }
@@ -156,12 +189,14 @@
                             Next
                         </MudButton>
                     }
-                    else
+                    else if (!string.IsNullOrEmpty(jokeImageUrl))
                     {
+                        <!-- Show Save button only after image is generated or skipped -->
                         <MudButton Variant="Variant.Filled"
-                                   Color="Color.Primary"
+                                   Color="Color.Success"
                                    OnClick="SaveJoke"
-                                   Disabled="@(isSaving || isGeneratingImage)">
+                                   Disabled="@(isSaving || isGeneratingImage)"
+                                   StartIcon="@Icons.Material.Filled.Save">
                             @if (isSaving)
                             {
                                 <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
