@@ -763,11 +763,11 @@ public partial class JokeEditor : ComponentBase
             return;
         }
 
-        bool? result = await DialogService.ShowMessageBox(
-            "Delete Joke",
-            $"Are you sure you want to delete this joke? This action cannot be undone.",
-            yesText: "Delete",
-            cancelText: "Cancel");
+        bool? result = await DialogService.ShowMessageBoxAsync(
+             "Delete Joke",
+             $"Are you sure you want to delete this joke? This action cannot be undone.",
+             yesText: "Delete",
+             cancelText: "Cancel");
 
         if (result == true)
         {
