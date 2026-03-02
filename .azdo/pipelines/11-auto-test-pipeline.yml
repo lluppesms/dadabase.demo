@@ -22,7 +22,6 @@ parameters:
     displayName: Environment to Test
     type: string
     values:
-      - DEMO
       - DEV
       - QA
       - PROD
@@ -31,10 +30,10 @@ parameters:
 # ------------------------------------------------------------------------------------------------------------------------
 resources:
   pipelines:
-  - pipeline: webapp-pipeline # Internal name of the resource in this YML file
-    source: dbw.infra-and-webapp-pipeline # The name of the pipeline that triggers this pipeline
-    project: Demo # Required only if the source pipeline is in another project
-    trigger: true # Run this pipeline when any run of the source pipeline completes
+  - pipeline: webapp-pipeline             # Internal name of the resource in this YML file
+    source: 2.1-bicep-build-deploy-webapp # The name of the pipeline that triggers this pipeline
+    project: Demo                         # Required only if the source pipeline is in another project
+    trigger: true                         # Run this pipeline when any run of the source pipeline completes
 
 # ----------------------------------------------------------------------------------------------------
 variables:

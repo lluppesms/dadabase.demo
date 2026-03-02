@@ -22,7 +22,6 @@ parameters:
     displayName: Environment to Test
     type: string
     values:
-      - DEMO
       - DEV
       - QA
       - PROD

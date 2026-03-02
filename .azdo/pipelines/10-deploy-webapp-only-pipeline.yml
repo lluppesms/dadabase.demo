@@ -23,7 +23,7 @@ variables:
 resources:
   pipelines:
   - pipeline: dadabase.web.build.deploy    # internal identifier for the resource
-    source: dbw.infra-and-webapp-pipeline  # name of the pipeline that produces an artifact
+    source: 2.1-bicep-build-deploy-webapp  # name of the pipeline that produces an artifact
     branch: main                           # should only allow builds from the main branch to be used
 
 # ----------------------------------------------------------------------------------------------------
@@ -32,7 +32,6 @@ parameters:
     displayName: Deploy To
     type: string
     values:
-      - DEMO
       - DEV
       - QA
       - PROD
