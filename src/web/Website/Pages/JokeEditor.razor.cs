@@ -19,6 +19,7 @@ public partial class JokeEditor : ComponentBase
     [Inject] IJSRuntime JsInterop { get; set; }
     [Inject] HttpContextAccessor Context { get; set; }
     [Inject] IDialogService DialogService { get; set; }
+    [Inject] IAIHelper GenAIAgent { get; set; }
 
     private List<Joke> allJokes;
     private IEnumerable<Joke> filteredJokes;
@@ -35,6 +36,12 @@ public partial class JokeEditor : ComponentBase
     private string categoryFilter = string.Empty;
     private string editMessage = string.Empty;
     private string editAlertClass = "alert-info";
+
+    private int currentWizardStep = 0;
+    private bool isSuggestingCategories = false;
+    private bool isGeneratingScenario = false;
+    private bool isGeneratingImage = false;
+    private string jokeImageUrl = string.Empty;
 
     // MudDataGrid sorting
     private Func<Joke, object> _sortByJokeText = x => x.JokeTxt;
@@ -133,48 +140,76 @@ public partial class JokeEditor : ComponentBase
     }
 
     /// <summary>
+    /// Toggle a category in/out of the selected set
+    /// </summary>
+    private void ToggleCategory(int categoryId)
+    {
+        var ids = new HashSet<int>(selectedCategoryIds);
+        if (ids.Contains(categoryId))
+            ids.Remove(categoryId);
+        else
+            ids.Add(categoryId);
+        selectedCategoryIds = ids;
+        StateHasChanged();
+    }
+
+    /// <summary>
     /// Get alert severity based on alert class
     /// </summary>
     private Severity GetAlertSeverity()
     {
         return editAlertClass switch
         {
-                "alert-success" => Severity.Success,
-                "alert-warning" => Severity.Warning,
-                "alert-danger" => Severity.Error,
-                _ => Severity.Info
-            };
-        }
+            "alert-success" => Severity.Success,
+            "alert-warning" => Severity.Warning,
+            "alert-danger" => Severity.Error,
+            _ => Severity.Info
+        };
+    }
 
-        /// <summary>
-        /// Start adding a new joke
-        /// </summary>
-        private void AddNewJoke()
-        {
-            isAddingNew = true;
-            editingJoke = new Joke
-            {
-                JokeId = 0,
-                JokeTxt = string.Empty,
-                Attribution = string.Empty,
-                ImageTxt = string.Empty,
-                ActiveInd = "Y",
-                SortOrderNbr = 50
-            };
-            selectedCategoryIds = new HashSet<int>();
-            editMessage = string.Empty;
-            StateHasChanged();
-        }
+    /// <summary>
+    /// Get the MudBlazor color for a wizard step chip
+    /// </summary>
+    private Color GetStepColor(int step)
+    {
+        if (step < currentWizardStep) return Color.Success;
+        if (step == currentWizardStep) return Color.Primary;
+        return Color.Default;
+    }
 
-        /// <summary>
-        /// Start editing a joke
-        /// </summary>
-        private void EditJoke(int jokeId)
+    /// <summary>
+    /// Start adding a new joke - resets wizard to step 0
+    /// </summary>
+    private void AddNewJoke()
+    {
+        isAddingNew = true;
+        currentWizardStep = 0;
+        jokeImageUrl = string.Empty;
+        editingJoke = new Joke
         {
-            isAddingNew = false;
-            var joke = JokeRepository.GetOne(jokeId);
-            if (joke != null)
-            {
+            JokeId = 0,
+            JokeTxt = string.Empty,
+            Attribution = string.Empty,
+            ImageTxt = string.Empty,
+            ActiveInd = "Y",
+            SortOrderNbr = 50
+        };
+        selectedCategoryIds = new HashSet<int>();
+        editMessage = string.Empty;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Start editing a joke
+    /// </summary>
+    private void EditJoke(int jokeId)
+    {
+        isAddingNew = false;
+        currentWizardStep = 0;
+        jokeImageUrl = GenAIAgent.GetJokeImagePath(jokeId);
+        var joke = JokeRepository.GetOne(jokeId);
+        if (joke != null)
+        {
             editingJoke = new Joke
             {
                 JokeId = joke.JokeId,
@@ -206,14 +241,349 @@ public partial class JokeEditor : ComponentBase
                 }
             }
             selectedCategoryIds = categoryIds;
-
             editMessage = string.Empty;
         }
         StateHasChanged();
     }
 
     /// <summary>
-    /// Save the edited joke
+    /// Advance to the next wizard step - validates and reveals the image section
+    /// </summary>
+    private async Task NextWizardStep()
+    {
+        editMessage = string.Empty;
+
+        if (currentWizardStep == 0)
+        {
+            if (string.IsNullOrWhiteSpace(editingJoke.JokeTxt))
+            {
+                editMessage = "Joke text is required.";
+                editAlertClass = "alert-danger";
+                StateHasChanged();
+                return;
+            }
+            if (!selectedCategoryIds.Any())
+            {
+                editMessage = "Please select at least one category, or click Auto-Assign to have AI suggest categories.";
+                editAlertClass = "alert-warning";
+                StateHasChanged();
+                return;
+            }
+            currentWizardStep = 1;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Go back to the previous wizard step
+    /// </summary>
+    private void PreviousWizardStep()
+    {
+        if (currentWizardStep > 0)
+        {
+            currentWizardStep--;
+            editMessage = string.Empty;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Use AI to analyze the joke and get both category suggestions and scene description in one call
+    /// </summary>
+    private async Task AnalyzeJokeAsync()
+    {
+        isSuggestingCategories = true;
+        isGeneratingScenario = true;
+        StateHasChanged();
+
+        try
+        {
+            var (suggestedNames, description, success, message) = await GenAIAgent.AnalyzeJoke(
+                editingJoke.JokeTxt,
+                allCategories.Select(c => c.JokeCategoryTxt));
+
+            if (success)
+            {
+                // Set suggested categories
+                if (suggestedNames.Count > 0)
+                {
+                    var matchedIds = allCategories
+                        .Where(c => suggestedNames.Any(s => s.Equals(c.JokeCategoryTxt, StringComparison.OrdinalIgnoreCase)))
+                        .Select(c => c.JokeCategoryId);
+                    selectedCategoryIds = new HashSet<int>(matchedIds);
+                }
+
+                // Set scene description
+                if (!string.IsNullOrWhiteSpace(description))
+                {
+                    editingJoke.ImageTxt = description;
+                }
+            }
+            else if (!string.IsNullOrEmpty(message))
+            {
+                editMessage = message;
+                editAlertClass = "alert-warning";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Joke analysis failed: {Helpers.Utilities.GetExceptionMessage(ex)}");
+            editMessage = "Unable to analyze joke. Please select categories and enter a description manually, or try again.";
+            editAlertClass = "alert-warning";
+        }
+        finally
+        {
+            isSuggestingCategories = false;
+            isGeneratingScenario = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Ask AI to suggest categories for the joke
+    /// </summary>
+    private async Task SuggestCategoriesAsync()
+    {
+        isSuggestingCategories = true;
+        StateHasChanged();
+
+        try
+        {
+            var (suggestedNames, success, message) = await GenAIAgent.SuggestCategories(
+                editingJoke.JokeTxt,
+                allCategories.Select(c => c.JokeCategoryTxt));
+
+            if (success && suggestedNames.Count > 0)
+            {
+                var matchedIds = allCategories
+                    .Where(c => suggestedNames.Any(s => s.Equals(c.JokeCategoryTxt, StringComparison.OrdinalIgnoreCase)))
+                    .Select(c => c.JokeCategoryId);
+                selectedCategoryIds = new HashSet<int>(matchedIds);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Category suggestion failed: {Helpers.Utilities.GetExceptionMessage(ex)}");
+            editMessage = "Unable to suggest categories. Please try again or select categories manually.";
+            editAlertClass = "alert-warning";
+        }
+        finally
+        {
+            isSuggestingCategories = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Build the joke-with-categories string used as input to the scene description AI
+    /// </summary>
+    private string GetJokeWithCategories() =>
+        $"{editingJoke.JokeTxt} ({GetSelectedCategoriesText(null)})";
+
+    /// <summary>
+    /// Ask AI to generate a scene description for the joke (wizard mode)
+    /// </summary>
+    private async Task GenerateScenarioAsync()
+    {
+        isGeneratingScenario = true;
+        StateHasChanged();
+
+        try
+        {
+            var (description, success, message) = await GenAIAgent.GetJokeSceneDescription(GetJokeWithCategories());
+            if (success && !string.IsNullOrWhiteSpace(description))
+            {
+                editingJoke.ImageTxt = description;
+            }
+            else if (!success)
+            {
+                editMessage = message;
+                editAlertClass = "alert-warning";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Scenario generation failed: {Helpers.Utilities.GetExceptionMessage(ex)}");
+            editMessage = "Unable to generate a scenario description. You can enter one manually or try again.";
+            editAlertClass = "alert-warning";
+        }
+        finally
+        {
+            isGeneratingScenario = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Skip image generation and proceed to save
+    /// </summary>
+    private void SkipImageGeneration()
+    {
+        // Set a placeholder to indicate image was intentionally skipped
+        jokeImageUrl = "skipped";
+        editingJoke.ImageTxt = string.Empty;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Clear the wizard image and allow user to regenerate or skip
+    /// </summary>
+    private void ClearWizardImage()
+    {
+        jokeImageUrl = string.Empty;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Regenerate the wizard image (clears current and regenerates from existing description)
+    /// </summary>
+    private async Task RegenerateWizardImageAsync()
+    {
+        jokeImageUrl = string.Empty;
+        StateHasChanged();
+        await GenerateImageAsync();
+    }
+
+    /// <summary>
+    /// Create an image for the joke: generates scene description then image in one action
+    /// </summary>
+    private async Task CreateJokeImageAsync()
+    {
+        editMessage = string.Empty;
+
+        // Step 1: Generate scene description if not already set
+        if (string.IsNullOrWhiteSpace(editingJoke.ImageTxt))
+        {
+            await GenerateScenarioAsync();
+        }
+
+        // Step 2: Generate image from the description
+        if (!string.IsNullOrWhiteSpace(editingJoke.ImageTxt))
+        {
+            await GenerateImageAsync();
+        }
+    }
+
+    /// <summary>
+    /// Ask AI to generate an image for the joke (wizard mode, jokeId=0 before saving)
+    /// </summary>
+    private async Task GenerateImageAsync()
+    {
+        if (string.IsNullOrWhiteSpace(editingJoke.ImageTxt))
+        {
+            jokeImageUrl = string.Empty;
+            return;
+        }
+
+        isGeneratingImage = true;
+        StateHasChanged();
+
+        try
+        {
+            // Use jokeId=0 for new jokes; image will be regenerated with real ID after save
+            var (imageUrl, success, message) = await GenAIAgent.GenerateAnImage(editingJoke.ImageTxt, 0);
+            if (success)
+            {
+                jokeImageUrl = imageUrl;
+            }
+            else
+            {
+                editMessage = message;
+                editAlertClass = "alert-warning";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Image generation failed: {Helpers.Utilities.GetExceptionMessage(ex)}");
+            editMessage = "Unable to generate an image. You can continue and save the joke without an image.";
+            editAlertClass = "alert-warning";
+        }
+        finally
+        {
+            isGeneratingImage = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Re-generate scene description in edit mode and persist it to the database
+    /// </summary>
+    private async Task RegenerateScenarioAsync()
+    {
+        isGeneratingScenario = true;
+        editMessage = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var (description, success, message) = await GenAIAgent.GetJokeSceneDescription(GetJokeWithCategories());
+            if (success && !string.IsNullOrWhiteSpace(description))
+            {
+                editingJoke.ImageTxt = description;
+                JokeRepository.UpdateImageTxt(editingJoke.JokeId, description, currentUserName);
+            }
+            else if (!success)
+            {
+                editMessage = message;
+                editAlertClass = "alert-warning";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Scenario regeneration failed: {Helpers.Utilities.GetExceptionMessage(ex)}");
+            editMessage = "Unable to regenerate scenario. Please try again or edit the description manually.";
+            editAlertClass = "alert-warning";
+        }
+        finally
+        {
+            isGeneratingScenario = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Re-generate image in edit mode using the real joke ID
+    /// </summary>
+    private async Task RegenerateImageAsync()
+    {
+        if (string.IsNullOrWhiteSpace(editingJoke.ImageTxt))
+        {
+            jokeImageUrl = string.Empty;
+            return;
+        }
+
+        isGeneratingImage = true;
+        editMessage = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var (imageUrl, success, message) = await GenAIAgent.GenerateAnImage(editingJoke.ImageTxt, editingJoke.JokeId);
+            if (success)
+            {
+                jokeImageUrl = imageUrl;
+            }
+            else
+            {
+                editMessage = message;
+                editAlertClass = "alert-warning";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Image regeneration failed: {Helpers.Utilities.GetExceptionMessage(ex)}");
+            editMessage = "Unable to regenerate image. Please try again.";
+            editAlertClass = "alert-warning";
+        }
+        finally
+        {
+            isGeneratingImage = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Save the edited or new joke
     /// </summary>
     private async Task SaveJoke()
     {
@@ -239,7 +609,7 @@ public partial class JokeEditor : ComponentBase
                 return;
             }
 
-            if (selectedCategoryIds.Count() == 0)
+            if (!selectedCategoryIds.Any())
             {
                 editMessage = "At least one category must be selected.";
                 editAlertClass = "alert-danger";
@@ -252,6 +622,7 @@ public partial class JokeEditor : ComponentBase
             editingJoke.ActiveInd = "Y";
             int jokeId;
             bool success;
+            var imageGenerationMessage = string.Empty;
 
             if (isAddingNew)
             {
@@ -266,6 +637,40 @@ public partial class JokeEditor : ComponentBase
                     return;
                 }
                 success = true;
+
+                // Update categories immediately after creating the joke
+                success = JokeRepository.UpdateJokeCategories(jokeId, selectedCategoryIds.ToList(), currentUserName);
+                if (!success)
+                {
+                    editMessage = "Joke added, but failed to update categories.";
+                    editAlertClass = "alert-warning";
+                    isSaving = false;
+                    StateHasChanged();
+                    return;
+                }
+
+                // Persist the ImageTxt with the real ID, and save image to blob storage
+                if (!string.IsNullOrWhiteSpace(editingJoke.ImageTxt))
+                {
+                    JokeRepository.UpdateImageTxt(jokeId, editingJoke.ImageTxt, currentUserName);
+                }
+
+                // Save the already-generated image to blob storage with the real jokeId
+                // (avoids regenerating the image that was already created in the wizard)
+                // Skip if user chose to skip image generation
+                if (!string.IsNullOrWhiteSpace(jokeImageUrl) && jokeImageUrl != "skipped")
+                {
+                    var (blobUrl, imageSuccess, imageMsg) = await GenAIAgent.SaveBase64ImageToBlob(jokeImageUrl, jokeId);
+                    if (imageSuccess)
+                    {
+                        jokeImageUrl = blobUrl;
+                    }
+                    else if (!string.IsNullOrEmpty(imageMsg))
+                    {
+                        // Non-fatal: joke is saved, capture message to display after
+                        imageGenerationMessage = imageMsg;
+                    }
+                }
             }
             else
             {
@@ -280,27 +685,46 @@ public partial class JokeEditor : ComponentBase
                     StateHasChanged();
                     return;
                 }
+
+                // Update categories
+                success = JokeRepository.UpdateJokeCategories(jokeId, selectedCategoryIds.ToList(), currentUserName);
+                if (!success)
+                {
+                    editMessage = "Joke updated, but failed to update categories.";
+                    editAlertClass = "alert-warning";
+                    isSaving = false;
+                    StateHasChanged();
+                    return;
+                }
             }
 
-            // Update categories
-            success = JokeRepository.UpdateJokeCategories(jokeId, selectedCategoryIds.ToList(), currentUserName);
-            if (!success)
+            // Display success message, including image generation warning if applicable
+            if (!string.IsNullOrEmpty(imageGenerationMessage))
             {
-                editMessage = isAddingNew ? "Joke added, but failed to update categories." : "Joke updated, but failed to update categories.";
+                editMessage = $"Joke saved successfully, but image generation failed: {imageGenerationMessage}";
                 editAlertClass = "alert-warning";
-                isSaving = false;
-                StateHasChanged();
-                return;
+            }
+            else
+            {
+                editMessage = isAddingNew ? "Joke added successfully!" : "Joke updated successfully!";
+                editAlertClass = "alert-success";
             }
 
-            editMessage = isAddingNew ? "Joke added successfully!" : "Joke updated successfully!";
-            editAlertClass = "alert-success";
+            // Brief delay to show success message
+            StateHasChanged();
+            await Task.Delay(1500);
 
-            // Reload data and return to list
-            await Task.Delay(1500); // Show success message briefly
+            // Reload data from database to get updated categories and relationships
             LoadData();
+
+            // Clear edit state and return to list
             editingJoke = null;
             isAddingNew = false;
+            currentWizardStep = 0;
+            jokeImageUrl = string.Empty;
+            selectedCategoryIds = new HashSet<int>();
+
+            // Apply current filters to the refreshed data
             FilterJokes();
         }
         catch (Exception ex)
@@ -316,87 +740,90 @@ public partial class JokeEditor : ComponentBase
     }
 
     /// <summary>
-        /// Cancel editing
-        /// </summary>
-        private void CancelEdit()
+    /// Cancel editing
+    /// </summary>
+    private void CancelEdit()
+    {
+        editingJoke = null;
+        editMessage = string.Empty;
+        isAddingNew = false;
+        currentWizardStep = 0;
+        jokeImageUrl = string.Empty;
+        selectedCategoryIds = new HashSet<int>();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Confirm delete joke with a dialog
+    /// </summary>
+    private async Task ConfirmDeleteJoke()
+    {
+        if (editingJoke == null)
         {
-            editingJoke = null;
-            editMessage = string.Empty;
-            isAddingNew = false;
-            selectedCategoryIds = new HashSet<int>();
-            StateHasChanged();
+            return;
         }
 
-        /// <summary>
-        /// Confirm delete joke with a dialog
-        /// </summary>
-        private async Task ConfirmDeleteJoke()
+        bool? result = await DialogService.ShowMessageBoxAsync(
+             "Delete Joke",
+             $"Are you sure you want to delete this joke? This action cannot be undone.",
+             yesText: "Delete",
+             cancelText: "Cancel");
+
+        if (result == true)
         {
-            if (editingJoke == null)
-            {
-                return;
-            }
-
-            bool? result = await DialogService.ShowMessageBox(
-                "Delete Joke",
-                $"Are you sure you want to delete this joke? This action cannot be undone.",
-                yesText: "Delete",
-                cancelText: "Cancel");
-
-            if (result == true)
-            {
-                await DeleteJoke();
-            }
-        }
-
-        /// <summary>
-        /// Delete the joke
-        /// </summary>
-        private async Task DeleteJoke()
-        {
-            if (editingJoke == null)
-            {
-                return;
-            }
-
-            isSaving = true;
-            editMessage = "Deleting...";
-            editAlertClass = "alert-info";
-            StateHasChanged();
-
-            try
-            {
-                var jokeId = editingJoke.JokeId;
-                var success = JokeRepository.DeleteJoke(jokeId, currentUserName);
-
-                if (!success)
-                {
-                    editMessage = "Failed to delete joke.";
-                    editAlertClass = "alert-danger";
-                    isSaving = false;
-                    StateHasChanged();
-                    return;
-                }
-
-                editMessage = "Joke deleted successfully!";
-                editAlertClass = "alert-success";
-
-                // Reload data and return to list
-                await Task.Delay(1000); // Show success message briefly
-                LoadData();
-                editingJoke = null;
-                isAddingNew = false;
-                FilterJokes();
-            }
-            catch (Exception ex)
-            {
-                editMessage = $"Error deleting joke: {Helpers.Utilities.GetExceptionMessage(ex)}";
-                editAlertClass = "alert-danger";
-            }
-            finally
-            {
-                isSaving = false;
-                StateHasChanged();
-            }
+            await DeleteJoke();
         }
     }
+
+    /// <summary>
+    /// Delete the joke
+    /// </summary>
+    private async Task DeleteJoke()
+    {
+        if (editingJoke == null)
+        {
+            return;
+        }
+
+        isSaving = true;
+        editMessage = "Deleting...";
+        editAlertClass = "alert-info";
+        StateHasChanged();
+
+        try
+        {
+            var jokeId = editingJoke.JokeId;
+            var success = JokeRepository.DeleteJoke(jokeId, currentUserName);
+
+            if (!success)
+            {
+                editMessage = "Failed to delete joke.";
+                editAlertClass = "alert-danger";
+                isSaving = false;
+                StateHasChanged();
+                return;
+            }
+
+            editMessage = "Joke deleted successfully!";
+            editAlertClass = "alert-success";
+
+            // Reload data and return to list
+            await Task.Delay(1000); // Show success message briefly
+            LoadData();
+            editingJoke = null;
+            isAddingNew = false;
+            FilterJokes();
+        }
+        catch (Exception ex)
+        {
+            editMessage = $"Error deleting joke: {Helpers.Utilities.GetExceptionMessage(ex)}";
+            editAlertClass = "alert-danger";
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+}
+
