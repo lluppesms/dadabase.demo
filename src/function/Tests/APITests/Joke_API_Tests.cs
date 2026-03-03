@@ -1,6 +1,6 @@
 ////-----------------------------------------------------------------------
 //// <copyright file="Joke_API_Tests.cs" company="Luppes Consulting, Inc.">
-//// Copyright 2024, Luppes Consulting, Inc. All rights reserved.
+//// Copyright 2026, Luppes Consulting, Inc. All rights reserved.
 //// </copyright>
 //// <summary>
 //// Joke API Tests

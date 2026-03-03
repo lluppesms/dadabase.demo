@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------
 // <copyright file="JokeEditor.razor.cs" company="Luppes Consulting, Inc.">
-// Copyright 2025, Luppes Consulting, Inc. All rights reserved.
+// Copyright 2026, Luppes Consulting, Inc. All rights reserved.
 // </copyright>
 // <summary>
 // Joke Editor Page Code-Behind

@@ -1,6 +1,6 @@
 ﻿//-----------------------------------------------------------------------
 // <copyright file="_BaseRepository.cs" company="Luppes Consulting, Inc.">
-// Copyright 2024, Luppes Consulting, Inc. All rights reserved.
+// Copyright 2026, Luppes Consulting, Inc. All rights reserved.
 // </copyright>
 // <summary>
 // Base Repository

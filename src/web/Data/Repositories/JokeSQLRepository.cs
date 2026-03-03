@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------
 // <copyright file="JokeRepository.cs" company="Luppes Consulting, Inc.">
-// Copyright 2025, Luppes Consulting, Inc. All rights reserved.
+// Copyright 2026, Luppes Consulting, Inc. All rights reserved.
 // </copyright>
 // <summary>
 // Joke Repository
@@ -12,25 +12,22 @@ using System.Threading;
 namespace DadABase.Data.Repositories;
 
 /// <summary>
-/// Joke Repository
+/// Represents the Entity Framework Core implementation of the joke repository.
 /// </summary>
 /// <remarks>
-/// Joke Repository
+/// Initializes a new instance of the <see cref="JokeSQLRepository"/> class.
 /// </remarks>
-/// <param name="context">Database Context</param>
+/// <param name="context">The database context to utilize.</param>
 [ExcludeFromCodeCoverage]
 public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
 {
-    /// <summary>
-    /// DadABase Database Context
-    /// </summary>
     private readonly DadABaseDbContext _context = context;
 
     /// <summary>
-    /// Get a random joke
+    /// Gets a random joke from the database.
     /// </summary>
-    /// <param name="requestingUserName">Requesting UserName</param>
-    /// <returns>Record</returns>
+    /// <param name="requestingUserName">The username of the user requesting the joke.</param>
+    /// <returns>A random <see cref="Joke"/> record.</returns>
     public Joke GetRandomJoke(string requestingUserName = "ANON")
     {
         var joke = _context.Jokes
@@ -42,12 +39,12 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
-    /// Find Matching Jokes by Search Text and Category
+    /// Finds matching jokes by search text and category.
     /// </summary>
-    /// <param name="searchTxt">Search Text</param>
-    /// <param name="jokeCategoryTxt">Category</param>
-    /// <param name="requestingUserName">Requesting UserName</param>
-    /// <returns>Records</returns>
+    /// <param name="searchTxt">The partial text to search for.</param>
+    /// <param name="jokeCategoryTxt">The specified category text filter.</param>
+    /// <param name="requestingUserName">The username of the user requesting the search.</param>
+    /// <returns>An <see cref="IQueryable{T}"/> of matching <see cref="Joke"/> records.</returns>
     public IQueryable<Joke> SearchJokes(string searchTxt = "", string jokeCategoryTxt = "", string requestingUserName = "ANON")
     {
         jokeCategoryTxt = jokeCategoryTxt.Equals("All", StringComparison.OrdinalIgnoreCase) ? string.Empty : jokeCategoryTxt;
@@ -75,9 +72,11 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
-    /// List All Jokes with Categories populated
+    /// Lists all jokes with their categories populated.
     /// </summary>
-    /// <returns>List of Jokes</returns>
+    /// <param name="activeInd">The active indicator, typically "Y" or "N".</param>
+    /// <param name="requestingUserName">The username of the user requesting the list.</param>
+    /// <returns>An <see cref="IQueryable{T}"/> of jokes.</returns>
     public IQueryable<Joke> ListAll(string activeInd = "Y", string requestingUserName = "ANON")
     {
         // Use raw SQL to include Categories from the many-to-many relationship
@@ -101,12 +100,12 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
-    /// Update ImageTxt field for a specific joke
+    /// Updates the image text field for a specific joke.
     /// </summary>
-    /// <param name="jokeId">Joke ID</param>
-    /// <param name="imageTxt">Image description text</param>
-    /// <param name="requestingUserName">Requesting UserName</param>
-    /// <returns>Success</returns>
+    /// <param name="jokeId">The identifier of the joke.</param>
+    /// <param name="imageTxt">The image description text.</param>
+    /// <param name="requestingUserName">The username performing the update.</param>
+    /// <returns><see langword="true" /> if the update succeeded; otherwise, <see langword="false" />.</returns>
     public bool UpdateImageTxt(int jokeId, string imageTxt, string requestingUserName = "ANON")
     {
         try
@@ -123,9 +122,10 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
-    /// Get Joke Categories
+    /// Gets all joke categories from the database.
     /// </summary>
-    /// <returns>List of Category Names</returns>
+    /// <param name="requestingUserName">The username of the user requesting the categories.</param>
+    /// <returns>An <see cref="IQueryable{T}"/> of category names.</returns>
     public IQueryable<string> GetJokeCategories(string requestingUserName)
     {
         return _context.JokeCategories
@@ -135,11 +135,11 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
-    /// Get One Record with Categories populated
+    /// Gets one specific joke record with its categories populated.
     /// </summary>
-    /// <param name="id"></param>
-    /// <param name="requestingUserName"></param>
-    /// <returns></returns>
+    /// <param name="id">The identifier of the joke.</param>
+    /// <param name="requestingUserName">The username of the user requesting the joke.</param>
+    /// <returns>The specified <see cref="Joke"/> object.</returns>
     public Joke GetOne(int id, string requestingUserName = "ANON")
     {
         // Use raw SQL to include Categories from the many-to-many relationship
@@ -228,10 +228,10 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     //}
 
     /// <summary>
-    /// Export all jokes and categories to SQL format
+    /// Exports all jokes and categories to an SQL script format.
     /// </summary>
-    /// <param name="requestingUserName">Requesting UserName</param>
-    /// <returns>SQL script content</returns>
+    /// <param name="requestingUserName">The username of the user requesting the export.</param>
+    /// <returns>A string containing the SQL script content.</returns>
     public string ExportToSql(string requestingUserName = "ANON")
     {
         var sb = new System.Text.StringBuilder();
@@ -414,19 +414,21 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
-    /// Escape SQL string literals (handle single quotes)
+    /// Escapes SQL string literals by handling single quotes.
     /// </summary>
+    /// <param name="input">The input string to escape.</param>
+    /// <returns>The escaped SQL string.</returns>
     private static string EscapeSqlString(string input)
     {
         return input?.Replace("'", "''") ?? string.Empty;
     }
 
     /// <summary>
-    /// Update a joke
+    /// Updates an existing joke.
     /// </summary>
-    /// <param name="joke">Joke to update</param>
-    /// <param name="requestingUserName">Requesting UserName</param>
-    /// <returns>Success</returns>
+    /// <param name="joke">The joke entity containing the updated information.</param>
+    /// <param name="requestingUserName">The username of the user requesting the update.</param>
+    /// <returns><see langword="true"/> if the update was successful; otherwise, <see langword="false"/>.</returns>
     public bool UpdateJoke(Joke joke, string requestingUserName = "ANON")
     {
         try
@@ -457,10 +459,10 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
-    /// Get all joke categories (entities, not just names)
+    /// Gets all active joke categories.
     /// </summary>
-    /// <param name="requestingUserName">Requesting UserName</param>
-    /// <returns>List of JokeCategory entities</returns>
+    /// <param name="requestingUserName">The username of the user requesting the categories.</param>
+    /// <returns>An <see cref="IQueryable{T}"/> of <see cref="JokeCategory"/> entities.</returns>
     public IQueryable<JokeCategory> GetAllCategories(string requestingUserName = "ANON")
     {
         return _context.JokeCategories
@@ -469,12 +471,12 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
-    /// Update joke categories
+    /// Updates the categories associated with a joke.
     /// </summary>
-    /// <param name="jokeId">Joke ID</param>
-    /// <param name="categoryIds">List of category IDs</param>
-    /// <param name="requestingUserName">Requesting UserName</param>
-    /// <returns>Success</returns>
+    /// <param name="jokeId">The ID of the joke to update.</param>
+    /// <param name="categoryIds">The list of category IDs to associate with the joke.</param>
+    /// <param name="requestingUserName">The username of the user requesting the update.</param>
+    /// <returns><see langword="true"/> if the update was successful; otherwise, <see langword="false"/>.</returns>
     public bool UpdateJokeCategories(int jokeId, List<int> categoryIds, string requestingUserName = "ANON")
     {
         try
@@ -507,11 +509,11 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
-    /// Add a new joke
+    /// Adds a new joke.
     /// </summary>
-    /// <param name="joke">Joke to add</param>
-    /// <param name="requestingUserName">Requesting UserName</param>
-    /// <returns>The ID of the newly created joke, or -1 if failed</returns>
+    /// <param name="joke">The joke entity to add.</param>
+    /// <param name="requestingUserName">The username of the user requesting the add operation.</param>
+    /// <returns>The identifier of the newly created joke; otherwise, -1 if the operation fails.</returns>
     public int AddJoke(Joke joke, string requestingUserName = "ANON")
     {
         try
@@ -544,11 +546,11 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
-    /// Delete a joke
+    /// Deletes an existing joke.
     /// </summary>
-    /// <param name="jokeId">Joke ID to delete</param>
-    /// <param name="requestingUserName">Requesting UserName</param>
-    /// <returns>Success</returns>
+    /// <param name="jokeId">The identifier of the joke to delete.</param>
+    /// <param name="requestingUserName">The username of the user requesting the delete operation.</param>
+    /// <returns><see langword="true"/> if the delete was successful; otherwise, <see langword="false"/>.</returns>
     public bool DeleteJoke(int jokeId, string requestingUserName = "ANON")
     {
         try
@@ -572,7 +574,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
-    /// Dispose
+    /// Disposes the repository and its underlying resources.
     /// </summary>
     public void Dispose()
     {

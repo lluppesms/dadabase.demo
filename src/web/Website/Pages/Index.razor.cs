@@ -1,6 +1,6 @@
-﻿//-----------------------------------------------------------------------
+//-----------------------------------------------------------------------
 // <copyright file="Index.razor.cs" company="Luppes Consulting, Inc.">
-// Copyright 2025, Luppes Consulting, Inc. All rights reserved.
+// Copyright 2026, Luppes Consulting, Inc. All rights reserved.
 // </copyright>
 // <summary>
 // Index Page Code Behind
@@ -121,7 +121,7 @@ public partial class Index : ComponentBase, IDisposable
         if (!string.IsNullOrEmpty(myJoke.ImageTxt))
         {
             jokeImageDescription = myJoke.ImageTxt;
-            jokeImageMessage = "🚀 The DadJoke AI has created a description! Let me draw that for you! (gimme a sec...)";
+            jokeImageMessage = "?? The DadJoke AI has created a description! Let me draw that for you! (gimme a sec...)";
             imageLoading = true;
             StateHasChanged();
 
@@ -135,7 +135,7 @@ public partial class Index : ComponentBase, IDisposable
         }
 
         // Step 1: Generate image description
-        jokeImageMessage = "🚀 Generating a mental image of this scenario...";
+        jokeImageMessage = "?? Generating a mental image of this scenario...";
         imageLoading = true;
         StateHasChanged();
 
@@ -158,7 +158,7 @@ public partial class Index : ComponentBase, IDisposable
         }
 
         // Step 2: Generate the actual image from the description with jokeId
-        jokeImageMessage = "🚀 OK - I've got an idea! Let me draw that for you! (gimme a sec...)";
+        jokeImageMessage = "?? OK - I've got an idea! Let me draw that for you! (gimme a sec...)";
         StateHasChanged();
 
         (jokeImageUrl, var imgSuccess, var imgErrorMessage) = await GenAIAgent.GenerateAnImage(jokeImageDescription, myJoke.JokeId);

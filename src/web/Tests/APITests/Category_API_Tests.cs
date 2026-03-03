@@ -1,7 +1,7 @@
-﻿// namespace DadABase.Tests;
+// namespace DadABase.Tests;
 // //-----------------------------------------------------------------------
 // // <copyright file="Category_API_Tests.cs" company="Luppes Consulting, Inc.">
-// // Copyright 2025, Luppes Consulting, Inc. All rights reserved.
+// // Copyright 2026, Luppes Consulting, Inc. All rights reserved.
 // // </copyright>
 // // <summary>
 // // GENERATED - Category API Tests

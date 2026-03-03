@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------
 // <copyright file="JokeJsonRepository.cs" company="Luppes Consulting, Inc.">
-// Copyright 2025, Luppes Consulting, Inc. All rights reserved.
+// Copyright 2026, Luppes Consulting, Inc. All rights reserved.
 // </copyright>
 // <summary>
 // Joke Repository - JSON File Based
@@ -12,25 +12,25 @@ using Newtonsoft.Json;
 namespace DadABase.Data.Repositories;
 
 /// <summary>
-/// Joke Repository - JSON File Based (Fallback when no database connection)
+/// Provides a JSON-backed fallback implementation of <see cref="IJokeRepository"/> when a database is unavailable.
 /// </summary>
 [ExcludeFromCodeCoverage]
 public class JokeJsonRepository : IJokeRepository
 {
     /// <summary>
-    /// List of Jokes (mapped from JSON)
+    /// Collection of jokes that are materialized from the JSON data source.
     /// </summary>
     private readonly List<Joke> _jokes;
 
     /// <summary>
-    /// List of Categories
+    /// Collection of joke categories derived from the JSON data source.
     /// </summary>
     private readonly List<string> _jokeCategories;
 
     /// <summary>
-    /// Joke Repository
+    /// Initializes a new instance of the <see cref="JokeJsonRepository"/> class.
     /// </summary>
-    /// <param name="jsonFilePath">Path to the JSON file containing jokes</param>
+    /// <param name="jsonFilePath">The path to the JSON file that contains the jokes payload.</param>
     public JokeJsonRepository(string jsonFilePath)
     {
         // Load jokes from JSON file
@@ -63,10 +63,10 @@ public class JokeJsonRepository : IJokeRepository
     }
 
     /// <summary>
-    /// Get a random joke
+    /// Gets a random joke from the in-memory collection.
     /// </summary>
-    /// <param name="requestingUserName">Requesting UserName</param>
-    /// <returns>Record</returns>
+    /// <param name="requestingUserName">The username of the caller requesting the joke.</param>
+    /// <returns>A <see cref="Joke"/> selected at random.</returns>
     public Joke GetRandomJoke(string requestingUserName = "ANON")
     {
         if (_jokes == null || _jokes.Count == 0)
@@ -79,11 +79,11 @@ public class JokeJsonRepository : IJokeRepository
     }
 
     /// <summary>
-    /// Find One Specific Joke
+    /// Gets a specific joke by its identifier.
     /// </summary>
-    /// <param name="id">id</param>
-    /// <param name="requestingUserName">Requesting UserName</param>
-    /// <returns>Record</returns>
+    /// <param name="id">The unique identifier of the joke.</param>
+    /// <param name="requestingUserName">The username of the caller requesting the joke.</param>
+    /// <returns>The matching <see cref="Joke"/> if found; otherwise, a placeholder joke.</returns>
     public Joke GetOne(int id, string requestingUserName = "ANON")
     {
         var joke = _jokes.FirstOrDefault(j => j.JokeId == id);
@@ -91,12 +91,12 @@ public class JokeJsonRepository : IJokeRepository
     }
 
     /// <summary>
-    /// Find Matching Jokes by Search Text and Category
+    /// Searches for jokes that match the provided text and optional category filters.
     /// </summary>
-    /// <param name="searchTxt">Search Text</param>
-    /// <param name="jokeCategoryTxt">Category</param>
-    /// <param name="requestingUserName">Requesting UserName</param>
-    /// <returns>Records</returns>
+    /// <param name="searchTxt">The free-form text used to match against joke content.</param>
+    /// <param name="jokeCategoryTxt">The comma-separated list of categories to filter by.</param>
+    /// <param name="requestingUserName">The username of the caller requesting the search operation.</param>
+    /// <returns>An <see cref="IQueryable{T}"/> representing the filtered set of jokes.</returns>
     public IQueryable<Joke> SearchJokes(string searchTxt = "", string jokeCategoryTxt = "", string requestingUserName = "ANON")
     {
         List<string>? jokeCategoryList = null;
@@ -152,33 +152,33 @@ public class JokeJsonRepository : IJokeRepository
     }
 
     /// <summary>
-    /// Get Joke Categories
+    /// Gets the collection of available joke category names.
     /// </summary>
-    /// <param name="requestingUserName">Requesting UserName</param>
-    /// <returns>List of Category Names</returns>
+    /// <param name="requestingUserName">The username of the caller requesting the categories.</param>
+    /// <returns>An <see cref="IQueryable{T}"/> of category names.</returns>
     public IQueryable<string> GetJokeCategories(string requestingUserName = "ANON")
     {
         return _jokeCategories.AsQueryable();
     }
 
     /// <summary>
-    /// Find All Records
+    /// Lists all jokes contained in the JSON repository.
     /// </summary>
-    /// <param name="activeInd">Active?</param>
-    /// <param name="requestingUserName">Requesting UserName</param>
-    /// <returns>Records</returns>
+    /// <param name="activeInd">The active indicator filter, ignored for the JSON repository.</param>
+    /// <param name="requestingUserName">The username of the caller requesting the list.</param>
+    /// <returns>An <see cref="IQueryable{T}"/> of <see cref="Joke"/> items.</returns>
     public IQueryable<Joke> ListAll(string activeInd = "Y", string requestingUserName = "ANON")
     {
         return _jokes.AsQueryable();
     }
 
     /// <summary>
-    /// Update ImageTxt field for a specific joke
+    /// Updates the <see cref="Joke.ImageTxt"/> field for the specified joke.
     /// </summary>
-    /// <param name="jokeId">Joke ID</param>
-    /// <param name="imageTxt">Image description text</param>
-    /// <param name="requestingUserName">Requesting UserName</param>
-    /// <returns>Success</returns>
+    /// <param name="jokeId">The identifier of the joke to update.</param>
+    /// <param name="imageTxt">The replacement descriptive text for the image.</param>
+    /// <param name="requestingUserName">The username of the caller requesting the update.</param>
+    /// <returns><see langword="true"/> if the update succeeded; otherwise, <see langword="false"/>.</returns>
     public bool UpdateImageTxt(int jokeId, string imageTxt, string requestingUserName = "ANON")
     {
         var joke = _jokes.FirstOrDefault(j => j.JokeId == jokeId);
@@ -191,10 +191,10 @@ public class JokeJsonRepository : IJokeRepository
     }
 
     /// <summary>
-    /// Export all jokes and categories to SQL format
+    /// Exports all jokes and categories to a SQL script representation.
     /// </summary>
-    /// <param name="requestingUserName">Requesting UserName</param>
-    /// <returns>SQL script content</returns>
+    /// <param name="requestingUserName">The username of the caller requesting the export.</param>
+    /// <returns>A formatted SQL script that can recreate the joke data.</returns>
     public string ExportToSql(string requestingUserName = "ANON")
     {
         var sb = new System.Text.StringBuilder();
@@ -310,19 +310,21 @@ public class JokeJsonRepository : IJokeRepository
     }
 
     /// <summary>
-    /// Escape SQL string literals (handle single quotes)
+    /// Escapes SQL string literals by handling single quotes.
     /// </summary>
+    /// <param name="input">The input string that requires escaping.</param>
+    /// <returns>The escaped SQL-safe string.</returns>
     private static string EscapeSqlString(string input)
     {
         return input?.Replace("'", "''") ?? string.Empty;
     }
 
     /// <summary>
-    /// Update a joke
+    /// Updates an existing joke.
     /// </summary>
-    /// <param name="joke">Joke to update</param>
-    /// <param name="requestingUserName">Requesting UserName</param>
-    /// <returns>Success</returns>
+    /// <param name="joke">The joke to update.</param>
+    /// <param name="requestingUserName">The username of the caller requesting the update.</param>
+    /// <returns>Always throws because updates are not supported.</returns>
     public bool UpdateJoke(Joke joke, string requestingUserName = "ANON")
     {
         // Not supported for JSON-based repository
@@ -330,10 +332,10 @@ public class JokeJsonRepository : IJokeRepository
     }
 
     /// <summary>
-    /// Get all joke categories (entities, not just names)
+    /// Gets the list of joke categories represented as <see cref="JokeCategory"/> entities.
     /// </summary>
-    /// <param name="requestingUserName">Requesting UserName</param>
-    /// <returns>List of JokeCategory entities</returns>
+    /// <param name="requestingUserName">The username of the caller requesting the categories.</param>
+    /// <returns>An <see cref="IQueryable{T}"/> of <see cref="JokeCategory"/> entities.</returns>
     public IQueryable<JokeCategory> GetAllCategories(string requestingUserName = "ANON")
     {
         // Convert category strings to JokeCategory entities
@@ -344,47 +346,44 @@ public class JokeJsonRepository : IJokeRepository
     }
 
     /// <summary>
-    /// Update joke categories
+    /// Updates the categories assigned to a joke.
     /// </summary>
-    /// <param name="jokeId">Joke ID</param>
-    /// <param name="categoryIds">List of category IDs</param>
-        /// <param name="requestingUserName">Requesting UserName</param>
-        /// <returns>Success</returns>
-        public bool UpdateJokeCategories(int jokeId, List<int> categoryIds, string requestingUserName = "ANON")
-        {
-            // Not supported for JSON-based repository
-            throw new NotSupportedException("UpdateJokeCategories is not supported for JSON-based repository");
-        }
-
-        /// <summary>
-        /// Add a new joke
-        /// </summary>
-        /// <param name="joke">Joke to add</param>
-        /// <param name="requestingUserName">Requesting UserName</param>
-        /// <returns>The ID of the newly created joke, or -1 if failed</returns>
-        public int AddJoke(Joke joke, string requestingUserName = "ANON")
-        {
-            // Not supported for JSON-based repository
-            throw new NotSupportedException("AddJoke is not supported for JSON-based repository");
-        }
-
-        /// <summary>
-        /// Delete a joke
-        /// </summary>
-        /// <param name="jokeId">Joke ID to delete</param>
-        /// <param name="requestingUserName">Requesting UserName</param>
-        /// <returns>Success</returns>
-        public bool DeleteJoke(int jokeId, string requestingUserName = "ANON")
-        {
-            // Not supported for JSON-based repository
-            throw new NotSupportedException("DeleteJoke is not supported for JSON-based repository");
-        }
-
-        /// <summary>
-        /// Disposal
-        /// </summary>
-        public void Dispose()
-        {
-            // No resources to dispose for JSON-based repository
-        }
+    /// <param name="jokeId">The identifier of the joke to update.</param>
+    /// <param name="categoryIds">The category identifiers to associate with the joke.</param>
+    /// <param name="requestingUserName">The username of the caller requesting the update.</param>
+    /// <returns>This method always throws because the JSON repository is read-only.</returns>
+    public bool UpdateJokeCategories(int jokeId, List<int> categoryIds, string requestingUserName = "ANON")
+    {
+        throw new NotSupportedException("UpdateJokeCategories is not supported for JSON-based repository");
     }
+
+    /// <summary>
+    /// Adds a new joke to the repository.
+    /// </summary>
+    /// <param name="joke">The joke to add.</param>
+    /// <param name="requestingUserName">The username of the caller requesting the add operation.</param>
+    /// <returns>This method always throws because the JSON repository is read-only.</returns>
+    public int AddJoke(Joke joke, string requestingUserName = "ANON")
+    {
+        throw new NotSupportedException("AddJoke is not supported for JSON-based repository");
+    }
+
+    /// <summary>
+    /// Deletes a joke from the repository.
+    /// </summary>
+    /// <param name="jokeId">The identifier of the joke to delete.</param>
+    /// <param name="requestingUserName">The username of the caller requesting the delete operation.</param>
+    /// <returns>This method always throws because the JSON repository is read-only.</returns>
+    public bool DeleteJoke(int jokeId, string requestingUserName = "ANON")
+    {
+        throw new NotSupportedException("DeleteJoke is not supported for JSON-based repository");
+    }
+
+    /// <summary>
+    /// Disposes the repository. No resources require explicit cleanup.
+    /// </summary>
+    public void Dispose()
+    {
+        // No resources to dispose for JSON-based repository
+    }
+}

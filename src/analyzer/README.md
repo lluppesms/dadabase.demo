@@ -341,4 +341,4 @@ src/analyzer/
 
 ## License
 
-Copyright 2025, Luppes Consulting, Inc. All rights reserved.
+Copyright 2026, Luppes Consulting, Inc. All rights reserved.

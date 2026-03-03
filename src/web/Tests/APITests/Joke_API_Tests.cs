@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------
 // <copyright file="Joke_API_Tests.cs" company="Luppes Consulting, Inc.">
-// Copyright 2025, Luppes Consulting, Inc. All rights reserved.
+// Copyright 2026, Luppes Consulting, Inc. All rights reserved.
 // </copyright>
 // <summary>
 // Joke API Tests
@@ -12,12 +12,26 @@ using DadABase.Data;
 using DadABase.Data.Models;
 using DadABase.Data.Repositories;
 
+/// <summary>
+/// Contains API-level tests for the <see cref="JokeController"/> endpoints.
+/// </summary>
 [ExcludeFromCodeCoverage]
 public class Joke_API_Tests : BaseTest
 {
+    /// <summary>
+    /// Provides joke data access for the tests.
+    /// </summary>
     private readonly IJokeRepository repo;
+
+    /// <summary>
+    /// Provides access to the joke API under test.
+    /// </summary>
     private readonly JokeController apiController;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Joke_API_Tests"/> class.
+    /// </summary>
+    /// <param name="output">The test output helper used for logging.</param>
     public Joke_API_Tests(ITestOutputHelper output)
     {
         Task.Run(() => SetupInitialize(output)).Wait();
@@ -30,6 +44,9 @@ public class Joke_API_Tests : BaseTest
         apiController = new JokeController(appSettings, mockContext, repo);
     }
 
+    /// <summary>
+    /// Verifies that the API returns a complete list of jokes.
+    /// </summary>
     [Fact]
     public void Api_Joke_Get_List_Works()
     {
@@ -48,6 +65,9 @@ public class Joke_API_Tests : BaseTest
         Assert.True(jokeList.Count >= 0, "Found no Jokes!");
     }
 
+    /// <summary>
+    /// Verifies that requesting a random joke returns a valid result.
+    /// </summary>
     [Fact]
     public void Api_Joke_GetRandom_Works()
     {
@@ -61,6 +81,9 @@ public class Joke_API_Tests : BaseTest
         output.WriteLine($"Found Joke: {joke.Joke}");
     }
 
+    /// <summary>
+    /// Verifies that the category endpoint filters jokes correctly.
+    /// </summary>
     [Fact]
     public void Api_Joke_Category_Works()
     {
@@ -89,6 +112,9 @@ public class Joke_API_Tests : BaseTest
     // [Property("Owner", "Just for test.")]
 
     // XUnit
+    /// <summary>
+    /// Verifies that the search endpoint returns jokes matching the query.
+    /// </summary>
     [Trait("Owner", "Dad")]
     [Fact]
     public void Api_Joke_Search_Works()
@@ -128,6 +154,9 @@ public class Joke_API_Tests : BaseTest
     //    Assert.True(message.Success, "Put did not succeed!");
     //}
 
+    /// <summary>
+    /// Verifies that the controller initializes successfully with JSON data.
+    /// </summary>
     [Fact]
     public void Api_Joke_Initialize_Works()
     {
