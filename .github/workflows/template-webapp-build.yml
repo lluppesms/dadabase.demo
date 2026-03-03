@@ -124,11 +124,8 @@ jobs:
 
     - name: Test Application
       if: inputs.testApplication == true
-      run: dotnet test "${{ inputs.testDirectory }}/${{ inputs.testProjectName }}.csproj" \
-            --configuration Release \
-            --logger trx \
-            --collect:"XPlat Code Coverage" \
-            --results-directory TestResults
+      run: dotnet test "${{ inputs.testDirectory }}/${{ inputs.testProjectName }}.csproj" --logger trx --collect:"XPlat Code Coverage" --results-directory TestResults
+      continue-on-error: true
       env:
         COVERLET_OUTPUT_FORMATS: cobertura
         COVERLET_OUTPUT: TestResults/coverage/
@@ -166,11 +163,6 @@ jobs:
       with:
         recreate: true
         path: code-coverage-results.md
-
-    # - name: Test Application
-    #   if: inputs.testApplication == true
-    #   run: dotnet test "${{ inputs.testDirectory }}/${{ inputs.testProjectName }}.csproj" --logger trx
-    #   continue-on-error: true
 
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2
