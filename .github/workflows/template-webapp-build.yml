@@ -53,11 +53,12 @@ jobs:
     # You may have to change the default settings for the repo for this to work. You may get the error:
     #   The nested job 'Build' is requesting 'checks: write, issues: read, pull-requests: read', but is only allowed 'checks: none, issues: none, pull-requests: none'.
     # Go to Repo Settings -> Actions -> General -> Workflow permissions -> Check: Read and Write Permissions
+    # The Comment on PR needs to permissions to update issues and pull requests
     permissions:
       contents: write
-      issues: read
+      issues: write
       checks: write
-      pull-requests: read
+      pull-requests: write
 
     # ------------------------------------------------------------------------------------------------------------------------
     steps:
