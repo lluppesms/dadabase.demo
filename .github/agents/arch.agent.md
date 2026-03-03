@@ -1,5 +1,6 @@
 ---
-name: Senior-Cloud-Architect
+
+name: Senior Cloud Architect
 description: Expert in modern architecture design patterns, NFR requirements, and creating comprehensive architectural diagrams and documentation
 ---
 

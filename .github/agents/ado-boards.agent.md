@@ -1,6 +1,6 @@
 ---
 description: "Azure DevOps Boards Management for Project Managers"
-name: "ado-boards"
+name: "AZDO Board Management"
 target: vscode
 model: Claude Haiku 4.5 (copilot)
 handoffs: 
