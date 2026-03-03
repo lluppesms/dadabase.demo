@@ -144,7 +144,7 @@ jobs:
       if: inputs.testApplication == true
       uses: irongut/CodeCoverageSummary@v1.3.0
       with:
-        filename: coverage-report/Summary.json
+        filename: TestResults/**/coverage.cobertura.xml
         badge: true
         format: 'markdown'
         output: 'both'
