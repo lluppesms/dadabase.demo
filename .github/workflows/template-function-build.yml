@@ -53,11 +53,12 @@ jobs:
     # You may have to change the default settings for the repo for this to work. You may get the error:
     #   The nested job 'Build' is requesting 'checks: write, issues: read, pull-requests: read', but is only allowed 'checks: none, issues: none, pull-requests: none'.
     # Go to Repo Settings -> Actions -> General -> Workflow permissions -> Check: Read and Write Permissions
+    # The coverage comment requires permission to update issues and pull requests
     permissions:
       contents: write
-      issues: read
+      issues: write
       checks: write
-      pull-requests: read
+      pull-requests: write
 
     # ------------------------------------------------------------------------------------------------------------------------
     steps:
@@ -104,9 +105,52 @@ jobs:
 
     - name: Test Application
       if: inputs.testApplication == true
-      run: dotnet test --logger trx
-      working-directory: ${{ inputs.testDirectory }}
+      run: dotnet test "${{ inputs.testDirectory }}/${{ inputs.testProjectName }}.csproj" --logger trx --collect:"XPlat Code Coverage" --results-directory TestResults
       continue-on-error: true
+      env:
+        COVERLET_OUTPUT_FORMATS: cobertura
+        COVERLET_OUTPUT: TestResults/coverage/
+        DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+    - name: Generate coverage summary
+      if: inputs.testApplication == true
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.3.10
+      with:
+        reports: 'TestResults/**/coverage.cobertura.xml'
+        targetdir: 'coverage-report'
+        reporttypes: 'JsonSummary'
+      continue-on-error: true
+
+    - name: Create Markdown coverage table
+      if: inputs.testApplication == true
+      uses: irongut/CodeCoverageSummary@v1.3.0
+      with:
+        filename: TestResults/**/coverage.cobertura.xml
+        badge: true
+        format: 'markdown'
+        output: 'both'
+
+    - name: Upload coverage report artifact
+      if: inputs.testApplication == true
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: coverage-report
+        retention-days: 14
+
+    - name: Comment coverage on PR
+      if: inputs.testApplication == true && github.event_name == 'pull_request'
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        recreate: true
+        path: code-coverage-results.md
+
+    - name: Append coverage to run summary
+      if: inputs.testApplication == true
+      run: |
+        echo "### Code Coverage" >> "$GITHUB_STEP_SUMMARY"
+        cat code-coverage-results.md >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
 
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2
