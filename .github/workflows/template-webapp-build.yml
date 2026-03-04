@@ -165,6 +165,13 @@ jobs:
         recreate: true
         path: code-coverage-results.md
 
+    - name: Append coverage to run summary
+      if: inputs.testApplication == true
+      run: |
+        echo "### Code Coverage" >> "$GITHUB_STEP_SUMMARY"
+        cat code-coverage-results.md >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2
       if: inputs.testApplication == true
