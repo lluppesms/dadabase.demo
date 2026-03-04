@@ -81,8 +81,8 @@ jobs:
 
         echo "---------------------------------"
         echo "##[group]All Variables:"
-        echo '${{ toJSON(env) }}'
-        echo '${{ toJSON(vars) }}'
+        echo "${{ toJSON(env) }}"
+        echo "${{ toJSON(vars) }}"
         echo "##[endgroup]"
         echo "---------------------------------"
         echo "##[group]Directory of ${{ github.workspace  }}"
