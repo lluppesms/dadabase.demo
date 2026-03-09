@@ -28,7 +28,7 @@ jobs:
       value: '$(Pipeline.Workspace)/${{ parameters.pipelineResourceIdentifier }}'
     - name: pipelineResourceDropPath
       value: '$(Pipeline.Workspace)/${{ parameters.pipelineResourceIdentifier }}/drop'
-    - template: ../../vars/var-common.yml
+    - template: ../vars/var-common.yml
 
   steps:
   - task: Bash@3

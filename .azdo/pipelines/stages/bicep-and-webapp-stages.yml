@@ -28,7 +28,7 @@ stages:
   - stage: ScanApplication
     displayName: Scan Application
     jobs:
-    - template: templates/scan-code-template.yml
+    - template: ../jobs/scan-code-jobs.yml
       parameters:
         environmentName: 'DEV'
         runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
@@ -38,7 +38,7 @@ stages:
 - stage: BuildWebApp
   displayName: Build WebApp
   jobs:
-  - template: templates/webapp-build.yml
+  - template: ../jobs/webapp-build-jobs.yml
     parameters:
       environmentName: 'DEV'
       runUnitTests: ${{ parameters.runUnitTests }}
@@ -50,7 +50,7 @@ stages:
     dependsOn: BuildWebApp
     condition: and(succeeded('BuildWebApp'), eq(${{ parameters.deployBicep }}, true))
     jobs:
-    - template: templates/bicep-deploy-template.yml
+    - template: ../jobs/bicep-deploy-jobs.yml
       parameters:
         environmentName: ${{ environmentName }}
         parseBicepOutputs: ${{ parameters.parseBicepOutputs }}
@@ -60,7 +60,7 @@ stages:
     dependsOn: CreateInfrastructure${{ environmentName }}
     condition: or(and(succeeded('CreateInfrastructure${{ environmentName }}'), eq(${{ parameters.deployBicep }}, true)), eq(${{ parameters.deployBicep }}, false))
     jobs:
-    - template: templates/webapp-deploy.yml
+    - template: ../jobs/webapp-deploy-jobs.yml
       parameters:
         environmentName: ${{ environmentName }}
 
@@ -72,7 +72,7 @@ stages:
       variables:
         - template: ../vars/var-common.yml
       jobs:
-      - template: templates/playwright-template.yml
+      - template: ../jobs/playwright-jobs.yml
         parameters:
           environment: ${{ environmentName }}
           testType: ${{ variables.playwrightBasicTestType }}

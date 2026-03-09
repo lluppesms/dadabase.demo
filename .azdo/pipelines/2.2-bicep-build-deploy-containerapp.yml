@@ -55,7 +55,7 @@ variables:
 # ----------------------------------------------------------------------------------------------------
 stages:
 - ${{ if ne(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
-  - template: pipes/infra-and-containerapp-pipe.yml
+  - template: stages/bicep-and-containerapp-stages.yml
     parameters:
       environments: ['${{ parameters.deployToEnvironment }}']
       deployBicep: ${{ parameters.deployBicep }}
@@ -68,7 +68,7 @@ stages:
       imageName: 'dadabase-web'
 
 - ${{ if eq(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
-  - template: pipes/infra-and-containerapp-pipe.yml
+  - template: stages/bicep-and-containerapp-stages.yml
     parameters:
       environments: ['DEV','QA','PROD']
       deployBicep: ${{ parameters.deployBicep }}

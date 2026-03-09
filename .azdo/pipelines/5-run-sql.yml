@@ -73,7 +73,7 @@ variables:
 # ----------------------------------------------------------------------------------------------------
 stages:
 - ${{ if ne(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
-  - template: pipes/run-sql-pipe.yml
+  - template: stages/run-sql-stages.yml
     parameters:
       environments: ['DEV']
       sqlFolderName: 'src\sql.database\Patch\'
@@ -84,7 +84,7 @@ stages:
       databaseCopyName: ${{ parameters.databaseCopyName }}
 
 - ${{ if eq(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
-  - template: pipes/run-sql-pipe.yml
+  - template: stages/run-sql-stages.yml
     parameters:
       environments: ['DEV','QA','PROD']
       sqlFolderName: 'src\sql.database\Patch\'

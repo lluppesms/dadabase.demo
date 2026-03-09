@@ -34,7 +34,7 @@ variables:
 
 # ----------------------------------------------------------------------------------------------------
 stages:
-- template: pipes/scan-code-pipe.yml
+- template: stages/scan-code-stages.yml
   parameters:
     runGHASScan: ${{ parameters.runGHASScan }}
     runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}

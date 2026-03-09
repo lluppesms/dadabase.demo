@@ -41,13 +41,13 @@ parameters:
 # ----------------------------------------------------------------------------------------------------
 stages:
 - ${{ if ne(parameters.deployToEnvironment, 'MULTIPLE') }}:
-  - template: pipes/webapp-deploy-pipe.yml
+  - template: stages/webapp-deploy-stages.yml
     parameters:
       environments: [ '${{ parameters.deployToEnvironment }}' ]
       pipelineResourceIdentifier: 'dadabase.web.build.deploy'
 
 - ${{ if eq(parameters.deployToEnvironment, 'MULTIPLE') }}:
-  - template: pipes/webapp-deploy-pipe.yml
+  - template: stages/webapp-deploy-stages.yml
     parameters:
       environments: ['DEV','PROD']
       pipelineResourceIdentifier: 'dadabase.web.build.deploy'

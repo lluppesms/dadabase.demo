@@ -7,24 +7,7 @@
 #     Extension Home: https://github.com/mburumaxwell/paklo
 #     Configuration Options: https://www.paklo.app/docs/extensions/azure
 # ------------------------------------------------------------------------------------------------------------------------
-# Build Run:
-#   See: https://learn.microsoft.com/en-us/azure/security/container-secure-supply-chain/articles/container-secure-supply-chain-implementation/cssc-depenadabot
-#   I can't get that example to work here... :(
-# ------------------------------------------------------------------------------------------------------------------------
-# Image Run:
-#   This uses ghcr.io/dependabot/dependabot-core:latest image, but it doesn't work either... :(
-# ------------------------------------------------------------------------------------------------------------------------
 name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r)
-
-# parameters:
-#   - name: typeofRun
-#     displayName: Type of Run
-#     type: string
-#     values:
-#       - BUILD
-#       - IMAGE
-#       - TASK
-#     default: TASK
 
 schedules:
 - cron: '0 3 * * 3'
@@ -40,87 +23,21 @@ pool:
 variables:
   System.Secrets: true # this variable makes secrets protected in the logs
 
-jobs:
-- job:
-  steps:
-  # -----------------------------------------------------------------------------------------------
-  # - ${{ if eq(parameters.typeofRun, 'TASK') }}:
-  - script: |
-      echo "Running task coming soon...!"
-  - task: dependabot@2
-    displayName: Run Dependabot Task
-    inputs:
-      mergeStrategy: 'squash'           # Merge strategy: squash, rebase, merge
-      # dryRun: true                    # Test logic without creating/updating PRs (default false)
-      # setAutoComplete: true           # Enable auto-complete on created PRs (default false)
-      # autoApprove: true               # Automatically approve created PRs (default false)
-      # targetProjectName: 'myProject'  # Target project (for multi-project pipelines)
-      # targetRepositoryName: 'myRepo'  # Target repository (for multi-repo pipelines)
-
-  # # -----------------------------------------------------------------------------------------------
-  # # - ${{ if eq(parameters.typeofRun, 'IMAGE') }}:
-  #   # Gets a Runtime error: 
-  #   #   Status: Downloaded newer image for ghcr.io/dependabot/dependabot-core:latest
-  #   #   Could not locate Gemfile or .bundle/ directory
-  #   - script: |
-  #       echo "Running Dependabot..."
-  #       docker run --rm \
-  #         -v "$(pwd)":/home/dependabot/dependabot-script \
-  #         -w /home/dependabot/dependabot-script \
-  #         ghcr.io/dependabot/dependabot-core:latest \
-  #         bundle exec ruby ./generic-update-script.rb
-  #     displayName: Run Image - Dependabot
-
-  # # -----------------------------------------------------------------------------------------------
-  # # - ${{ if eq(parameters.typeofRun, 'BUILD') }}:
-  #   #   I can't get the example here to work.... :(
-  #   #   Had to add .devcontainer to the path, which let it compile, but then it doesn't run...
-  #   - script: |
-  #       echo "Cloning dependabot-core repo..."
-  #       git clone https://github.com/dependabot/dependabot-core.git
-  #       echo "----------------------------------------"
-  #       echo "##[group]Directory of pipeline workspace:"
-  #       tree -L 4 $(Pipeline.Workspace)
-  #       echo "##[endgroup]"
-  #       cd dependabot-core
-  #       echo "Displaying Dockerfile for dependabot-core..."
-  #       cat .devcontainer/Dockerfile
-  #       echo "Building dependabot-core Docker image..."
-  #       DOCKER_BUILDKIT=1 
-  #       docker build \
-  #         -f .devcontainer/Dockerfile \
-  #         --build-arg "USER_UID=$(id -u)" \
-  #         --build-arg "USER_GID=$(id -g)" \
-  #         -t "dependabot/dependabot-core" .
-  #       cd ..
-  #       echo "Done Building dependabot-core Docker image!"
-  #     displayName: Download & Build Dependabot
-  #
-  #   - script: |
-  #       echo "Cloning dependabot-script repo..."
-  #       git clone https://github.com/dependabot/dependabot-script.git
-  #       cd dependabot-script
-  #       echo "Running Dependabot Install Script..."
-  #       docker run -v "$(pwd):/home/dependabot/dependabot-script" -w /home/dependabot/dependabot-script dependabot/dependabot-core bundle install -j 3 --path vendor
-  #       echo "Done Running Dependabot Install Script!"
-  #     displayName: Install Dependencies
-  #
-  #   - script: |
-  #       #!/bin/bash
-  #       SYSTEM_COLLECTIONURI_TRIM=`echo "${SYSTEM_COLLECTIONURI:22}"`
-  #       PROJECT_PATH="$SYSTEM_COLLECTIONURI_TRIM$SYSTEM_TEAMPROJECT/_git/$BUILD_REPOSITORY_NAME"
-  #       echo "path: $PROJECT_PATH"
-  #       echo "Running Dependabot Script..."
-  #       docker run  -v "$(pwd)/dependabot-script:/home/dependabot/dependabot-script" \
-  #                   -w '/home/dependabot/dependabot-script' \
-  #                   -e AZURE_ACCESS_TOKEN=$(System.AccessToken) \
-  #                   -e PACKAGE_MANAGER=docker \
-  #                   -e PROJECT_PATH=$PROJECT_PATH \
-  #                   -e DIRECTORY_PATH=/ \
-  #                   -e OPTIONS="$OPTIONS" \
-  #                   dependabot/dependabot-core bundle exec ruby ./generic-update-script.rb
-  #       echo "Done Running Dependabot Script!"
-  #     displayName: Run Dependabot
-  #     env:
-  #       OPTIONS: |
-  #         { "kubernetes_updates": true }
+stages:
+- stage: RunDependabotStage
+  displayName: Dependabot
+  jobs:
+  - job: DependabotJob
+    displayName: Run Dependabot
+    steps:
+    - script: |
+        echo "Running task coming soon...!"
+    - task: dependabot@2
+      displayName: Run Dependabot Task
+      inputs:
+        mergeStrategy: 'squash'           # Merge strategy: squash, rebase, merge
+        # dryRun: true                    # Test logic without creating/updating PRs (default false)
+        # setAutoComplete: true           # Enable auto-complete on created PRs (default false)
+        # autoApprove: true               # Automatically approve created PRs (default false)
+        # targetProjectName: 'myProject'  # Target project (for multi-project pipelines)
+        # targetRepositoryName: 'myRepo'  # Target repository (for multi-repo pipelines)

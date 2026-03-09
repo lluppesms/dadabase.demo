@@ -51,7 +51,7 @@ variables:
 # ----------------------------------------------------------------------------------------------------
 stages:
 - ${{ if ne(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
-  - template: pipes/schema-only-pipe.yml
+  - template: stages/dacpac-deploy-stages.yml
     parameters:
       environments: ['DEV']
       singleEnvironment: 'true'
@@ -61,7 +61,7 @@ stages:
       loginAccountType: ${{ parameters.loginAccountType }}
 
 - ${{ if eq(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
-  - template: pipes/schema-only-pipe.yml
+  - template: stages/dacpac-deploy-stages.yml
     parameters:
       environments: ['DEV','QA','PROD']
       appFolderName: $(sqlAppFolderName)

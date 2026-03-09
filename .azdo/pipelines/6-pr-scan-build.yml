@@ -20,11 +20,11 @@ variables:
 
 # ----------------------------------------------------------------------------------------------------
 stages:
-- template: pipes/scan-code-pipe.yml
+- template: stages/scan-code-stages.yml
   parameters:
     runMSDevSecOpsScan: true
     runGHASScan: false
 
-- template: pipes/webapp-build-pipe.yml
+- template: stages/webapp-build-stages.yml
   parameters:
     runUnitTests: true

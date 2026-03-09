@@ -46,7 +46,7 @@ variables:
 # ----------------------------------------------------------------------------------------------------
 stages:
 - ${{ if ne(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
-  - template: pipes/infra-only-pipe.yml
+  - template: stages/bicep-only-stages.yml
     parameters:
       environments: ['${{ parameters.deployToEnvironment }}']
       #singleEnvironment: 'true'
@@ -55,7 +55,7 @@ stages:
       runGHASScan: ${{ parameters.runGHASScan }}
 
 - ${{ if eq(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
-  - template: pipes/infra-only-pipe.yml
+  - template: stages/bicep-only-stages.yml
     parameters:
       environments: ['DEV','QA','PROD']
       parseBicepOutputs: true

@@ -20,7 +20,7 @@ stages:
 - stage: ScanApplication
   displayName: Scan Application
   jobs:
-  - template: templates/scan-code-template.yml
+  - template: ../jobs/scan-code-jobs.yml
     parameters:
       environmentName: 'DEV'
       runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
@@ -34,7 +34,7 @@ stages:
     condition: or(eq(${{ parameters.singleEnvironment }}, 'true'), and(eq(upper('${{ environmentName }}'), 'DEV'), succeeded('ScanApplication')), and(eq(upper('${{ environmentName }}'), 'QA'), succeeded('CreateInfraDEV')), and(eq(upper('${{ environmentName }}'), 'PROD'), succeeded('CreateInfraQA')))
     displayName: Create ${{ environmentName }} Resources
     jobs:
-    - template: templates/bicep-deploy-template.yml
+    - template: ../jobs/bicep-deploy-jobs.yml
       parameters:
         environmentName: ${{ environmentName }}
         parseBicepOutputs: ${{ parameters.parseBicepOutputs }}

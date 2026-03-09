@@ -40,7 +40,7 @@ jobs:
     variables:
       - name: continueAfterScanErrors
         value: ${{ eq(parameters.continueOnScanError, 'true') }}
-      - template: ../../vars/var-common.yml
+      - template: ../vars/var-common.yml
 
     steps:
     # Simplest example that sometimes works...
@@ -115,7 +115,7 @@ jobs:
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
     # Custom Build steps for this project (Web, Function, and DacPac projects)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-    - template: steps-scan-code-compile-template.yml
+    - template: ../steps/scan-code-compile-steps.yml
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
     - task: AdvancedSecurity-Dependency-Scanning@1
@@ -141,7 +141,7 @@ jobs:
         value: 'dadabase*.sln'
       - name: nugetScanProjectPattern
         value: 'dadabase*.csproj'
-      - template: ../../vars/var-common.yml
+      - template: ../vars/var-common.yml
     steps:
     - bash: |
         echo "parameters.runMSDevSecOpsScan=${{parameters.runMSDevSecOpsScan}}"

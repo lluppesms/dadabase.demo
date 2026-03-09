@@ -12,7 +12,7 @@ stages:
 - stage: ScanApplication
   displayName: Scan Application
   jobs:
-  - template: templates/scan-code-template.yml
+  - template: ../jobs/scan-code-jobs.yml
     parameters:
       environmentName: 'DEV'
       runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}

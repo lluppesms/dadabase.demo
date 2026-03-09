@@ -58,7 +58,7 @@ variables:
 # ----------------------------------------------------------------------------------------------------
 stages:
 - ${{ if ne(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
-  - template: pipes/infra-and-webapp-pipe.yml
+  - template: stages/bicep-and-webapp-stages.yml
     parameters:
       environments: ['${{ parameters.deployToEnvironment }}']
       deployBicep: ${{ parameters.deployBicep }}
@@ -69,7 +69,7 @@ stages:
       runUnitTests: ${{ parameters.runUnitTests }}
 
 - ${{ if eq(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
-  - template: pipes/infra-and-webapp-pipe.yml
+  - template: stages/bicep-and-webapp-stages.yml
     parameters:
       environments: ['DEV','QA','PROD']
       deployBicep: ${{ parameters.deployBicep }}

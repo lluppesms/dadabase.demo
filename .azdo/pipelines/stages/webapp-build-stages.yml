@@ -10,7 +10,7 @@ stages:
 - stage: BuildWebApp
   displayName: Build WebApp
   jobs:
-  - template: templates/webapp-build.yml
+  - template: ../jobs/webapp-build-jobs.yml
     parameters:
       environmentName: 'DEV'
       runUnitTests: ${{ parameters.runUnitTests }}

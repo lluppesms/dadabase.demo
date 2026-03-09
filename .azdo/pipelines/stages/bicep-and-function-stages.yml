@@ -26,7 +26,7 @@ stages:
   displayName: Scan Application
   jobs:
   - ${{ if or(eq(lower(parameters.runMSDevSecOpsScan), 'true'), eq(lower(parameters.runGHASScan), 'true')) }}:
-    - template: templates/scan-code-template.yml
+    - template: ../jobs/scan-code-jobs.yml
       parameters:
         environmentName: 'DEV'
         runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
@@ -40,7 +40,7 @@ stages:
   displayName: Build Function
   dependsOn: ScanApplication
   jobs:
-  - template: templates/function-build.yml
+  - template: ../jobs/function-build-jobs.yml
     parameters:
       environmentName: 'DEV'
       runUnitTests: ${{ parameters.runUnitTests }}
@@ -54,7 +54,7 @@ stages:
     # or the environment is 'dev', or if qa/prod, the previous stage (dev->qa or qa->prod) succeeded)
     condition: and(eq(${{ parameters.deployBicep }}, true), or(eq(${{ parameters.singleEnvironment }}, 'true'), and(eq(upper('${{ environmentName }}'), 'DEV'), succeeded('BuildFunction')), and(eq(upper('${{ environmentName }}'), 'QA'), succeeded('DeployFunctionDEV')), and(eq(upper('${{ environmentName }}'), 'PROD'), succeeded('DeployFunctionQA'))))
     jobs:
-    - template: templates/bicep-deploy-template.yml
+    - template: ../jobs/bicep-deploy-jobs.yml
       parameters:
         environmentName: ${{ environmentName }}
         parseBicepOutputs: ${{ parameters.parseBicepOutputs }}
@@ -65,7 +65,7 @@ stages:
     # Run if infrastructure deployment succeeded (when deployBicep=true) OR if deployBicep=false (skip infra)
     condition: or(and(succeeded('CreateInfra${{ environmentName }}'), eq(${{ parameters.deployBicep }}, true)), eq(${{ parameters.deployBicep }}, false))
     jobs:
-    - template: templates/function-deploy.yml
+    - template: ../jobs/function-deploy-jobs.yml
       parameters:
         environmentName: ${{ environmentName }}
 
@@ -77,7 +77,7 @@ stages:
       variables:
         - template: ../vars/var-common.yml
       jobs:
-      - template: templates/playwright-template.yml
+      - template: ../jobs/playwright-jobs.yml
         parameters:
           environment: ${{ environmentName }}
           testType: '${{ variables.playwrightAPITestType }}'
