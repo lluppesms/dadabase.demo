@@ -1,14 +1,30 @@
 # Azure DevOps Deployment Template Notes
 
-## 1. Azure DevOps Template Definitions
+## 1. Azure DevOps Pipeline Definitions
 
-Typically, you would want to set up either Option (a), or Option (b) AND Option (c), but not all three jobs.
+The following pipelines are available for various deployment scenarios:
 
-- **[infra-and-webapp-pipeline.yml](infra-and-webapp-pipeline.yml):** Deploys the main.bicep template, builds the website code, then deploys the website to the Azure App Service
-- **[infra-only-pipeline.yml](infra-only-pipeline.yml):** Deploys the main.bicep template and does nothing else
-- **[build-webapp-only-pipeline.yml](build-webapp-only-pipeline.yml):** Builds the website and then deploys the website to the Azure App Service
-- **[deploy-webapp-only-pipeline.yml](deploy-webapp-only-pipeline.yml):** Deploys a previously built website to the Azure App Service
-- **[scan-pipeline.yml](scan-pipeline.yml):** Performs a periodic security scan
+**Infrastructure & Application Deployment:**
+- **[1-deploy-bicep.yml](1-deploy-bicep.yml):** Deploys the main.bicep template to Azure (infrastructure only)
+- **[2.1-bicep-build-deploy-webapp.yml](2.1-bicep-build-deploy-webapp.yml):** Deploys Bicep infrastructure and builds/deploys the Blazor Web App to Azure App Service
+- **[2.2-bicep-build-deploy-containerapp.yml](2.2-bicep-build-deploy-containerapp.yml):** Deploys Bicep infrastructure and builds/deploys a containerized application to Azure Container Apps
+- **[3-bicep-build-deploy-function.yml](3-bicep-build-deploy-function.yml):** Deploys Bicep infrastructure and builds/deploys Azure Functions
+
+**Database & Schema:**
+- **[4-build-deploy-dacpac.yml](4-build-deploy-dacpac.yml):** Builds and deploys the SQL database schema (DACPAC) to Azure SQL Database
+- **[5-run-sql.yml](5-run-sql.yml):** Runs SQL scripts against an existing Azure SQL Database
+
+**Application Deployment Only:**
+- **[10-deploy-webapp-only-pipeline.yml](10-deploy-webapp-only-pipeline.yml):** Deploys a previously built Web App to Azure App Service without infrastructure changes
+
+**Code Quality & Security:**
+- **[6-pr-scan-build.yml](6-pr-scan-build.yml):** Scans and builds code on pull requests
+- **[7-scan-code.yml](7-scan-code.yml):** Performs periodic security scans (GitHub Advanced Security & Microsoft Secure DevOps)
+- **[8-dependabot.yml](dependabot.yml):** Automated dependency updates via Dependabot
+
+**Testing:**
+- **[9-smoke-test-webapp.yml](9-smoke-test-webapp.yml):** Runs smoke tests against deployed Web App
+- **[11-auto-test-pipeline.yml](11-auto-test-pipeline.yml):** Runs automated tests (unit, integration, UI tests)
 
 ---
 
@@ -28,13 +44,13 @@ These Azure DevOps YML files were designed to run as multi-stage environment dep
 
 - [Create Azure DevOps Pipeline(s)](https://docs.luppes.com/CreateNewPipeline/)
 
-- Run the infra-and-website-pipeline.yml pipeline to deploy the project to an Azure subscription.
+- Run one of the deployment pipelines (e.g., [2.1-bicep-build-deploy-webapp.yml](2.1-bicep-build-deploy-webapp.yml)) to deploy the project to an Azure subscription.
 
 ---
 
-## 4. These pipelines needs a variable group named "DadABaseDemo"
+## 4. These pipelines need a variable group named "Dadabase.Demo"
 
-To create this variable groups, customize and run this command in the Azure Cloud Shell.
+To create these variable groups, customize and run this command in the Azure Cloud Shell.
 
 Alternatively, you could define these variables in the Azure DevOps Portal on each pipeline, but a variable group is a more repeatable and scriptable way to do it.
 
@@ -51,6 +67,12 @@ Alternatively, you could define these variables in the Azure DevOps Portal on ea
          RESOURCE_GROUP_PREFIX='rg-dadabase' 
          INSTANCE_NUMBER='1'
          API_KEY='somesecretstring'
+         ADMIN_USER_LIST='user1@domain.com,user2@domain.com'
+
+         AZURE_TENANT_ID='yourTenantId'
+         AZURE_SUBSCRIPTION_ID='yourSubscriptionId'
+         AZURE_CLIENT_ID='yourClientId'
+
          OPENAI_CHAT_DEPLOYMENTNAME='gpt-5-mini'
          OPENAI_CHAT_MAXTOKENS='300'
          OPENAI_CHAT_TEMPERATURE='0.7'
@@ -60,20 +82,20 @@ Alternatively, you could define these variables in the Azure DevOps Portal on ea
          OPENAI_CHAT_ENDPOINT='https://<yourendpoint>.cognitiveservices.azure.com/'
          OPENAI_IMAGE_APIKEY='yourkey'
          OPENAI_CHAT_APIKEY='yourkey'
-         SQL_SERVER_NAME_PREFIX='your-dadabase-server'
+
+         SQL_SERVER_NAME_PREFIX='your-dadabase-server-prefix'
          SQL_DATABASE_NAME='DadABase'
          SQLADMIN_LOGIN_USERID='youruser@yourdomain.com'
          SQLADMIN_LOGIN_USERSID='yoursid'
          SQLADMIN_LOGIN_TENANTID='yourtennant'
-         ADMIN_USER_LIST='user1@domain.com,user2@domain.com'
-         LOGIN_CLIENTID='<yourADClientId>'
+
+         LOGIN_CLIENTID='yourADClientId'
          LOGIN_DOMAIN='<yourdomain>.onmicrosoft.com'
          LOGIN_INSTANCEENDPOINT='https://login.microsoftonline.com/'
-         LOGIN_TENANTID='<yourTenantId>'
-         AZURE_TENANT_ID='<yourTenantId>'
-         AZURE_SUBSCRIPTION_ID='<yourSubscriptionId>'
-         AZURE_CLIENT_ID='<yourClientId>'
-         KEYVAULT_OWNER_USERID='<yourAccountSid>'
+         LOGIN_TENANTID='yourTenantId'
+
+         KEYVAULT_OWNER_USERID='yourAccountSid'
+
          EXISTING_SERVICEPLAN_NAME=''
          EXISTING_SERVICEPLAN_RESOURCE_GROUP_NAME=''
          EXISTING_SQLSERVER_NAME=''
