@@ -30,8 +30,6 @@ stages:
   - job: DependabotJob
     displayName: Run Dependabot
     steps:
-    - script: |
-        echo "Running task coming soon...!"
     - task: dependabot@2
       displayName: Run Dependabot Task
       inputs:
