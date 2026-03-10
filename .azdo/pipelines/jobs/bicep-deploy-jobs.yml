@@ -112,6 +112,7 @@ jobs:
     #   inputs:
     #     targetType: 'inline'
     #     script: Get-ChildItem -Path Env:\ | Format-List
+    # or this bash script
     # - bash: |
     #     echo "Display All Environment Variables:"
     #     printenv | sort
@@ -135,9 +136,10 @@ jobs:
         cat  $(parameterFile)
         echo "##[endgroup]"
 
-  # in order to use multiple dynamic service connections, you can't just use a variable.
-  # they need to be defined and available at YML pre-compile time, so use this technique.
-  # this switch allows you to dynamically select a 'hard-coded' service connection
+  # in order to use multiple dynamic service connections, you CANNOT just use a variable.
+  # they need to be defined and available at YML *pre-compile* time, so use this technique.
+  # this switch allows you to dynamically select a 'hard-coded' service connection by using
+  # a variable to dynamically pass in a hard-coded (pre-compile time) value
   - ${{ if eq(variables.environmentNameUpper, 'DEV') }}:
     - template: ../steps/bicep-deploy-steps.yml
       parameters:
@@ -165,34 +167,48 @@ jobs:
         echo "bicepOutputs-RESOURCE_GROUP_NAME: $(bicepOutputs-RESOURCE_GROUP_NAME)"
         echo "bicepOutputs-WEB_HOST_NAME: $(bicepOutputs-WEB_HOST_NAME)"
 
-  # creates a markdown summary that will be visible in the pipeline "Extensions" tab
+  # creates a markdown summary that *should* be visible in the pipeline "Extensions" tab and in the Summary tab 
+  # this used to work, but doesn't seem to show up as before...  not totally sure why...
   # https://learn.microsoft.com/en-us/azure/devops/pipelines/scripts/logging-commands?view=azure-devops&tabs=bash
-  - task: CmdLine@2
+  - task: PowerShell@2
     displayName: Create Summary File
     continueOnError: true
+    condition: always()
     inputs:
+      targetType: 'inline'
       script: |
-        echo "Writing to Summary File $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md"
-        echo "Deployed Bicep File:        ${{ parameters.templateFolderName }}/${{ parameters.templateFileName }}"        >> $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
-        echo "With Parameter File:        ${{ parameters.templateFolderName }}/${{ parameters.parameterFileName }}"       >> $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
-        echo "Deployed to Environment:    $(environmentName)"                                                             >> $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
-        echo "Deployed In Subscription:   $(bicepOutputs-SUBSCRIPTION_ID)"                                                >> $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
-        echo "Deployed To Resource Group: $(bicepOutputs-RESOURCE_GROUP_NAME)"                                            >> $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
-        echo "Created Website:            [https://$(bicepOutputs-WEB_HOST_NAME)](https://$(bicepOutputs-WEB_HOST_NAME))" >> $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
+        $summaryFile = "$(System.DefaultWorkingDirectory)/bicep_deploy_summary.md"
+        Write-Host "Writing to Summary File $summaryFile"
 
-        echo "Publishing Summary File: $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md"
-        echo ##vso[task.uploadsummary]$(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
+        $content = @"
+        Deployed Bicep File: ${{ parameters.templateFolderName }}/${{ parameters.templateFileName }}
+        With Parameter File: ${{ parameters.templateFolderName }}/${{ parameters.parameterFileName }}
+        | Task | Result |
+        |------|------|
+        | Deployed to Environment:    | $(environmentName) |
+        | Deployed In Subscription:   | $(bicepOutputs-SUBSCRIPTION_ID) |
+        | Created Website:            | [https://$(bicepOutputs-WEB_HOST_NAME)](https://$(bicepOutputs-WEB_HOST_NAME)) |
+        "@
+        $content | Out-File -FilePath $summaryFile -Encoding utf8
 
-        echo "Publishing Summary Upload File: $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md"
-        echo ##vso[task.uploadfile]$(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
+        Write-Host "Publishing Summary File:"
+        Write-Host "##vso[task.uploadsummary]$summaryFile"
 
-        echo "----------------------------------------"
-        echo "##[group]Directory of pipeline workspace:"
-        tree -L 4 $(Pipeline.Workspace)
-        echo "##[endgroup]"
+        Write-Host "----------------------------------------"
+        Write-Host "##[group]Directory of pipeline workspace:"
+        Get-ChildItem -Path "$(Pipeline.Workspace)" -Recurse -Depth 3 | ForEach-Object { $_.FullName }
+        Write-Host "##[endgroup]"
 
-        echo "Contents of Summary File:"
-        cat $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
+        Write-Host "Contents of Summary File:"
+        Get-Content $summaryFile
+
+  # Since the Summary is not always visible in the tabs in all organizations, publish it as an artifact so it's always accessible
+  - task: PublishBuildArtifacts@1
+    displayName: Save Summary Artifact
+    inputs:
+      PathtoPublish: '$(System.DefaultWorkingDirectory)/bicep_deploy_summary.md'
+      ArtifactName: 'bicep_deploy_outputs'
+      publishLocation: 'Container'
 
   - task: CmdLine@2
     displayName: 'Wipe Parameter File'
