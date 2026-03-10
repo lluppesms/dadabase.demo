@@ -166,6 +166,7 @@ jobs:
         echo "bicepOutputs-WEB_HOST_NAME: $(bicepOutputs-WEB_HOST_NAME)"
 
   # creates a markdown summary that will be visible in the pipeline "Extensions" tab
+  # https://learn.microsoft.com/en-us/azure/devops/pipelines/scripts/logging-commands?view=azure-devops&tabs=bash
   - task: CmdLine@2
     displayName: Create Summary File
     continueOnError: true
@@ -181,6 +182,7 @@ jobs:
 
         echo "Publishing Summary File: $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md"
         echo ##vso[task.uploadsummary]$(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
+        echo ##vso[task.uploadfile]$(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
 
   - task: CmdLine@2
     displayName: 'Wipe Parameter File'
