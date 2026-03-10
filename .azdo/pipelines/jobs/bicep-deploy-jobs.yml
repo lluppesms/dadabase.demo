@@ -182,7 +182,17 @@ jobs:
 
         echo "Publishing Summary File: $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md"
         echo ##vso[task.uploadsummary]$(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
+
+        echo "Publishing Summary Upload File: $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md"
         echo ##vso[task.uploadfile]$(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
+
+        echo "----------------------------------------"
+        echo "##[group]Directory of pipeline workspace:"
+        tree -L 4 $(Pipeline.Workspace)
+        echo "##[endgroup]"
+
+        echo "Contents of Summary File:"
+        cat $(System.DefaultWorkingDirectory)/bicep_deploy_summary.md
 
   - task: CmdLine@2
     displayName: 'Wipe Parameter File'
