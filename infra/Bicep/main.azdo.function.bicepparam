@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------------
-// Azure DevOps Pipeline - Bicep Parameter File (App Service Deployment)
+// Azure DevOps Pipeline - Bicep Parameter File (Function only)
 // ----------------------------------------------------------------------------------------------------
 using './main.bicep'
 

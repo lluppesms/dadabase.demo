@@ -15,6 +15,15 @@ param instanceNumber string = '1'
 @allowed(['appservice', 'containerapp'])
 param deploymentType string = 'appservice'
 
+@description('Deploy only website infrastructure (skip SQL and Function resources).')
+param websiteOnly bool = false
+
+@description('Deploy website resources (App Service/Container App path).')
+param deployWebsite bool = true
+
+@description('Deploy function resources and function app.')
+param deployFunction bool = true
+
 @description('Container image to deploy (required for containerapp deployment type)')
 param containerImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 
@@ -58,6 +67,8 @@ param adCallbackPath string = '/signin-oidc'
 
 param adminUserList string = ''
 
+@description('Data source used by the web app. JSON avoids database-backed repository usage.')
+@allowed(['JSON', 'SQL'])
 param appDataSource string = 'JSON'
 param appSwaggerEnabled string = 'true'
 
@@ -92,6 +103,10 @@ var commonTags = {
   Environment: environmentCode
 }
 var resourceGroupName = resourceGroup().name
+var useSqlDataSource = toUpper(appDataSource) == 'SQL' && !websiteOnly
+var webAppConnectionString = useSqlDataSource ? sqlDbModule!.outputs.identityConnectionString : ''
+var deployWebsiteEffective = deployWebsite
+var deployFunctionEffective = deployFunction && !websiteOnly
 // var resourceToken = toLower(uniqueString(resourceGroup().id, location))
 
 // --------------------------------------------------------------------------------
@@ -125,7 +140,7 @@ module storageModule './modules/storage/storageaccount.bicep' = {
   }
 }
 
-module functionStorageModule './modules/storage/storageaccount.bicep' = {
+module functionStorageModule './modules/storage/storageaccount.bicep' = if (deployFunctionEffective) {
   name: 'functionstorage${deploymentSuffix}'
   params: {
     storageSku: functionStorageSku
@@ -139,7 +154,7 @@ module functionStorageModule './modules/storage/storageaccount.bicep' = {
 }
 
 // --------------------------------------------------------------------------------
-module sqlDbModule './modules/database/sqlserver.bicep' = {
+module sqlDbModule './modules/database/sqlserver.bicep' = if (!websiteOnly) {
   name: 'sql-server${deploymentSuffix}'
   params: {
     sqlServerName: resourceNames.outputs.sqlServerName
@@ -183,7 +198,7 @@ module appRoleAssignments './modules/iam/roleassignments.bicep' = if (addRoleAss
   }
 }
 // also add rights to the web app storage account (App Service only)
-module appRoleAssignments2 './modules/iam/roleassignments.bicep' = if (addRoleAssignments && deploymentType == 'appservice') {
+module appRoleAssignments2 './modules/iam/roleassignments.bicep' = if (addRoleAssignments && deployWebsiteEffective && deploymentType == 'appservice') {
   name: 'appRoleAssignments-webapp-storage${deploymentSuffix}'
   params: {
     identityPrincipalId: webSiteModule!.outputs.systemPrincipalId
@@ -192,7 +207,7 @@ module appRoleAssignments2 './modules/iam/roleassignments.bicep' = if (addRoleAs
   }
 }
 // also add rights to the container app storage account (Container Apps only)
-module appRoleAssignments2Container './modules/iam/roleassignments.bicep' = if (addRoleAssignments && deploymentType == 'containerapp') {
+module appRoleAssignments2Container './modules/iam/roleassignments.bicep' = if (addRoleAssignments && deployWebsiteEffective && deploymentType == 'containerapp') {
   name: 'appRoleAssignments-containerapp-storage${deploymentSuffix}'
   params: {
     identityPrincipalId: containerAppModule!.outputs.systemPrincipalId
@@ -201,12 +216,12 @@ module appRoleAssignments2Container './modules/iam/roleassignments.bicep' = if (
   }
 }
 // also add rights to the function storage account
-module appRoleAssignments3 './modules/iam/roleassignments.bicep' = if (addRoleAssignments) {
+module appRoleAssignments3 './modules/iam/roleassignments.bicep' = if (addRoleAssignments && deployFunctionEffective) {
   name: 'appRoleAssignments-function-storage${deploymentSuffix}'
   params: {
     identityPrincipalId: identity.outputs.managedIdentityPrincipalId
     principalType: 'ServicePrincipal'
-    storageAccountName: functionStorageModule.outputs.name
+    storageAccountName: functionStorageModule!.outputs.name
   }
 }
 // module adminRoleAssignments './modules/iam/roleassignments.bicep' = if (addRoleAssignments) {
@@ -228,30 +243,32 @@ module keyVaultModule './modules/security/keyvault.bicep' = {
     commonTags: commonTags
     keyVaultOwnerUserId: adminUserId
     adminUserObjectIds: [ identity.outputs.managedIdentityPrincipalId ]
-    applicationUserObjectIds: deploymentType == 'appservice' 
+    applicationUserObjectIds: deployWebsiteEffective
+      ? (deploymentType == 'appservice'
       ? [ webSiteModule!.outputs.userManagedPrincipalId, webSiteModule!.outputs.systemPrincipalId ]
-      : [ containerAppModule!.outputs.userManagedPrincipalId, containerAppModule!.outputs.systemPrincipalId ]
+      : [ containerAppModule!.outputs.userManagedPrincipalId, containerAppModule!.outputs.systemPrincipalId ])
+      : [ identity.outputs.managedIdentityPrincipalId ]
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
     publicNetworkAccess: 'Enabled'
     allowNetworkAccess: 'Allow'
     useRBAC: true
   }
-  dependsOn: deploymentType == 'appservice' ? [ webSiteModule ] : [ containerAppModule ]
+  dependsOn: deployWebsiteEffective ? (deploymentType == 'appservice' ? [ webSiteModule ] : [ containerAppModule ]) : []
 }
 
-module keyVaultStorageSecret './modules/security/keyvaultsecretstorageconnection.bicep' = {
+module keyVaultStorageSecret './modules/security/keyvaultsecretstorageconnection.bicep' = if (deployFunctionEffective) {
   name: 'keyVaultStorageSecret${deploymentSuffix}'
   params: {
     keyVaultName: keyVaultModule.outputs.name
     secretName: 'azurefilesconnectionstring'
-    storageAccountName: functionStorageModule.outputs.name
+    storageAccountName: functionStorageModule!.outputs.name
   }
 }
 
 // --------------------------------------------------------------------------------
 // Container Infrastructure (deployed when deploymentType == 'containerapp')
 // --------------------------------------------------------------------------------
-module containerRegistryModule './modules/container/containerregistry.bicep' = if (deploymentType == 'containerapp') {
+module containerRegistryModule './modules/container/containerregistry.bicep' = if (deployWebsiteEffective && deploymentType == 'containerapp') {
   name: 'containerRegistry${deploymentSuffix}'
   params: {
     containerRegistryName: resourceNames.outputs.containerRegistryName
@@ -265,7 +282,7 @@ module containerRegistryModule './modules/container/containerregistry.bicep' = i
   }
 }
 
-module containerAppsEnvironmentModule './modules/container/containerappenvironment.bicep' = if (deploymentType == 'containerapp') {
+module containerAppsEnvironmentModule './modules/container/containerappenvironment.bicep' = if (deployWebsiteEffective && deploymentType == 'containerapp') {
   name: 'containerAppsEnv${deploymentSuffix}'
   params: {
     environmentName: resourceNames.outputs.containerAppsEnvironmentName
@@ -275,7 +292,7 @@ module containerAppsEnvironmentModule './modules/container/containerappenvironme
   }
 }
 
-module containerAppModule './modules/container/containerapp.bicep' = if (deploymentType == 'containerapp') {
+module containerAppModule './modules/container/containerapp.bicep' = if (deployWebsiteEffective && deploymentType == 'containerapp') {
   name: 'containerApp${deploymentSuffix}'
   params: {
     containerAppName: resourceNames.outputs.containerAppName
@@ -294,8 +311,8 @@ module containerAppModule './modules/container/containerapp.bicep' = if (deploym
     memory: '1Gi'
     // In Container Apps, environment variables use standard naming (no double underscores needed)
     customAppSettings: {
-      AppSettings__DefaultConnection: sqlDbModule.outputs.identityConnectionString
-      AppSettings__ProjectEntities: sqlDbModule.outputs.identityConnectionString
+      AppSettings__DefaultConnection: webAppConnectionString
+      AppSettings__ProjectEntities: webAppConnectionString
       AppSettings__EnvironmentName: environmentCode
       AppSettings__EnableSwagger: appSwaggerEnabled
       AppSettings__DataSource: appDataSource
@@ -323,13 +340,12 @@ module containerAppModule './modules/container/containerapp.bicep' = if (deploym
 // --------------------------------------------------------------------------------
 // App Service Infrastructure (deployed when deploymentType == 'appservice')
 // --------------------------------------------------------------------------------
-module appServicePlanModule './modules/webapp/websiteserviceplan.bicep' = if (deploymentType == 'appservice') {
+module appServicePlanModule './modules/webapp/websiteserviceplan.bicep' = if (deployWebsiteEffective && deploymentType == 'appservice') {
   name: 'appService${deploymentSuffix}'
   params: {
     location: location
     commonTags: commonTags
     sku: webSiteSku
-    environmentCode: environmentCode
     appServicePlanName: servicePlanName == '' ? resourceNames.outputs.webSiteAppServicePlanName : servicePlanName
     existingServicePlanName: servicePlanName
     existingServicePlanResourceGroupName: servicePlanResourceGroupName
@@ -337,7 +353,7 @@ module appServicePlanModule './modules/webapp/websiteserviceplan.bicep' = if (de
   }
 }
 
-module webSiteModule './modules/webapp/website.bicep' = if (deploymentType == 'appservice') {
+module webSiteModule './modules/webapp/website.bicep' = if (deployWebsiteEffective && deploymentType == 'appservice') {
   name: 'webSite${deploymentSuffix}'
   params: {
     webSiteName: resourceNames.outputs.webSiteName
@@ -357,8 +373,8 @@ module webSiteModule './modules/webapp/website.bicep' = if (deploymentType == 'a
     // NOTE: See https://learn.microsoft.com/en-us/azure/app-service/configure-common?tabs=portal
     customAppSettings: {
       AppSettings__AppInsights_InstrumentationKey: '' // Will be set by base settings
-      AppSettings__DefaultConnection: sqlDbModule.outputs.identityConnectionString
-      AppSettings__ProjectEntities: sqlDbModule.outputs.identityConnectionString
+      AppSettings__DefaultConnection: webAppConnectionString
+      AppSettings__ProjectEntities: webAppConnectionString
       AppSettings__EnvironmentName: environmentCode
       AppSettings__EnableSwagger: appSwaggerEnabled
       AppSettings__DataSource: appDataSource
@@ -387,7 +403,7 @@ module webSiteModule './modules/webapp/website.bicep' = if (deploymentType == 'a
 // Function Flex Consumption - Shared Infrastructure (App Service Plan, App Insights, Storage)
 // This is deployed once and shared by all function apps
 // --------------------------------------------------------------------------------
-module flexFunctionResourcesModule 'modules/functions/functionresources.bicep' = {
+module flexFunctionResourcesModule 'modules/functions/functionresources.bicep' = if (deployFunctionEffective) {
   name: 'flexFunctionResources${deploymentSuffix}'
   params: {
     functionInsightsName: resourceNames.outputs.functionApp.insightsName
@@ -399,14 +415,14 @@ module flexFunctionResourcesModule 'modules/functions/functionresources.bicep' =
 }
 
 //--------------------------------------------------------------------------------
-module functionModule './modules/function/functionflex.bicep' = {
+module functionModule './modules/function/functionflex.bicep' = if (deployFunctionEffective) {
   name: 'function${deploymentSuffix}'
   params: {
     functionAppName: resourceNames.outputs.functionApp.name
     functionAppServicePlanName: resourceNames.outputs.functionApp.servicePlanName
     deploymentStorageContainerName: resourceNames.outputs.functionApp.deploymentStorageContainerName
-    functionInsightsName: flexFunctionResourcesModule.outputs.appInsightsName
-    functionStorageAccountName: flexFunctionResourcesModule.outputs.storageAccountName
+    functionInsightsName: flexFunctionResourcesModule!.outputs.appInsightsName
+    functionStorageAccountName: flexFunctionResourcesModule!.outputs.storageAccountName
     // appInsightsName: flexFunctionResourcesModule.outputs.appInsightsName
     // storageAccountName: flexFunctionResourcesModule.outputs.storageAccountName
     addRoleAssignments: addRoleAssignments

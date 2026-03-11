@@ -57,6 +57,7 @@ stages:
     - template: ../jobs/bicep-deploy-jobs.yml
       parameters:
         environmentName: ${{ environmentName }}
+        parameterFileName: 'main.azdo.function.bicepparam'
         parseBicepOutputs: ${{ parameters.parseBicepOutputs }}
 
   - stage: DeployFunction${{ environmentName }}

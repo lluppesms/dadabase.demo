@@ -1,18 +1,18 @@
 # ----------------------------------------------------------------------------------------------------
 # Pipeline used by the azd command
 # ----------------------------------------------------------------------------------------------------
-name: dadabase.blazor.azd
+name: dadabase-blazor-azd
 
 infra:
-    provider: bicep
-    path: infra
-    module: azd-main
+  provider: bicep
+  path: infra/Bicep
+  module: main
 
 pipeline:
-    provider: github
+  provider: github
 
 services:
   web:
-    project: ./src/Dadabase/DadABase.Web/
+    project: ./src/web/Website/
     language: csharp
     host: appservice

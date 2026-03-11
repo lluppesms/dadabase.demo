@@ -70,11 +70,16 @@ builder.Services.AddSingleton(builder.Configuration);
 builder.Services.AddSingleton<AppSettings>(settings);
 
 // ----- Configure Database Context and Repositories -----------------------------------------------------------------
+var configuredDataSource = appSettings["DataSource"];
 var connectionString = appSettings["DefaultConnection"];
-var useDatabase = !string.IsNullOrEmpty(connectionString);
-if (useDatabase)
+var useJsonDataSource = string.Equals(configuredDataSource, "JSON", StringComparison.OrdinalIgnoreCase);
+var useSqlDataSource = string.Equals(configuredDataSource, "SQL", StringComparison.OrdinalIgnoreCase)
+    || string.Equals(configuredDataSource, "SQLDB", StringComparison.OrdinalIgnoreCase)
+    || string.Equals(configuredDataSource, "DATABASE", StringComparison.OrdinalIgnoreCase);
+
+if (useSqlDataSource && !string.IsNullOrWhiteSpace(connectionString))
 {
-    Console.WriteLine("Using SQL Database for Joke Source...");
+    Console.WriteLine("Using SQL Database for Joke Source (DataSource=SQL)...");
     // Use SQL Server database for joke storage
     builder.Services.AddDbContext<DadABaseDbContext>(options => options.UseSqlServer(connectionString));
     builder.Services.AddScoped<IJokeRepository, JokeSQLRepository>();
@@ -84,7 +89,19 @@ if (useDatabase)
 }
 else
 {
-    Console.WriteLine("Using JSON File for Joke Source...");
+    if (useSqlDataSource && string.IsNullOrWhiteSpace(connectionString))
+    {
+        Console.WriteLine("DataSource=SQL was configured, but DefaultConnection is empty. Falling back to JSON file source.");
+    }
+    else if (!useJsonDataSource && !useSqlDataSource)
+    {
+        Console.WriteLine($"Unknown DataSource '{configuredDataSource}'. Falling back to JSON file source.");
+    }
+    else
+    {
+        Console.WriteLine("Using JSON File for Joke Source (DataSource=JSON)...");
+    }
+
     // Fallback to JSON file-based joke storage
     var jsonFilePath = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Data/Jokes.json");
     builder.Services.AddSingleton<IJokeRepository>(sp => new JokeJsonRepository(jsonFilePath));
