@@ -9,7 +9,6 @@ param existingServicePlanName string = ''
 param existingServicePlanResourceGroupName string = ''
 
 param location string = resourceGroup().location
-param environmentCode string = 'dev'
 param commonTags object = {}
 @allowed(['F1','B1','B2','S1','S2','S3'])
 param sku string = 'B1'
@@ -17,8 +16,7 @@ param webAppKind string = 'linux'
 
 // --------------------------------------------------------------------------------
 var templateTag = { TemplateFile: '~website.bicep'}
-var azdTag = environmentCode == 'azd' ? { 'azd-service-name': 'web' } : {}
-var tags = union(commonTags, templateTag, azdTag)
+var tags = union(commonTags, templateTag)
 
 // --------------------------------------------------------------------------------
 

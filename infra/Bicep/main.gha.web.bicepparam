@@ -1,15 +1,15 @@
 // ----------------------------------------------------------------------------------------------------
-// Azure DevOps Pipeline - Bicep Parameter File (App Service Deployment)
+// GitHub Workflow - Bicep Parameter File (Web App only)
 // ----------------------------------------------------------------------------------------------------
 using './main.bicep'
 
 param appName = '#{APP_NAME}#'
-param environmentCode = '#{environmentName}#'
+param environmentCode = '#{ENVCODE}#'
 param location = '#{RESOURCE_GROUP_LOCATION}#'
 param instanceNumber = '#{INSTANCE_NUMBER}#'
 param deploymentType = 'appservice'
-param deployWebsite = false
-param deployFunction = true
+param deployWebsite = true
+param deployFunction = false
 
 param adminUserList = '#{ADMIN_USER_LIST}#'
 param adInstance = '#{LOGIN_INSTANCEENDPOINT}#'

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------------
-// Azure DevOps Pipeline - Bicep Parameter File (App Service Deployment)
+// Azure DevOps Pipeline - Bicep Parameter File (Web App only)
 // ----------------------------------------------------------------------------------------------------
 using './main.bicep'
 
@@ -8,8 +8,8 @@ param environmentCode = '#{environmentName}#'
 param location = '#{RESOURCE_GROUP_LOCATION}#'
 param instanceNumber = '#{INSTANCE_NUMBER}#'
 param deploymentType = 'appservice'
-param deployWebsite = false
-param deployFunction = true
+param deployWebsite = true
+param deployFunction = false
 
 param adminUserList = '#{ADMIN_USER_LIST}#'
 param adInstance = '#{LOGIN_INSTANCEENDPOINT}#'
