@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  ============================================================
+  Coverage exclusions for DadABase.Function.Tests
+  ============================================================
+  This single file centralises all code-coverage exclusions so
+  that no [ExcludeFromCodeCoverage] attributes are required on
+  individual source files.
+
+  It is wired in automatically via the RunSettingsFilePath MSBuild
+  property in DadABase.Function.Tests.csproj, so it is picked up
+  by every dotnet test invocation without needing an explicit
+  /settings flag:
+    - local development
+    - GitHub Actions
+    - Azure DevOps
+    - Visual Studio Test Explorer
+
+  Excluded categories and the reason for each:
+    Program.cs                     - startup / infrastructure; covered by integration tests
+    Function/Helpers/**            - Azure Functions middleware and configuration helpers
+    Function/TriggerHttp.cs        - Azure Function triggers; covered by integration tests
+    Function/TriggerHealthCheck.cs - Azure Function triggers; covered by integration tests
+    Migrations/**                  - auto-generated EF Core migration scaffolding
+    obj/**                         - compiler-generated intermediate output
+    *.g.cs                         - source-generator output
+
+  WHY CompilerGeneratedAttribute is NOT in ExcludeByAttribute:
+  Adding it causes coverlet to incorrectly exclude classes that use the C# 11
+  "required" keyword, because the compiler emits RequiredMemberAttribute (also in
+  System.Runtime.CompilerServices) onto those types.
+  ============================================================
+-->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+
+          <!--
+            Honour [ExcludeFromCodeCoverage] and [GeneratedCode] attributes that
+            already exist in the codebase (e.g., on AppSettings, Joke, JokeCategory,
+            ProjectEntities, JokeRepository, test helpers, etc.).
+            CompilerGeneratedAttribute is omitted on purpose - see header note.
+          -->
+          <ExcludeByAttribute>ExcludeFromCodeCoverage,GeneratedCodeAttribute</ExcludeByAttribute>
+
+          <!--
+            IMPORTANT: Do NOT put XML comments inside this element.
+            Coverlet reads its text content as a comma-separated list; XML comments
+            embedded in the value corrupt the pattern strings and cause unexpected
+            file exclusions. All explanatory notes belong in the top-level comment.
+          -->
+          <ExcludeByFile>
+            **/Program.cs,
+            **/Function/Helpers/**,
+            **/Function/TriggerHttp.cs,
+            **/Function/TriggerHealthCheck.cs,
+            **/Migrations/**,
+            **/*.g.cs,
+            **/obj/**
+          </ExcludeByFile>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
