@@ -2,7 +2,7 @@
 # Pipeline to build and deploy Database Objects Only to existing resources
 # See readme file for info about variable group "SQLDeployDemo"
 # ------------------------------------------------------------------------------------------------------------------------
-name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r)
+name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r) ${{ parameters.deployToEnvironment }}
 pool:
   vmImage: windows-latest # dacpac restore only runs on Windows...
 

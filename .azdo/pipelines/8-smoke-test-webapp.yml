@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------------------------------------------------
 # Pipeline to run a UI Smoke Test
 # ------------------------------------------------------------------------------------------------------------------------
-name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r)
+name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r) ${{ parameters.deployToEnvironment }}
 pool:
   vmImage: ubuntu-latest
 
