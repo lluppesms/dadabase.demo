@@ -4,7 +4,7 @@
 
 ### Bicep Parameter File Process
 
-- Azure DevOps now uses a single shared Bicep parameter file: `infra/Bicep/main.azdo.bicepparam`.
+- Azure DevOps now uses a single shared Bicep parameter file: `infra/Bicep/main.bicepparam`.
 - Deployment mode is selected through pipeline/template parameter `deploymentType` with supported values: `webapp`, `containerapp`, `functionapp`, `all`.
 - The previous mode-specific files (`main.azdo.web.bicepparam`, `main.azdo.containerapp.bicepparam`, `main.azdo.function.bicepparam`) have been retired.
 

@@ -72,13 +72,9 @@ az containerapp update --name $CONTAINER_APP --resource-group rg-dadabase-dev \
 
 ## Parameter Files
 
-### GitHub Actions Parameter Files
+### Shared Parameter File
 
-- `main.gha.bicepparam` - Shared parameters for all GHA deployment modes (`webapp`, `containerapp`, `functionapp`, `all`)
-
-### Azure DevOps Parameter Files
-
-- `main.azdo.bicepparam` - Shared parameters for all AzDO deployment modes (`webapp`, `containerapp`, `functionapp`, `all`)
+- `main.bicepparam` - Shared parameters for all deployment modes (`webapp`, `containerapp`, `functionapp`, `all`) across GitHub Actions and Azure DevOps
 
 ## Environment Variables
 

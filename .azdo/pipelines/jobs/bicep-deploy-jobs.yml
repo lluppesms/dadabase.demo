@@ -10,7 +10,7 @@ parameters:
 - name: templateFileName
   default: 'main.bicep'
 - name: parameterFileName
-  default: 'main.azdo.bicepparam'
+  default: 'main.bicepparam'
 - name: deploymentMode
   default: 'Incremental'  # 'Incremental' | 'Complete' | 'Validation'
 - name: parseBicepOutputs
@@ -61,6 +61,7 @@ jobs:
       script: |
         $environmentNameLower="${{ parameters.environmentName }}".ToLower()
         echo "##vso[task.setvariable variable=environmentNameLower]$environmentNameLower"
+        echo "##vso[task.setvariable variable=ENVCODE]$environmentNameLower"
 
         $appNameLower="$(APP_NAME)".ToLower()
         echo "##vso[task.setvariable variable=appNameLower]$appNameLower"
@@ -92,6 +93,7 @@ jobs:
         echo "parameterFile=$(parameterFile)"
         echo "deploymentMode=${{ parameters.deploymentMode }}"
         echo "resourceGroupName=$(resourceGroupName)"
+        echo "ENVCODE=$(ENVCODE)"
         echo "appName=$(APP_NAME)"
         echo "deploymentType=$(DEPLOYMENT_TYPE)"
         echo "appNameLower=$(appNameLower)"

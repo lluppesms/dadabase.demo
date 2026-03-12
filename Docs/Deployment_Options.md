@@ -90,7 +90,7 @@ param containerImage = 'your-registry.azurecr.io/dadabase-web:latest'
 - **GitHub Actions:** `.github/workflows/3.1-bicep-build-deploy-containerapp.yml` (Workflow: **3.1.bicep.build.deploy.containerapp**)
 - **Azure DevOps:** `.azdo/pipelines/3.2-bicep-build-deploy-containerapp.yml` (Pipeline: **3.2-bicep-build-deploy-containerapp**)
 
-GitHub Actions uses the shared `infra/Bicep/main.gha.bicepparam` and Azure DevOps uses the shared `infra/Bicep/main.azdo.bicepparam`, with deployment mode selected via `deploymentType='containerapp'` for this workflow.
+GitHub Actions and Azure DevOps both use the shared `infra/Bicep/main.bicepparam`, with deployment mode selected via `deploymentType='containerapp'` for this workflow.
 
 ## Architecture Comparison
 
@@ -133,7 +133,7 @@ GitHub Actions uses the shared `infra/Bicep/main.gha.bicepparam` and Azure DevOp
 4. **Azure DevOps Variable Group** named `Dadabase.Demo` with:
    - `#{APP_NAME}#`
    - `#{INSTANCE_NUMBER}#`
-   - `#{environmentName}#` (DEV, QA, or PROD)
+  - `#{ENVCODE}#` (`dev`, `qa`, or `prod`)
    - `#{RESOURCE_GROUP_LOCATION}#`
    - SQL, OpenAI, and authentication settings (see variable group for complete list)
 
@@ -174,7 +174,7 @@ GitHub Actions uses the shared `infra/Bicep/main.gha.bicepparam` and Azure DevOp
    - Run GHAS Scan: `false`
 5. Click **Run**
 
-The pipeline uses parameter file `infra/Bicep/main.azdo.bicepparam`; deployment mode is selected by pipeline parameter `deploymentType` (set to `webapp` for this pipeline).
+The pipeline uses parameter file `infra/Bicep/main.bicepparam`; deployment mode is selected by pipeline parameter `deploymentType` (set to `webapp` for this pipeline).
 
 #### Via Azure CLI
 
@@ -250,7 +250,7 @@ The pipeline will:
 - Push image to Azure Container Registry
 - Deploy Container App with the new image
 
-The pipeline uses parameter file `infra/Bicep/main.azdo.bicepparam` with `deploymentType='containerapp'`.
+The pipeline uses parameter file `infra/Bicep/main.bicepparam` with `deploymentType='containerapp'`.
 
 #### Via Azure CLI
 

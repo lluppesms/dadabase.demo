@@ -12,8 +12,7 @@ param location string = resourceGroup().location
 param instanceNumber string = '1'
 
 @description('Deployment type for the web application')
-@allowed(['webapp', 'containerapp', 'functionapp', 'all', 'appservice'])
-param deploymentType string = 'webapp'
+param deploymentType string = 'webapp'  // ['webapp', 'containerapp', 'functionapp', 'all']
 
 @description('Deploy only website infrastructure (skip SQL and Function resources).')
 param websiteOnly bool = false
@@ -99,8 +98,7 @@ var commonTags = {
 var resourceGroupName = resourceGroup().name
 var useSqlDataSource = toUpper(appDataSource) == 'SQL' && !websiteOnly
 var webAppConnectionString = useSqlDataSource ? sqlDbModule!.outputs.identityConnectionString : ''
-// appservice is retained as a backwards-compatible alias for webapp.
-var deploymentTypeNormalized = toLower(deploymentType) == 'appservice' ? 'webapp' : toLower(deploymentType)
+var deploymentTypeNormalized = toLower(deploymentType)
 var deployWebAppEffective = contains(['webapp', 'all'], deploymentTypeNormalized)
 var deployContainerAppEffective = contains(['containerapp', 'all'], deploymentTypeNormalized)
 var deployWebsiteEffective = deployWebAppEffective || deployContainerAppEffective
