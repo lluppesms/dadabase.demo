@@ -14,7 +14,6 @@ namespace DadABase.Web.Pages;
 /// Random Page Code Behind
 /// </summary>
 [AllowAnonymous]
-[ExcludeFromCodeCoverage]
 public partial class Random : ComponentBase
 {
     [Inject] IJokeRepository JokeRepository { get; set; }

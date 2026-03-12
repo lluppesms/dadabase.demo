@@ -16,7 +16,6 @@ public interface IBuildInfoService
 /// <summary>
 /// Build Info Service
 /// </summary>
-[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public class BuildInfoService : IBuildInfoService
 {
     private readonly IWebHostEnvironment _webHostEnvironment;

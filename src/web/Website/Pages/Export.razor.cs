@@ -11,7 +11,6 @@ namespace DadABase.Web.Pages;
 /// <summary>
 /// Export Page Code-Behind
 /// </summary>
-[ExcludeFromCodeCoverage]
 public partial class Export : ComponentBase
 {
     [Inject] AppSettings Settings { get; set; }

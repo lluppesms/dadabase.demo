@@ -14,7 +14,6 @@ namespace DadABase.Web.Pages;
 /// Index Page Code Behind
 /// </summary>
 [AllowAnonymous]
-[ExcludeFromCodeCoverage]
 public partial class Index : ComponentBase, IDisposable
 {
     [Inject] IJSRuntime JsInterop { get; set; }

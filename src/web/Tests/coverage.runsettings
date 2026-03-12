@@ -1,13 +1,72 @@
 <?xml version="1.0" encoding="utf-8" ?>
+<!--
+  ============================================================
+  Coverage exclusions for DadABase.Tests
+  ============================================================
+  This single file centralises all code-coverage exclusions so
+  that no [ExcludeFromCodeCoverage] attributes are required on
+  individual source files.
+
+  It is wired in automatically via the RunSettingsFilePath MSBuild
+  property in DadABase.Tests.csproj, so it is picked up by every
+  dotnet test invocation without needing an explicit /settings flag:
+    - local development
+    - GitHub Actions (template-webapp-build.yml)
+    - Azure DevOps (webapp-build-job.yml)
+    - Visual Studio Test Explorer
+
+  Excluded categories and the reason for each:
+    Program.cs            - startup / infrastructure; covered by Playwright E2E tests
+    Website/Pages/**      - Blazor page code-behinds + Razor templates; covered by Playwright
+    Website/Shared/**     - Blazor shared layout components; covered by Playwright
+    Website/Components/** - Blazor reusable UI components; covered by Playwright
+    AIHelper.cs           - requires live Azure OpenAI; covered by integration tests
+    BuildInfoService.cs   - reads the file system at runtime; covered by integration tests
+    Migrations/**         - auto-generated EF Core migration scaffolding
+    obj/**                - compiler-generated intermediate output
+    *.g.cs / *.razor.g.cs - Razor source-generator output
+
+  WHY CompilerGeneratedAttribute is NOT in ExcludeByAttribute:
+  Adding it causes coverlet to incorrectly exclude classes that use the C# 11
+  "required" keyword, because the compiler emits RequiredMemberAttribute (also in
+  System.Runtime.CompilerServices) onto those types. Async state machines and
+  lambda-closure classes belonging to excluded source files are already suppressed
+  by the ExcludeByFile patterns above.
+  ============================================================
+-->
 <RunSettings>
   <DataCollectionRunSettings>
     <DataCollectors>
       <DataCollector friendlyName="XPlat code coverage">
         <Configuration>
           <Format>cobertura</Format>
-          <ExcludeByAttribute>ExcludeFromCodeCoverage,GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
-          <!-- Exclude Program.cs startup, migrations, and auto-generated Razor source files -->
-          <ExcludeByFile>**/Program.cs,**/Migrations/**,**/*.cshtml.g.cs,**/*.razor.g.cs,**/obj/**</ExcludeByFile>
+
+          <!--
+            Honour [ExcludeFromCodeCoverage] and [GeneratedCode] attributes that
+            already exist in the codebase (e.g., on AppSettings, Utilities,
+            BaseAPIController, JokeJsonRepository, test helpers, etc.).
+            CompilerGeneratedAttribute is omitted on purpose - see header note.
+          -->
+          <ExcludeByAttribute>ExcludeFromCodeCoverage,GeneratedCodeAttribute</ExcludeByAttribute>
+
+          <!--
+            IMPORTANT: Do NOT put XML comments inside this element.
+            Coverlet reads its text content as a comma-separated list; XML comments
+            embedded in the value corrupt the pattern strings and cause unexpected
+            file exclusions. All explanatory notes belong in the top-level comment.
+          -->
+          <ExcludeByFile>
+            **/Program.cs,
+            **/Website/Pages/**,
+            **/Website/Shared/**,
+            **/Website/Components/**,
+            **/Website/Repositories/AIHelper.cs,
+            **/Website/Models/Application/BuildInfoService.cs,
+            **/Migrations/**,
+            **/*.cshtml.g.cs,
+            **/*.razor.g.cs,
+            **/obj/**
+          </ExcludeByFile>
         </Configuration>
       </DataCollector>
     </DataCollectors>

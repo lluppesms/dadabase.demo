@@ -14,7 +14,6 @@ namespace DadABase.Web.Pages;
 /// <summary>
 /// Admin Page Code-Behind
 /// </summary>
-[ExcludeFromCodeCoverage]
 public partial class Admin : ComponentBase
 {
     [Inject] AppSettings Settings { get; set; }

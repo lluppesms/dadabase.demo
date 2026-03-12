@@ -14,7 +14,6 @@ namespace DadABase.Web.Pages;
 /// Joke Detail Page Code Behind
 /// </summary>
 [AllowAnonymous]
-[ExcludeFromCodeCoverage]
 public partial class JokeDetail : ComponentBase
 {
     /// <summary>

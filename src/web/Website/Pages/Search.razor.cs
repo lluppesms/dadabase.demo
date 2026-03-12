@@ -11,7 +11,6 @@ namespace DadABase.Web.Pages;
 /// <summary>
 /// Search Page
 /// </summary>
-[ExcludeFromCodeCoverage]
 public partial class Search : ComponentBase
 {
     [Inject] IJokeRepository JokeRepository { get; set; }
