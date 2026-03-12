@@ -10,11 +10,13 @@ parameters:
 - name: templateFileName
   default: 'main.bicep'
 - name: parameterFileName
-  default: 'main.azdo.bicepparam'
+  default: 'main.bicepparam'
 - name: deploymentMode
   default: 'Incremental'  # 'Incremental' | 'Complete' | 'Validation'
 - name: parseBicepOutputs
   default: false
+- name: deploymentType
+  default: 'webapp' # 'webapp' | 'containerapp' | 'functionapp' | 'all'
 
 # ----------------------------------------------------------------------------------------------------
 jobs:
@@ -23,7 +25,7 @@ jobs:
   environment: ${{ parameters.environmentName }}
 
 - job: CreateInfraJob
-  displayName: Create Infrastructure
+  displayName: Create ${{ parameters.deploymentType }} Infrastructure
   variables:
     - name: environmentName
       value: ${{ parameters.environmentName }}
@@ -59,6 +61,7 @@ jobs:
       script: |
         $environmentNameLower="${{ parameters.environmentName }}".ToLower()
         echo "##vso[task.setvariable variable=environmentNameLower]$environmentNameLower"
+        echo "##vso[task.setvariable variable=ENVCODE]$environmentNameLower"
 
         $appNameLower="$(APP_NAME)".ToLower()
         echo "##vso[task.setvariable variable=appNameLower]$appNameLower"
@@ -68,6 +71,9 @@ jobs:
 
         $resourceGroupName="$(RESOURCE_GROUP_PREFIX)-$(INSTANCE_NUMBER)-$environmentNameLower".ToLower()
         echo "##vso[task.setvariable variable=resourceGroupName]$resourceGroupName"
+
+        $deploymentType="${{ parameters.deploymentType }}"
+        echo "##vso[task.setvariable variable=DEPLOYMENT_TYPE]$deploymentType"
 
         $runDateTime=(Get-Date).ToString("yyyyMMdd-HHmmss")
         echo "##vso[task.setvariable variable=runDateTime]$runDateTime"
@@ -87,7 +93,9 @@ jobs:
         echo "parameterFile=$(parameterFile)"
         echo "deploymentMode=${{ parameters.deploymentMode }}"
         echo "resourceGroupName=$(resourceGroupName)"
+        echo "ENVCODE=$(ENVCODE)"
         echo "appName=$(APP_NAME)"
+        echo "deploymentType=$(DEPLOYMENT_TYPE)"
         echo "appNameLower=$(appNameLower)"
         echo "appNameLowerNoDashes=$(appNameLowerNoDashes)"
         echo "runDateTime=$(runDateTime)"

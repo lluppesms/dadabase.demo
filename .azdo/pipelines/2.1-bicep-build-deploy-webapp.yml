@@ -67,6 +67,7 @@ stages:
       runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
       runGHASScan: ${{ parameters.runGHASScan }}
       runUnitTests: ${{ parameters.runUnitTests }}
+      deploymentType: 'webapp'
 
 - ${{ if eq(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
   - template: stages/bicep-and-webapp-stages.yml
@@ -78,3 +79,4 @@ stages:
       runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
       runGHASScan: ${{ parameters.runGHASScan }}
       runUnitTests: ${{ parameters.runUnitTests }}
+      deploymentType: 'webapp'

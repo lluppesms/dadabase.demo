@@ -27,6 +27,10 @@ on:
         required: false
         type: string
         default: 'false'
+      deploymentType:
+        required: false
+        type: string
+        default: 'webapp'
       runCreateInfra:
         required: false
         default: true
@@ -69,6 +73,7 @@ jobs:
       envCode: ${{ inputs.envCode }}
       generatedAppEnvName: ${{ inputs.envCode == 'prod' && vars.APP_NAME || format('{0}-{1}-{2}', vars.APP_NAME, inputs.envCode, vars.INSTANCE_NUMBER) }}
       generatedResourceGroupName: ${{ vars.RESOURCE_GROUP_NAME || format('{0}-{1}-{2}', vars.RESOURCE_GROUP_PREFIX, inputs.envCode, vars.INSTANCE_NUMBER) }}
+      DEPLOYMENT_TYPE: ${{ inputs.deploymentType }}
       createResourceGroup: ${{ inputs.createResourceGroup }}
       requestorName: ${{ inputs.requestorName }}
 
@@ -168,7 +173,7 @@ jobs:
     # The azure/arm-deploy action is being deprecated, replaced by azure/bicep-deploy
     # See: https://github.com/Azure/arm-deploy (old) vs https://github.com/azure/bicep-deploy (new)
     # Note: 'failOnStdErr' is not supported in bicep-deploy... will that be an issue in GHA where warnings are treated as errors???
-    - name: Deploy Azure Resources
+    - name: Deploy ${{ inputs.deploymentType }} Azure Resources
       uses: azure/bicep-deploy@v2
       if: ${{ inputs.runCreateInfra && inputs.deployInResourceGroup && inputs.bicepDeploymentMode != 'whatIf' }} 
       id: deploy-bicep-rg
@@ -182,7 +187,7 @@ jobs:
         type: deployment
         operation: ${{ inputs.bicepDeploymentMode }} # Must be: create | validate | whatIf
 
-    - name: Deploy Azure Resources (SUB)
+    - name: Deploy ${{ inputs.deploymentType }} Azure Resources (SUB)
       uses: azure/bicep-deploy@v2
       if: ${{ inputs.runCreateInfra && !inputs.deployInResourceGroup && inputs.bicepDeploymentMode != 'whatIf' }}
       id: deploy-bicep-sub

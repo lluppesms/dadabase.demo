@@ -13,6 +13,8 @@ parameters:
   default: 'false'
 - name: runMSDevSecOpsScan
   default: 'false'
+- name: deploymentType
+  default: 'webapp' # 'webapp' | 'containerapp' | 'functionapp' | 'all'
 
 # ----------------------------------------------------------------------------------------------------
 stages:
@@ -20,7 +22,7 @@ stages:
 - stage: ScanApplication
   displayName: Scan Application
   jobs:
-  - template: ../jobs/scan-code-jobs.yml
+  - template: ../jobs/scan-code-job.yml
     parameters:
       environmentName: 'DEV'
       runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
@@ -32,9 +34,10 @@ stages:
     # Condition is scan complete and a single environment is being deployed, 
     # or the environment is 'dev', or if qa/prod, the previous stage (dev->qa or qa->prod) succeeded
     condition: or(eq(${{ parameters.singleEnvironment }}, 'true'), and(eq(upper('${{ environmentName }}'), 'DEV'), succeeded('ScanApplication')), and(eq(upper('${{ environmentName }}'), 'QA'), succeeded('CreateInfraDEV')), and(eq(upper('${{ environmentName }}'), 'PROD'), succeeded('CreateInfraQA')))
-    displayName: Create ${{ environmentName }} Resources
+    displayName: Create ${{ environmentName }} ${{ parameters.deploymentType }} Resources
     jobs:
-    - template: ../jobs/bicep-deploy-jobs.yml
+    - template: ../jobs/bicep-deploy-job.yml
       parameters:
         environmentName: ${{ environmentName }}
         parseBicepOutputs: ${{ parameters.parseBicepOutputs }}
+        deploymentType: ${{ parameters.deploymentType }}

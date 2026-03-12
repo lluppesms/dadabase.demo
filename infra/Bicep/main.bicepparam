@@ -1,18 +1,14 @@
 // ----------------------------------------------------------------------------------------------------
-// GitHub Workflow - Bicep Parameter File for Container Apps Deployment
+// Shared Pipeline Parameter File (Azure DevOps + GitHub Actions)
 // ----------------------------------------------------------------------------------------------------
 using './main.bicep'
-
-// Deployment configuration
-param deploymentType = 'containerapp'
-param containerImage = '#{CONTAINER_IMAGE}#'
-param containerRegistrySku = 'Basic'
-param pipelineServicePrincipalObjectId = '#{PIPELINE_SERVICE_PRINCIPAL_OBJECT_ID}#'
 
 param appName = '#{APP_NAME}#'
 param environmentCode = '#{ENVCODE}#'
 param location = '#{RESOURCE_GROUP_LOCATION}#'
 param instanceNumber = '#{INSTANCE_NUMBER}#'
+param deploymentType = '#{DEPLOYMENT_TYPE}#'
+param appDataSource = 'SQL'
 
 param adminUserList = '#{ADMIN_USER_LIST}#'
 param adInstance = '#{LOGIN_INSTANCEENDPOINT}#'
@@ -20,13 +16,13 @@ param adDomain = '#{LOGIN_DOMAIN}#'
 param adTenantId = '#{LOGIN_TENANTID}#'
 param adClientId = '#{LOGIN_CLIENTID}#'
 param webApiKey = '#{WEB_API_KEY}#'
+param servicePlanName = '#{EXISTING_SERVICEPLAN_NAME}#'
+param servicePlanResourceGroupName = '#{EXISTING_SERVICEPLAN_RESOURCE_GROUP_NAME}#'
+param webAppKind = 'linux' // 'linux' or 'windows'
 
-// App Service parameters (not used for Container Apps but required by schema)
-param servicePlanName = ''
-param servicePlanResourceGroupName = ''
-param webAppKind = 'linux'
-param webSiteSku = 'B1'
-param webStorageSku = 'Standard_LRS'
+param containerImage = '#{CONTAINER_IMAGE}#'
+param containerRegistrySku = 'Basic'
+param pipelineServicePrincipalObjectId = '#{PIPELINE_SERVICE_PRINCIPAL_OBJECT_ID}#'
 
 param sqlAdminLoginUserId = '#{SQLADMIN_LOGIN_USERID}#'
 param sqlAdminLoginUserSid = '#{SQLADMIN_LOGIN_USERSID}#'

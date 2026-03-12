@@ -21,6 +21,7 @@ The DadABase web application can be deployed using two different Azure hosting o
 2. **Azure Container Apps** - Container-based deployment with advanced scaling
 
 Both options share common infrastructure:
+
 - Azure SQL Database
 - Azure Key Vault
 - Azure Storage Account
@@ -34,26 +35,30 @@ Both options share common infrastructure:
 **What it is:** Platform-as-a-Service (PaaS) hosting where you deploy compiled .NET code directly to Azure.
 
 **Infrastructure Components:**
+
 - App Service Plan (compute resources)
 - App Service (web application host)
 - Application Insights (monitoring)
 - Shared resources (SQL, Storage, Key Vault)
 
 **Deployment Method:**
+
 - Code is built on GitHub Actions runner
 - Artifacts are zipped and deployed via `webapps-deploy` action
 - .NET 10.0 runtime is provided by the App Service platform
 
 **Bicep Parameter:**
+
 ```bicep
-param deploymentType = 'appservice'
+param deploymentType = 'webapp'
 ```
 
 **CI/CD Workflows:**
+
 - **GitHub Actions:** `.github/workflows/3-bicep-build-deploy-webapp.yml` (Workflow: **3.bicep.build.deploy.webapp**)
 - **Azure DevOps:** `.azdo/pipelines/3.1-bicep-build-deploy-webapp.yml` (Pipeline: **3.1-bicep-build-deploy-webapp**)
 
-Both use parameter file `infra/Bicep/main.{gha|azdo}.bicepparam` with `deploymentType='appservice'`.
+Both use parameter file `infra/Bicep/main.bicepparam` with web app deployments using `deploymentType='webapp'`.
 
 ### Option 2: Azure Container Apps
 
@@ -67,22 +72,25 @@ Both use parameter file `infra/Bicep/main.{gha|azdo}.bicepparam` with `deploymen
 - Shared resources (SQL, Storage, Key Vault)
 
 **Deployment Method:**
+
 - Docker image is built from source
 - Image is pushed to Azure Container Registry
 - Container App pulls and runs the image
 - Automatic image-based deployments
 
 **Bicep Parameter:**
+
 ```bicep
 param deploymentType = 'containerapp'
 param containerImage = 'your-registry.azurecr.io/dadabase-web:latest'
 ```
 
 **CI/CD Workflows:**
+
 - **GitHub Actions:** `.github/workflows/3.1-bicep-build-deploy-containerapp.yml` (Workflow: **3.1.bicep.build.deploy.containerapp**)
 - **Azure DevOps:** `.azdo/pipelines/3.2-bicep-build-deploy-containerapp.yml` (Pipeline: **3.2-bicep-build-deploy-containerapp**)
 
-Both use parameter file `infra/Bicep/main.{gha|azdo}.containerapp.bicepparam` with `deploymentType='containerapp'`.
+GitHub Actions and Azure DevOps both use the shared `infra/Bicep/main.bicepparam`, with deployment mode selected via `deploymentType='containerapp'` for this workflow.
 
 ## Architecture Comparison
 
@@ -125,7 +133,7 @@ Both use parameter file `infra/Bicep/main.{gha|azdo}.containerapp.bicepparam` wi
 4. **Azure DevOps Variable Group** named `Dadabase.Demo` with:
    - `#{APP_NAME}#`
    - `#{INSTANCE_NUMBER}#`
-   - `#{environmentName}#` (DEV, QA, or PROD)
+  - `#{ENVCODE}#` (`dev`, `qa`, or `prod`)
    - `#{RESOURCE_GROUP_LOCATION}#`
    - SQL, OpenAI, and authentication settings (see variable group for complete list)
 
@@ -166,7 +174,7 @@ Both use parameter file `infra/Bicep/main.{gha|azdo}.containerapp.bicepparam` wi
    - Run GHAS Scan: `false`
 5. Click **Run**
 
-The pipeline uses parameter file `infra/Bicep/main.azdo.bicepparam` which explicitly sets `deploymentType='appservice'`.
+The pipeline uses parameter file `infra/Bicep/main.bicepparam`; deployment mode is selected by pipeline parameter `deploymentType` (set to `webapp` for this pipeline).
 
 #### Via Azure CLI
 
@@ -187,7 +195,7 @@ az deployment group create \
   --parameters \
     appName=$APP_NAME \
     environmentCode=$ENV_CODE \
-    deploymentType=appservice
+    deploymentType=webapp
 
 # Build and deploy application
 dotnet publish src/web/Website/DadABase.Web.csproj -c Release -o ./publish
@@ -216,6 +224,7 @@ az webapp deploy \
 5. Click **Run workflow**
 
 The workflow will:
+
 - Deploy Container Registry and Container Apps Environment
 - Build Docker image from `src/web/Dockerfile`
 - Push image to Azure Container Registry
@@ -235,12 +244,13 @@ The workflow will:
 5. Click **Run**
 
 The pipeline will:
+
 - Deploy Container Registry and Container Apps Environment
 - Build Docker image from `src/web/Dockerfile`
 - Push image to Azure Container Registry
 - Deploy Container App with the new image
 
-The pipeline uses parameter file `infra/Bicep/main.azdo.containerapp.bicepparam` which explicitly sets `deploymentType='containerapp'`.
+The pipeline uses parameter file `infra/Bicep/main.bicepparam` with `deploymentType='containerapp'`.
 
 #### Via Azure CLI
 
@@ -294,6 +304,7 @@ az containerapp update \
 ✅ **Windows hosting needed** - Can run on Windows or Linux  
 
 **Best for:**
+
 - Traditional web applications
 - Internal enterprise applications
 - Applications with steady traffic
@@ -309,6 +320,7 @@ az containerapp update \
 ✅ **Advanced scaling** - HTTP-based auto-scaling with multiple replicas  
 
 **Best for:**
+
 - Modern cloud-native applications
 - Applications with variable traffic
 - Cost-optimized workloads
@@ -330,7 +342,7 @@ az deployment group create \
 az deployment group create \
   --resource-group $RESOURCE_GROUP \
   --template-file infra/Bicep/main.bicep \
-  --parameters deploymentType=appservice ...
+  --parameters deploymentType=webapp ...
 ```
 
 **Note:** The Bicep template uses conditional deployment - only the resources for the selected deployment type will be created. Shared resources (SQL, Storage, Key Vault) remain the same.
@@ -338,16 +350,19 @@ az deployment group create \
 ## Monitoring and Troubleshooting
 
 Both deployment options integrate with:
+
 - **Application Insights** for APM and distributed tracing
 - **Log Analytics** for log aggregation
 - **Azure Monitor** for metrics and alerts
 
 ### App Service Logs
+
 ```bash
 az webapp log tail --name $APP_NAME --resource-group $RESOURCE_GROUP
 ```
 
 ### Container App Logs
+
 ```bash
 az containerapp logs show --name $CONTAINER_APP_NAME --resource-group $RESOURCE_GROUP --follow
 ```
@@ -355,11 +370,13 @@ az containerapp logs show --name $CONTAINER_APP_NAME --resource-group $RESOURCE_
 ## Cost Comparison
 
 ### App Service (B1 - Basic Tier)
+
 - **Fixed cost**: ~$13/month (Linux) or ~$55/month (Windows)
 - **Always running**: Costs even when idle
 - **Scaling**: Manual scale-up/out (costs increase with scale)
 
 ### Container Apps (Consumption Plan)
+
 - **Variable cost**: Pay per vCPU-second and memory
 - **Scale to zero**: No cost when idle
 - **Automatic scaling**: Costs adjust automatically with load

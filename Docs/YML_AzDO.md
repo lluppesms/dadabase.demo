@@ -38,7 +38,7 @@ This document outlines the structured approach to Azure DevOps YAML pipelines us
 │   ├── 3.1-bicep-build-deploy-webapp.yml    # App Service infrastructure and application deployment
 │   ├── 3.2-bicep-build-deploy-containerapp.yml # Container Apps infrastructure and container deployment
 │   ├── 4-build-deploy-dacpac.yml            # SQL Database deployment
-│   ├── 5-run-sql.yml                        # SQL script execution
+│   ├── 5-run-sql-script.yml                        # SQL script execution
 │   ├── 6-pr-scan-build.yml                  # Pull request scan and build
 │   ├── 7-scan-code.yml                      # Security scanning pipeline
 │   ├── 8-smoke-test-webapp.yml              # Smoke testing pipeline
@@ -129,7 +129,7 @@ This document outlines the structured approach to Azure DevOps YAML pipelines us
 
 ### 5. Database Deployment Pipelines
 - **Purpose**: Deploy database schema and data
-- **Entry Points**: `4-build-deploy-dacpac.yml`, `10-infra-build-deploy-dacpac.yml`, `5-run-sql.yml`
+- **Entry Points**: `4-build-deploy-dacpac.yml`, `10-infra-build-deploy-dacpac.yml`, `5-run-sql-script.yml`
 - **Uses Pipes**: `infra-and-schema-pipe.yml`, `schema-only-pipe.yml`, `run-sql-pipe.yml`
 - **Stages**:
   - Optional: Infrastructure provisioning

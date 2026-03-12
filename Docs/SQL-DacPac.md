@@ -53,7 +53,7 @@ See the [.azdo/pipeline/readme.md](../.azdo/pipelines/readme.md) file for detail
 
 - This project is mostly focused on database **SCHEMA** changes, not on changing to the actual **DATA** in a database (except for the initial data populate). However, there is an example of running scripts as part of the post-deployment.
 
-- In addition, this project has [a pipeline that runs a script](../.azdo/pipelines/5-run-sql.yml). The scripts allowed are defined in the YML code and the user may choose which one at runtime.
+- In addition, this project has [a pipeline that runs a script](../.azdo/pipelines/5-run-sql-script.yml). The scripts allowed are defined in the YML code and the user may choose which one at runtime.
 - One of the custom scripts in this example does an Azure DB Copy, which must run in the Master database, so there is custom logic in the run SQL pipeline template for that.
 
 - For some helpful queries about permissions in an Azure SQL database, see [SQL-Permissions-Queries.md](SQL-Permissions-Queries.md).

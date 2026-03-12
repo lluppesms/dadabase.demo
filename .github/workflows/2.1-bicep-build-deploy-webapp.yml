@@ -94,8 +94,9 @@ jobs:
       envCode: ${{ inputs.deployEnvironment }}
       templatePath: './infra/Bicep/'
       templateFile: 'main.bicep'
-      parameterFile: 'main.gha.web.bicepparam'
+      parameterFile: 'main.bicepparam'
       parameterFileReplaceTokens: 'true'
+      deploymentType: 'webapp'
       requestorName: ${{ github.actor }}
       createResourceGroup: ${{ inputs.createResourceGroup }}
       bicepDeploymentMode: ${{ inputs.bicepDeploymentMode }}
