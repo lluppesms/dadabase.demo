@@ -29,7 +29,7 @@ parameters:
       - PROD
       - DEV-QA-PROD
     default: DEV
-  - deploymentType:
+  - name: deploymentType
     displayName: Deployment Type
     type: string
     values:
