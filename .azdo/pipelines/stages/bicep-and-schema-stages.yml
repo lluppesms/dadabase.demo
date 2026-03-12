@@ -23,6 +23,8 @@ parameters:
   default: 'false'
 - name: loginAccountType
   default: 'SVC_PRINCIPAL'
+- name: deploymentType
+  default: 'functionapp' # 'webapp' | 'containerapp' | 'functionapp' | 'all'
 
 # ----------------------------------------------------------------------------------------------------
 stages:
@@ -62,6 +64,7 @@ stages:
     - template: ../jobs/bicep-deploy-jobs.yml
       parameters:
         environmentName: ${{ environmentName }}
+        deploymentType: ${{ parameters.deploymentType }}
 
   - stage: Deploy${{ environmentName }}Schema
     displayName: Deploy ${{ environmentName }} Schema

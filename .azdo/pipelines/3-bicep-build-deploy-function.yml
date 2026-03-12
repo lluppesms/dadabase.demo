@@ -75,6 +75,7 @@ stages:
       runSmokeTests: ${{ parameters.runSmokeTest }}
       runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
       runGHASScan: ${{ parameters.runGHASScan }}
+      deploymentType: 'functionapp'
 
 - ${{ if eq(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
   - template: stages/bicep-and-function-stages.yml
@@ -86,3 +87,4 @@ stages:
       runSmokeTests: ${{ parameters.runSmokeTest }}
       runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
       runGHASScan: ${{ parameters.runGHASScan }}
+      deploymentType: 'functionapp'

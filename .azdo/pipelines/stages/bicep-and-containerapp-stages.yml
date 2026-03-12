@@ -24,6 +24,9 @@ parameters:
   default: 'src/web'
 - name: imageName
   default: 'dadabase-web'
+- name: deploymentType
+  type: string
+  default: 'containerapp' # 'webapp' | 'containerapp' | 'functionapp' | 'all'
 
 # ----------------------------------------------------------------------------------------------------
 stages:
@@ -55,7 +58,7 @@ stages:
       parameters:
         environmentName: ${{ environmentName }}
         parseBicepOutputs: ${{ parameters.parseBicepOutputs }}
-        parameterFileName: 'main.azdo.containerapp.bicepparam'
+        deploymentType: ${{ parameters.deploymentType }}
 
   - stage: BuildAndPush${{ environmentName }}Container
     displayName: Build & Push ${{ environmentName }} Container

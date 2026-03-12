@@ -29,6 +29,15 @@ parameters:
       - PROD
       - DEV-QA-PROD
     default: DEV
+  - deploymentType:
+    displayName: Deployment Type
+    type: string
+    values:
+      - webapp
+      - containerapp
+      - functionapp
+      - all
+    default: webapp
   - name: runMSDevSecOpsScan
     displayName: Run MS DevSecOps Scan
     type: boolean
@@ -53,6 +62,7 @@ stages:
       parseBicepOutputs: true
       runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
       runGHASScan: ${{ parameters.runGHASScan }}
+      deploymentType: ${{ parameters.deploymentType }}
 
 - ${{ if eq(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
   - template: stages/bicep-only-stages.yml
@@ -61,3 +71,4 @@ stages:
       parseBicepOutputs: true
       runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
       runGHASScan: ${{ parameters.runGHASScan }}
+      deploymentType: ${{ parameters.deploymentType }}

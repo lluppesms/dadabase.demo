@@ -21,6 +21,15 @@ on:
         options:
           - create
           - whatIf
+      deploymentType:
+        description: Deployment Type
+        type: choice
+        default: webapp
+        options:
+          - webapp
+          - containerapp
+          - functionapp
+          - all
       createResourceGroup:
         description: Create Resource Group?
         type: boolean
@@ -64,6 +73,7 @@ jobs:
       templateFile: 'main.bicep'
       parameterFile: 'main.gha.bicepparam'
       parameterFileReplaceTokens: 'true'
+      deploymentType: ${{ inputs.deploymentType }}
       requestorName: ${{ github.actor }}
       createResourceGroup: ${{ inputs.createResourceGroup }}
       bicepDeploymentMode: ${{ inputs.bicepDeploymentMode }}

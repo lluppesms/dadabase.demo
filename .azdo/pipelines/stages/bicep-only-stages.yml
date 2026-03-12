@@ -13,6 +13,8 @@ parameters:
   default: 'false'
 - name: runMSDevSecOpsScan
   default: 'false'
+- name: deploymentType
+  default: 'webapp' # 'webapp' | 'containerapp' | 'functionapp' | 'all'
 
 # ----------------------------------------------------------------------------------------------------
 stages:
@@ -38,3 +40,4 @@ stages:
       parameters:
         environmentName: ${{ environmentName }}
         parseBicepOutputs: ${{ parameters.parseBicepOutputs }}
+        deploymentType: ${{ parameters.deploymentType }}

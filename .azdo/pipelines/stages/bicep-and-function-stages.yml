@@ -19,6 +19,8 @@ parameters:
   default: 'false'
 - name: runMSDevSecOpsScan
   default: 'false'
+- name: deploymentType
+  default: 'functionapp' # 'webapp' | 'containerapp' | 'functionapp' | 'all'
 
 # ----------------------------------------------------------------------------------------------------
 stages:
@@ -57,8 +59,8 @@ stages:
     - template: ../jobs/bicep-deploy-jobs.yml
       parameters:
         environmentName: ${{ environmentName }}
-        parameterFileName: 'main.azdo.function.bicepparam'
         parseBicepOutputs: ${{ parameters.parseBicepOutputs }}
+        deploymentType: ${{ parameters.deploymentType }}
 
   - stage: DeployFunction${{ environmentName }}
     displayName: Deploy ${{ environmentName }} Function

@@ -12,17 +12,11 @@ param location string = resourceGroup().location
 param instanceNumber string = '1'
 
 @description('Deployment type for the web application')
-@allowed(['appservice', 'containerapp'])
-param deploymentType string = 'appservice'
+@allowed(['webapp', 'containerapp', 'functionapp', 'all', 'appservice'])
+param deploymentType string = 'webapp'
 
 @description('Deploy only website infrastructure (skip SQL and Function resources).')
 param websiteOnly bool = false
-
-@description('Deploy website resources (App Service/Container App path).')
-param deployWebsite bool = true
-
-@description('Deploy function resources and function app.')
-param deployFunction bool = true
 
 @description('Container image to deploy (required for containerapp deployment type)')
 param containerImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
@@ -105,8 +99,17 @@ var commonTags = {
 var resourceGroupName = resourceGroup().name
 var useSqlDataSource = toUpper(appDataSource) == 'SQL' && !websiteOnly
 var webAppConnectionString = useSqlDataSource ? sqlDbModule!.outputs.identityConnectionString : ''
-var deployWebsiteEffective = deployWebsite
-var deployFunctionEffective = deployFunction && !websiteOnly
+// appservice is retained as a backwards-compatible alias for webapp.
+var deploymentTypeNormalized = toLower(deploymentType) == 'appservice' ? 'webapp' : toLower(deploymentType)
+var deployWebAppEffective = contains(['webapp', 'all'], deploymentTypeNormalized)
+var deployContainerAppEffective = contains(['containerapp', 'all'], deploymentTypeNormalized)
+var deployWebsiteEffective = deployWebAppEffective || deployContainerAppEffective
+var deployFunctionEffective = contains(['functionapp', 'all'], deploymentTypeNormalized) && !websiteOnly
+var keyVaultApplicationUserObjectIds = deployWebsiteEffective
+  ? concat(
+      deployWebAppEffective ? [ webSiteModule!.outputs.userManagedPrincipalId, webSiteModule!.outputs.systemPrincipalId ] : [],
+      deployContainerAppEffective ? [ containerAppModule!.outputs.userManagedPrincipalId, containerAppModule!.outputs.systemPrincipalId ] : [])
+  : [ identity.outputs.managedIdentityPrincipalId ]
 // var resourceToken = toLower(uniqueString(resourceGroup().id, location))
 
 // --------------------------------------------------------------------------------
@@ -198,7 +201,7 @@ module appRoleAssignments './modules/iam/roleassignments.bicep' = if (addRoleAss
   }
 }
 // also add rights to the web app storage account (App Service only)
-module appRoleAssignments2 './modules/iam/roleassignments.bicep' = if (addRoleAssignments && deployWebsiteEffective && deploymentType == 'appservice') {
+module appRoleAssignments2 './modules/iam/roleassignments.bicep' = if (addRoleAssignments && deployWebAppEffective) {
   name: 'appRoleAssignments-webapp-storage${deploymentSuffix}'
   params: {
     identityPrincipalId: webSiteModule!.outputs.systemPrincipalId
@@ -207,7 +210,7 @@ module appRoleAssignments2 './modules/iam/roleassignments.bicep' = if (addRoleAs
   }
 }
 // also add rights to the container app storage account (Container Apps only)
-module appRoleAssignments2Container './modules/iam/roleassignments.bicep' = if (addRoleAssignments && deployWebsiteEffective && deploymentType == 'containerapp') {
+module appRoleAssignments2Container './modules/iam/roleassignments.bicep' = if (addRoleAssignments && deployContainerAppEffective) {
   name: 'appRoleAssignments-containerapp-storage${deploymentSuffix}'
   params: {
     identityPrincipalId: containerAppModule!.outputs.systemPrincipalId
@@ -243,17 +246,12 @@ module keyVaultModule './modules/security/keyvault.bicep' = {
     commonTags: commonTags
     keyVaultOwnerUserId: adminUserId
     adminUserObjectIds: [ identity.outputs.managedIdentityPrincipalId ]
-    applicationUserObjectIds: deployWebsiteEffective
-      ? (deploymentType == 'appservice'
-      ? [ webSiteModule!.outputs.userManagedPrincipalId, webSiteModule!.outputs.systemPrincipalId ]
-      : [ containerAppModule!.outputs.userManagedPrincipalId, containerAppModule!.outputs.systemPrincipalId ])
-      : [ identity.outputs.managedIdentityPrincipalId ]
+    applicationUserObjectIds: keyVaultApplicationUserObjectIds
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
     publicNetworkAccess: 'Enabled'
     allowNetworkAccess: 'Allow'
     useRBAC: true
   }
-  dependsOn: deployWebsiteEffective ? (deploymentType == 'appservice' ? [ webSiteModule ] : [ containerAppModule ]) : []
 }
 
 module keyVaultStorageSecret './modules/security/keyvaultsecretstorageconnection.bicep' = if (deployFunctionEffective) {
@@ -266,9 +264,9 @@ module keyVaultStorageSecret './modules/security/keyvaultsecretstorageconnection
 }
 
 // --------------------------------------------------------------------------------
-// Container Infrastructure (deployed when deploymentType == 'containerapp')
+// Container Infrastructure (deployed when deploymentType is containerapp or all)
 // --------------------------------------------------------------------------------
-module containerRegistryModule './modules/container/containerregistry.bicep' = if (deployWebsiteEffective && deploymentType == 'containerapp') {
+module containerRegistryModule './modules/container/containerregistry.bicep' = if (deployContainerAppEffective) {
   name: 'containerRegistry${deploymentSuffix}'
   params: {
     containerRegistryName: resourceNames.outputs.containerRegistryName
@@ -282,7 +280,7 @@ module containerRegistryModule './modules/container/containerregistry.bicep' = i
   }
 }
 
-module containerAppsEnvironmentModule './modules/container/containerappenvironment.bicep' = if (deployWebsiteEffective && deploymentType == 'containerapp') {
+module containerAppsEnvironmentModule './modules/container/containerappenvironment.bicep' = if (deployContainerAppEffective) {
   name: 'containerAppsEnv${deploymentSuffix}'
   params: {
     environmentName: resourceNames.outputs.containerAppsEnvironmentName
@@ -292,7 +290,7 @@ module containerAppsEnvironmentModule './modules/container/containerappenvironme
   }
 }
 
-module containerAppModule './modules/container/containerapp.bicep' = if (deployWebsiteEffective && deploymentType == 'containerapp') {
+module containerAppModule './modules/container/containerapp.bicep' = if (deployContainerAppEffective) {
   name: 'containerApp${deploymentSuffix}'
   params: {
     containerAppName: resourceNames.outputs.containerAppName
@@ -338,9 +336,9 @@ module containerAppModule './modules/container/containerapp.bicep' = if (deployW
 }
 
 // --------------------------------------------------------------------------------
-// App Service Infrastructure (deployed when deploymentType == 'appservice')
+// App Service Infrastructure (deployed when deploymentType is webapp/appservice alias or all)
 // --------------------------------------------------------------------------------
-module appServicePlanModule './modules/webapp/websiteserviceplan.bicep' = if (deployWebsiteEffective && deploymentType == 'appservice') {
+module appServicePlanModule './modules/webapp/websiteserviceplan.bicep' = if (deployWebAppEffective) {
   name: 'appService${deploymentSuffix}'
   params: {
     location: location
@@ -353,7 +351,7 @@ module appServicePlanModule './modules/webapp/websiteserviceplan.bicep' = if (de
   }
 }
 
-module webSiteModule './modules/webapp/website.bicep' = if (deployWebsiteEffective && deploymentType == 'appservice') {
+module webSiteModule './modules/webapp/website.bicep' = if (deployWebAppEffective) {
   name: 'webSite${deploymentSuffix}'
   params: {
     webSiteName: resourceNames.outputs.webSiteName
@@ -448,10 +446,10 @@ module functionModule './modules/function/functionflex.bicep' = if (deployFuncti
 // --------------------------------------------------------------------------------
 output SUBSCRIPTION_ID string = subscription().subscriptionId
 output RESOURCE_GROUP_NAME string = resourceGroupName
-output DEPLOYMENT_TYPE string = deploymentType
-output WEB_HOST_NAME string = deploymentType == 'appservice' ? webSiteModule!.outputs.hostName : containerAppModule!.outputs.fqdn
-output WEB_URL string = deploymentType == 'appservice' ? 'https://${webSiteModule!.outputs.hostName}' : containerAppModule!.outputs.url
-output CONTAINER_REGISTRY_NAME string = deploymentType == 'containerapp' ? containerRegistryModule!.outputs.name : ''
-output CONTAINER_REGISTRY_LOGIN_SERVER string = deploymentType == 'containerapp' ? containerRegistryModule!.outputs.loginServer : ''
+output DEPLOYMENT_TYPE string = deploymentTypeNormalized
+output WEB_HOST_NAME string = deployWebAppEffective ? webSiteModule!.outputs.hostName : (deployContainerAppEffective ? containerAppModule!.outputs.fqdn : '')
+output WEB_URL string = deployWebAppEffective ? 'https://${webSiteModule!.outputs.hostName}' : (deployContainerAppEffective ? containerAppModule!.outputs.url : '')
+output CONTAINER_REGISTRY_NAME string = deployContainerAppEffective ? containerRegistryModule!.outputs.name : ''
+output CONTAINER_REGISTRY_LOGIN_SERVER string = deployContainerAppEffective ? containerRegistryModule!.outputs.loginServer : ''
 //output FUNCTION_HOST_NAME string = functionModule.outputs.hostname
 

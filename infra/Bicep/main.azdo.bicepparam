@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------------
-// Azure DevOps Pipeline - Bicep Parameter File (App Service Deployment)
+// Azure DevOps Pipeline - Bicep Parameter File
 // ----------------------------------------------------------------------------------------------------
 using './main.bicep'
 
@@ -7,9 +7,8 @@ param appName = '#{APP_NAME}#'
 param environmentCode = '#{environmentName}#'
 param location = '#{RESOURCE_GROUP_LOCATION}#'
 param instanceNumber = '#{INSTANCE_NUMBER}#'
-param deploymentType = 'appservice'
-param deployWebsite = false
-param deployFunction = true
+param deploymentType = '#{DEPLOYMENT_TYPE}#'
+param appDataSource = 'SQL'
 
 param adminUserList = '#{ADMIN_USER_LIST}#'
 param adInstance = '#{LOGIN_INSTANCEENDPOINT}#'
@@ -20,7 +19,10 @@ param webApiKey = '#{WEB_API_KEY}#'
 param servicePlanName = '#{EXISTING_SERVICEPLAN_NAME}#'
 param servicePlanResourceGroupName = '#{EXISTING_SERVICEPLAN_RESOURCE_GROUP_NAME}#'
 param webAppKind = 'linux' // 'linux' or 'windows'
-param appDataSource = 'SQL'
+
+param containerImage = '#{CONTAINER_IMAGE}#'
+param containerRegistrySku = 'Basic'
+param pipelineServicePrincipalObjectId = '#{PIPELINE_SERVICE_PRINCIPAL_OBJECT_ID}#'
 
 param sqlAdminLoginUserId = '#{SQLADMIN_LOGIN_USERID}#'
 param sqlAdminLoginUserSid = '#{SQLADMIN_LOGIN_USERSID}#'
