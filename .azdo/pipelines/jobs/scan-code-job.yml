@@ -15,6 +15,10 @@ parameters:
   default: 'false'
 - name: runMSDevSecOpsScan
   default: 'false'
+- name: runGHASADOScan
+  default: 'false'
+- name: runGHASADOScanTest
+  default: 'false'
 - name: continueOnScanError
   default: 'true'
 
@@ -315,3 +319,132 @@ jobs:
         publishLocation: 'Container'
       condition: always()
       continueOnError: true
+
+# ----------------------------------------------------------------------------------------------------
+# UNTESTED CODE....!
+# ----------------------------------------------------------------------------------------------------
+# CodeQL for GitHub-hosted repos from Azure DevOps
+# ----------------------------------------------------------------------------------------------------
+# This job is for repositories hosted in GitHub where AzDO GHAS tasks are not supported.
+# It uses modern CodeQL CLI to produce SARIF, then uploads the SARIF to GitHub Code Scanning.
+# Requires secret variable: GITHUB_PAT with permission to upload code scanning results.
+# Prefer GitHub App auth over PAT when available.
+# ----------------------------------------------------------------------------------------------------
+- ${{ if eq(lower(parameters.runGHASADOScan), 'true') }}:
+  - job: GHASADOScanJob
+    displayName: GHAS ADO Scan Job
+    variables:
+      - name: continueAfterScanErrors
+        value: ${{ eq(parameters.continueOnScanError, 'true') }}
+      - name: githubRepository
+        value: $(Build.Repository.Name)
+      - template: ../vars/var-common.yml
+
+    steps:
+    - task: UseDotNet@2
+      inputs:
+        version: 10.0.x
+      displayName: 'Use dotnet 10.0'
+
+    - bash: |
+        set -euo pipefail
+        BUNDLE_URL="https://github.com/github/codeql-action/releases/latest/download/codeql-bundle-linux64.tar.gz"
+        TOOLS_DIR="$(Agent.TempDirectory)/codeql-tools"
+        mkdir -p "$TOOLS_DIR"
+        curl -sSL "$BUNDLE_URL" -o "$TOOLS_DIR/codeql-bundle.tgz"
+        tar -xzf "$TOOLS_DIR/codeql-bundle.tgz" -C "$TOOLS_DIR"
+        echo "##vso[task.prependpath]$TOOLS_DIR/codeql"
+        codeql version
+      displayName: 'Install latest CodeQL CLI bundle'
+
+    - bash: |
+        set -euo pipefail
+        DB_PATH="$(Agent.TempDirectory)/codeql-db"
+        rm -rf "$DB_PATH"
+
+        codeql database create "$DB_PATH" \
+          --language=csharp \
+          --source-root "$(Build.SourcesDirectory)" \
+          --command "dotnet build $(Build.SourcesDirectory)/src/DadABase.Web/DadABase.Web.csproj -c Release"
+      displayName: 'Create CodeQL database'
+
+    - bash: |
+        set -euo pipefail
+        DB_PATH="$(Agent.TempDirectory)/codeql-db"
+        SARIF_PATH="$(Build.ArtifactStagingDirectory)/codeql-results.sarif"
+
+        codeql database analyze "$DB_PATH" \
+          csharp-security-and-quality.qls \
+          --format=sarif-latest \
+          --output "$SARIF_PATH"
+
+        echo "SARIF generated at: $SARIF_PATH"
+      displayName: 'Analyze and generate SARIF'
+
+    - bash: |
+        set -euo pipefail
+        SARIF_PATH="$(Build.ArtifactStagingDirectory)/codeql-results.sarif"
+        SARIF_B64=$(base64 -w 0 "$SARIF_PATH")
+
+        API_URL="https://api.github.com/repos/$(githubRepository)/code-scanning/sarifs"
+
+        curl -sS -X POST "$API_URL" \
+          -H "Authorization: token $GITHUB_PAT" \
+          -H "Accept: application/vnd.github+json" \
+          -H "Content-Type: application/json" \
+          -d "{\"commit_sha\":\"$(Build.SourceVersion)\",\"ref\":\"$(Build.SourceBranch)\",\"sarif\":\"$SARIF_B64\",\"checkout_uri\":\"file://$(Build.SourcesDirectory)\",\"tool_name\":\"CodeQL CLI (Azure DevOps)\"}"
+      displayName: 'Upload SARIF to GitHub Code Scanning'
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish CodeQL SARIF artifact'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/codeql-results.sarif'
+        ArtifactName: 'codeql-sarif'
+        publishLocation: 'Container'
+
+# # ----------------------------------------------------------------------------------------------------
+# # UNTESTED CODE....!  and currently unreachable...!
+# # ----------------------------------------------------------------------------------------------------
+# # This example shows how to do a GHAS scan in an Azure DevOps pipeline when the repository lives in GitHub.
+# # If you try to use the GHAS steps and actions above, you get the error:
+# #   [error]The AdvancedSecurity CodeQL build task only supports Azure DevOps Git repositories.
+# # This example comes from blog from 2020
+# #   https://github.blog/news-insights/product-news/code-scanning-a-github-repository-using-github-advanced-security-within-an-azure-devops-pipeline/
+# # ----------------------------------------------------------------------------------------------------
+# # For this example, you will need to create a GH Personal Access Token
+# # This example is using a PAT and pulling it from a pipeline variable named $GITHUB_PAT.
+# # This could/should be changed to use GitHub Apps for authentication.
+# # ----------------------------------------------------------------------------------------------------
+# - ${{ if eq(lower(parameters.runGHASADOScanTest), 'true') }}:
+#   - job: GHASADOScanOldJob
+#     displayName: GHAS ADO Old Scan Job
+#     variables:
+#       - name: continueAfterScanErrors
+#         value: ${{ eq(parameters.continueOnScanError, 'true') }}
+#       - name: githubRepository
+#         value: $(Build.Repository.Name)
+#       - template: ../vars/var-common.yml
+
+#     steps:
+#     - task: NodeTool@0
+#       inputs:
+#         versionSpec: '10.x'
+#       displayName: 'Install Node.js'
+    
+#     - script: |
+#         npm install
+#         npm test
+#       displayName: 'npm install and test'
+    
+#     - script: |
+#         wget https://github.com/github/codeql-action/releases/download/codeql-bundle-20200826/codeql-runner-linux
+#         chmod +x codeql-runner-linux
+#       displayName: 'Get latest CodeQL package. Install on Agent.'
+    
+#     - script: |
+#         ./codeql-runner-linux init --repository $(githubRepository) --github-url https://github.com --github-auth $GITHUB_PAT
+#       displayName: 'Initialize CodeQ Executable and create a CodeQL database'
+    
+#     - script: |
+#         ./codeql-runner-linux analyze --repository $(githubRepository) --github-url https://github.com --github-auth $GITHUB_PAT --commit $(Build.SourceVersion) --ref $(Build.SourceBranch)
+#       displayName: 'Populate the CodeQL runner databases, analyze them, and upload the results to GitHub.'
