@@ -56,7 +56,7 @@ stages:
 # ----------------------------------------------------------------------------------------------------
 - ${{ each environmentName in parameters.environments }} :
   - stage: CreateInfra${{ environmentName }}
-    displayName: Create ${{ environmentName }} Resources
+    displayName: Create ${{ environmentName }} ${{ parameters.deploymentType }} Resources
     # Condition is build complete and a single environment is being deployed, 
     # or the environment is 'dev', or if qa/prod, the previous stage (dev->qa or qa->prod) succeeded
     condition: or(eq(${{ parameters.singleEnvironment }}, 'true'), and(eq(upper('${{ environmentName }}'), 'DEV'), succeeded('BuildDacPac')), and(eq(upper('${{ environmentName }}'), 'QA'), succeeded('DeployDEVSchema')), and(eq(upper('${{ environmentName }}'), 'PROD'), succeeded('DeployQASchema')))
