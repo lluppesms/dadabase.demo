@@ -13,6 +13,7 @@ namespace DadABase.Web.Pages;
 /// <summary>
 /// Joke Editor Page Code-Behind
 /// </summary>
+[ExcludeFromCodeCoverage]
 public partial class JokeEditor : ComponentBase
 {
     [Inject] IJokeRepository JokeRepository { get; set; }

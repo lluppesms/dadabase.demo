@@ -1,77 +1,63 @@
-// namespace DadABase.Tests;
-// //-----------------------------------------------------------------------
-// // <copyright file="Category_API_Tests.cs" company="Luppes Consulting, Inc.">
-// // Copyright 2026, Luppes Consulting, Inc. All rights reserved.
-// // </copyright>
-// // <summary>
-// // GENERATED - Category API Tests
-// // </summary>
-// //-----------------------------------------------------------------------
+//-----------------------------------------------------------------------
+// <copyright file="Category_API_Tests.cs" company="Luppes Consulting, Inc.">
+// Copyright 2026, Luppes Consulting, Inc. All rights reserved.
+// </copyright>
+// <summary>
+// Category API Tests
+// </summary>
+//-----------------------------------------------------------------------
+namespace DadABase.Tests;
 
-// [ExcludeFromCodeCoverage]
-// public class Category_API_Tests : BaseTest
-// {
-// 	private readonly IJokeRepository repo;
-// 	private readonly CategoryController apiController;
+using DadABase.Data;
+using DadABase.Data.Repositories;
 
-// 	public Category_API_Tests(ITestOutputHelper output)
-// 	{
-// 		Task.Run(() => SetupInitialize(output)).Wait();
+/// <summary>
+/// Contains API-level tests for the <see cref="CategoryController"/> endpoints.
+/// </summary>
+[ExcludeFromCodeCoverage]
+public class Category_API_Tests : BaseTest
+{
+    private readonly IJokeRepository repo;
+    private readonly CategoryController apiController;
 
-// 		var mockContext = GetMockHttpContext(testData.UserName);
-// 		repo = new MockJokeRepository();
-// 		apiController = new CategoryController(appSettings, mockContext, repo);
-// 	}
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Category_API_Tests"/> class.
+    /// </summary>
+    public Category_API_Tests(ITestOutputHelper output)
+    {
+        Task.Run(() => SetupInitialize(output)).Wait();
+        var jsonFilePath = Path.Combine(AppContext.BaseDirectory, "Data", "Jokes.json");
+        repo = new JokeJsonRepository(jsonFilePath);
+        var mockContext = GetMockHttpContext(testData.UserName);
+        apiController = new CategoryController(appSettings, mockContext, repo);
+    }
 
-// 	[Fact]
-// 	public void Api_Category_List_Works()
-// 	{
-// 		// Arrange
+    /// <summary>
+    /// Verifies that the category list endpoint returns categories.
+    /// </summary>
+    [Fact]
+    public void Api_Category_List_Works()
+    {
+        // Act
+        var categoryList = apiController.List();
 
-// 		// Act
-// 		var categoryList = apiController.List();
+        // Assert
+        Assert.NotNull(categoryList);
+        Assert.True(categoryList.Count > 0, "Found no categories!");
+        output.WriteLine($"Found {categoryList.Count} Categories!");
+        foreach (var category in categoryList)
+        {
+            output.WriteLine($"Category: {category}");
+        }
+    }
 
-// 		// Assert
-// 		Assert.NotNull(categoryList);
-// 		Assert.True(categoryList.Count > 0, "Found no categories!");
-// 		output.WriteLine($"Found {categoryList.Count} Categories!");
-// 		foreach (var category in categoryList)
-// 		{
-// 			output.WriteLine($"Category: {category}");
-// 		}
-// 	}
-// }
-
-// // Mock repository for testing
-// public class MockJokeRepository : IJokeRepository
-// {
-// 	public IQueryable<Joke> ListAll(string activeInd = "Y", string requestingUserName = "ANON")
-// 	{
-// 		throw new NotImplementedException();
-// 	}
-
-// 	public Joke GetOne(int id, string requestingUserName = "ANON")
-// 	{
-// 		throw new NotImplementedException();
-// 	}
-
-// 	public Joke GetRandomJoke(string requestingUserName = "ANON")
-// 	{
-// 		throw new NotImplementedException();
-// 	}
-
-// 	public IQueryable<string> GetJokeCategories(string requestingUserName = "ANON")
-// 	{
-// 		return new List<string> { "Category1", "Category2", "Category3" }.AsQueryable();
-// 	}
-
-// 	public IQueryable<Joke> SearchJokes(string searchTxt, string jokeCategoryTxt, string requestingUserName = "ANON")
-// 	{
-// 		throw new NotImplementedException();
-// 	}
-
-// 	public void Dispose()
-// 	{
-// 		// Dispose resources if any
-// 	}
-// }
+    /// <summary>
+    /// Verifies that the controller initializes successfully.
+    /// </summary>
+    [Fact]
+    public void Api_Category_Initialize_Works()
+    {
+        var jsonFilePath = Path.Combine(AppContext.BaseDirectory, "Data", "Jokes.json");
+        _ = new CategoryController(appSettings, GetMockHttpContext(testData.UserName), new JokeJsonRepository(jsonFilePath));
+    }
+}

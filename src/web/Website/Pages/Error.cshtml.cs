@@ -7,6 +7,7 @@ namespace DadABase.Web.Pages;
 /// </summary>
 [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
 [IgnoreAntiforgeryToken]
+[ExcludeFromCodeCoverage]
 public class ErrorModel : PageModel
 {
     /// <summary>

@@ -11,6 +11,7 @@ namespace DadABase.Web.Pages;
 /// <summary>
 /// About Page Code-Behind
 /// </summary>
+[ExcludeFromCodeCoverage]
 public partial class About : ComponentBase
 {
     [Inject] IJSRuntime JsInterop { get; set; }

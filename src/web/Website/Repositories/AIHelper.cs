@@ -13,6 +13,7 @@ namespace DadABase.Web.Repositories;
 /// <summary>
 /// AI Agent Helper using Microsoft Agent Framework to manage conversations with Azure OpenAI Service
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class AIHelper : IAIHelper
 {
     #region Variables
