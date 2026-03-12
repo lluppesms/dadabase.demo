@@ -20,7 +20,7 @@ The following pipelines are available for various deployment scenarios.
 ### Database and Schema
 
 - [4-build-deploy-dacpac.yml](4-build-deploy-dacpac.yml): Builds and deploys the SQL database schema (DACPAC) to Azure SQL Database
-- [5-run-sql.yml](5-run-sql.yml): Runs SQL scripts against an existing Azure SQL Database
+- [5-run-sql-script.yml](5-run-sql-script.yml): Runs SQL scripts against an existing Azure SQL Database
 
 ### Application Deployment Only
 
@@ -30,7 +30,7 @@ The following pipelines are available for various deployment scenarios.
 
 - [6-pr-scan-build.yml](6-pr-scan-build.yml): Scans and builds code on pull requests
 - [7-scan-code.yml](7-scan-code.yml): Performs periodic security scans (GitHub Advanced Security and Microsoft Secure DevOps)
-- [8-dependabot.yml](dependabot.yml): Automated dependency updates via Dependabot
+- [9-dependabot.yml](dependabot.yml): Automated dependency updates via Dependabot
 
 ### Testing
 
