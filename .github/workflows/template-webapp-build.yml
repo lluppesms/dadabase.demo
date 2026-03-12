@@ -125,7 +125,7 @@ jobs:
 
     - name: Test Application
       if: inputs.testApplication == true
-      run: dotnet test "${{ inputs.testDirectory }}/${{ inputs.testProjectName }}.csproj" --logger trx --collect:"XPlat Code Coverage" --results-directory TestResults
+      run: dotnet test "${{ inputs.testDirectory }}/${{ inputs.testProjectName }}.csproj" --logger trx --collect:"XPlat Code Coverage" --settings "${{ inputs.testDirectory }}/coverage.runsettings" --results-directory TestResults
       continue-on-error: true
       env:
         COVERLET_OUTPUT_FORMATS: cobertura

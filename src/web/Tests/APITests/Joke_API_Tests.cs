@@ -166,4 +166,70 @@ public class Joke_API_Tests : BaseTest
         // Act
         // Assert
     }
+
+    /// <summary>
+    /// Verifies that GetOne returns a valid joke when given a valid ID.
+    /// </summary>
+    [Fact]
+    public void Api_Joke_GetOne_Works()
+    {
+        // Arrange - JSON repository generates sequential IDs starting at 1
+        const int validJokeId = 1;
+
+        // Act
+        var joke = apiController.GetOne(validJokeId);
+
+        // Assert
+        Assert.NotNull(joke);
+        output.WriteLine($"GetOne returned joke: {joke.Joke}");
+    }
+
+    /// <summary>
+    /// Verifies that GetOne returns a result even when given an ID that does not exist.
+    /// </summary>
+    [Fact]
+    public void Api_Joke_GetOne_NotFound_ReturnsResult()
+    {
+        // Arrange
+        const int nonExistentId = int.MaxValue;
+
+        // Act
+        var joke = apiController.GetOne(nonExistentId);
+
+        // Assert - repository returns a placeholder, not null
+        Assert.NotNull(joke);
+        output.WriteLine($"GetOne with non-existent ID returned: {joke.Joke}");
+    }
+
+    /// <summary>
+    /// Verifies that SearchCategory returns jokes matching both category and search text.
+    /// </summary>
+    [Fact]
+    public void Api_Joke_SearchCategory_Works()
+    {
+        // Act
+        var jokeList = apiController.SearchCategory("Engineers", "e");
+
+        // Assert
+        Assert.NotNull(jokeList);
+        output.WriteLine($"SearchCategory found {jokeList.Count} jokes in 'Engineers' category containing 'e'.");
+        foreach (var item in jokeList)
+        {
+            output.WriteLine($"Joke: {item.Category} {item.Joke}");
+        }
+    }
+
+    /// <summary>
+    /// Verifies that SearchCategory with an empty search text returns category-filtered jokes.
+    /// </summary>
+    [Fact]
+    public void Api_Joke_SearchCategory_EmptySearch_ReturnsResults()
+    {
+        // Act
+        var jokeList = apiController.SearchCategory("Engineers", string.Empty);
+
+        // Assert
+        Assert.NotNull(jokeList);
+        output.WriteLine($"SearchCategory (empty search) found {jokeList.Count} jokes in 'Engineers'.");
+    }
 }

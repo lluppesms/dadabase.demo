@@ -134,7 +134,7 @@ jobs:
         command: 'test'
         workingDirectory: '$(testDirectory)'
         publishTestResults: false
-        arguments: '--logger trx --results-directory "$(Build.SourcesDirectory)/TestResults/Coverage/" --collect "XPlat Code Coverage"'
+        arguments: '--logger trx --results-directory "$(Build.SourcesDirectory)/TestResults/Coverage/" --collect "XPlat Code Coverage" --settings "$(testDirectory)coverage.runsettings"'
 
     - task: PublishTestResults@2
       displayName: 'Publish Test Results'
