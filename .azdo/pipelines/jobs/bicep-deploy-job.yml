@@ -25,7 +25,7 @@ jobs:
   environment: ${{ parameters.environmentName }}
 
 - job: CreateInfraJob
-  displayName: Create Infrastructure
+  displayName: Create ${{ parameters.deploymentType }} Infrastructure
   variables:
     - name: environmentName
       value: ${{ parameters.environmentName }}

@@ -21,7 +21,7 @@ stages:
 - stage: BuildDacPac
   displayName: Build DACPAC
   jobs:
-  - template: ../jobs/dacpac-build-jobs.yml
+  - template: ../jobs/dacpac-build-job.yml
     parameters:
       environmentName: 'DEV'
       appFolderName: ${{ parameters.appFolderName }}
@@ -37,7 +37,7 @@ stages:
     # or the environment is 'dev', or if qa/prod, the previous stage (dev->qa or qa->prod) succeeded
     condition: or(eq(${{ parameters.singleEnvironment }}, 'true'), and(eq(upper('${{ environmentName }}'), 'QA'), succeeded('DeployDEVSchema')), and(eq(upper('${{ environmentName }}'), 'PROD'), succeeded('DeployQASchema')))
     jobs:
-    - template: ../jobs/dacpac-deploy-jobs.yml
+    - template: ../jobs/dacpac-deploy-job.yml
       parameters:
         environmentName: ${{ environmentName }}
         artifactName: 'dacpac'

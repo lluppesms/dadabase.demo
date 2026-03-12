@@ -24,7 +24,7 @@ stages:
   - stage: Run${{ environmentName }}SQL
     displayName: Run ${{ environmentName }} SQL
     jobs:
-    - template: ../jobs/run-sql-jobs.yml
+    - template: ../jobs/run-sql-job.yml
       parameters:
         environmentName: ${{ environmentName }}
         sqlFolderName: ${{ parameters.sqlFolderName }}

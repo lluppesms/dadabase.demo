@@ -32,7 +32,7 @@ stages:
   - stage: ScanApplication
     displayName: Scan Application
     jobs:
-    - template: ../jobs/scan-code-jobs.yml
+    - template: ../jobs/scan-code-job.yml
       parameters:
         environmentName: 'DEV'
         runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
@@ -45,7 +45,7 @@ stages:
 - stage: BuildDacPac
   displayName: Build DACPAC
   jobs:
-  - template: ../jobs/dacpac-build-jobs.yml
+  - template: ../jobs/dacpac-build-job.yml
     parameters:
       environmentName: 'DEV'
       appFolderName: ${{ parameters.appFolderName }}
@@ -61,7 +61,7 @@ stages:
     # or the environment is 'dev', or if qa/prod, the previous stage (dev->qa or qa->prod) succeeded
     condition: or(eq(${{ parameters.singleEnvironment }}, 'true'), and(eq(upper('${{ environmentName }}'), 'DEV'), succeeded('BuildDacPac')), and(eq(upper('${{ environmentName }}'), 'QA'), succeeded('DeployDEVSchema')), and(eq(upper('${{ environmentName }}'), 'PROD'), succeeded('DeployQASchema')))
     jobs:
-    - template: ../jobs/bicep-deploy-jobs.yml
+    - template: ../jobs/bicep-deploy-job.yml
       parameters:
         environmentName: ${{ environmentName }}
         deploymentType: ${{ parameters.deploymentType }}
@@ -70,7 +70,7 @@ stages:
     displayName: Deploy ${{ environmentName }} Schema
     condition: or(eq(${{ parameters.singleEnvironment }}, 'true'), and(eq(upper('${{ environmentName }}'), 'DEV'), succeeded('CreateInfraDEV')), and(eq(upper('${{ environmentName }}'), 'QA'), succeeded('CreateInfraQA')), and(eq(upper('${{ environmentName }}'), 'PROD'), succeeded('CreateInfraPROD')))
     jobs:
-    - template: ../jobs/dacpac-deploy-jobs.yml
+    - template: ../jobs/dacpac-deploy-job.yml
       parameters:
         environmentName: ${{ environmentName }}
         artifactName: 'dacpac'

@@ -58,7 +58,7 @@ param deploymentType = 'webapp'
 - **GitHub Actions:** `.github/workflows/3-bicep-build-deploy-webapp.yml` (Workflow: **3.bicep.build.deploy.webapp**)
 - **Azure DevOps:** `.azdo/pipelines/3.1-bicep-build-deploy-webapp.yml` (Pipeline: **3.1-bicep-build-deploy-webapp**)
 
-Both use parameter file `infra/Bicep/main.{gha|azdo}.bicepparam` with web app deployments using `deploymentType='webapp'`.
+Both use parameter file `infra/Bicep/main.bicepparam` with web app deployments using `deploymentType='webapp'`.
 
 ### Option 2: Azure Container Apps
 

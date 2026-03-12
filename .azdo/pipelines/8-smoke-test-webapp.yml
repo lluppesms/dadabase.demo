@@ -47,7 +47,7 @@ stages:
   - stage: BasicTestWebApp
     displayName: Basic Test ${{ parameters.environmentToTest }}
     jobs:
-    - template: jobs/playwright-jobs.yml
+    - template: jobs/playwright-job.yml
       parameters:
         environment: ${{ parameters.environmentToTest }}
         testType: ${{ variables.playwrightBasicTestType }}
@@ -58,7 +58,7 @@ stages:
   - stage: UITestWebApp
     displayName: UI Test ${{ parameters.environmentToTest }}
     jobs:
-    - template: jobs/playwright-jobs.yml
+    - template: jobs/playwright-job.yml
       parameters:
         environment: ${{ parameters.environmentToTest }}
         testType: ${{ variables.playwrightUITestType }}
@@ -69,7 +69,7 @@ stages:
   - stage: APITestWebApp
     displayName: API Test ${{ parameters.environmentToTest }}
     jobs:
-    - template: jobs/playwright-jobs.yml
+    - template: jobs/playwright-job.yml
       parameters:
         environment: ${{ parameters.environmentToTest }}
         testType: ${{ variables.playwrightAPITestType }}
