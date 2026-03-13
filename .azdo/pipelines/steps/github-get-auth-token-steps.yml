@@ -2,7 +2,7 @@
 # Steps Template: Resolve GitHub API token for PAT or GitHub App authentication modes
 # ------------------------------------------------------------------------------------------------------------------------
 # 1) PAT mode (authMode: GITHUB_PAT_TOKEN)
-#    - Provide secret GITHUB_PAT in variable group Dadabase.Demo.
+#    - Provide secret GITHUB_PAT in the variable group.
 #    - Fine-grained PAT (recommended): select target repos and then add permissions - Actions: R/W
 #    - Classic PAT (legacy): repo + workflow.
 #
@@ -15,7 +15,7 @@
 # 1. GitHub -> Settings -> Developer settings -> GitHub Apps -> New GitHub App.
 # 2. Set repository permission Actions: Read and write, then create the app.
 # 3. Open the app -> Private keys -> Generate a private key (downloads .pem once).
-# 4. Store full PEM contents as secret variable GITHUB_APP_PRIVATE_KEY in Dadabase.Demo.
+# 4. Store full PEM contents as secret variable GITHUB_APP_PRIVATE_KEY in the variable group.
 # 5. Add GITHUB_APP_ID and GITHUB_APP_INSTALLATION_ID as secrets and run with authMode: GITHUB_APP.
 # ------------------------------------------------------------------------------------------------------------------------
 parameters:
