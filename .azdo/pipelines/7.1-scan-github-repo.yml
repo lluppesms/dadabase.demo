@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------------------------------------------------
 # Pipeline to Run Security Scan on a GitHub Repository but triggered from Azure DevOps Pipeline
 # GHAzDO will scan Azure DevOps Repositories but will NOT scan linked GitHub Repositories.
-# You have to trigger a GitHub Action remotely with a PAT token.  See stage file for details.
+# You have to trigger a GitHub Action remotely using either a PAT token or a GitHub App token. See stage file for details.
 # ------------------------------------------------------------------------------------------------------------------------
 # See: https://learn.microsoft.com/en-us/azure/devops/repos/security/github-advanced-security-code-scanning?view=azure-devops#codeql-alerts
 # See: https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security
@@ -14,6 +14,13 @@ trigger:
 
 # ----------------------------------------------------------------------------------------------------
 parameters:
+  - name: authMode
+    displayName: GitHub Authentication Mode
+    type: string
+    values:
+      - GITHUB_APP
+      - GITHUB_PAT_TOKEN
+    default: GITHUB_APP
   - name: githubOwner
     displayName: GitHub Owner
     type: string
@@ -23,7 +30,7 @@ parameters:
     type: string
     default: dadabase.azdo.demo
   - name: githubWorkflowFile
-    displayName: GitHub Workflow File
+    displayName: GitHub Workflow File to Start
     type: string
     default: 7-scan-code.yml
 
@@ -36,6 +43,7 @@ variables:
 stages:
 - template: stages/scan-github-repo-stages.yml
   parameters:
+    authMode: ${{ parameters.authMode }}
     githubOwner: ${{ parameters.githubOwner }}
     githubRepository: ${{ parameters.githubRepository }}
     githubWorkflowFile: ${{ parameters.githubWorkflowFile }}

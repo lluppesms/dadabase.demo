@@ -1,0 +1,106 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Steps Template: Resolve GitHub API token for PAT or GitHub App authentication modes
+# ------------------------------------------------------------------------------------------------------------------------
+# 1) PAT mode (authMode: GITHUB_PAT_TOKEN)
+#    - Provide secret GITHUB_PAT in variable group Dadabase.Demo.
+#    - Fine-grained PAT (recommended): select target repos and then add permissions - Actions: R/W
+#    - Classic PAT (legacy): repo + workflow.
+#
+# 2) GitHub App mode (authMode: GITHUB_APP) [recommended for better security]
+#    - Provide secrets: GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID, GITHUB_APP_PRIVATE_KEY.
+#    - Minimal app permission for this pipeline: Repository permissions -> Actions: Read and write.
+#    - Install the app on the target repository.
+#
+# Quick steps to create GITHUB_APP_PRIVATE_KEY:
+# 1. GitHub -> Settings -> Developer settings -> GitHub Apps -> New GitHub App.
+# 2. Set repository permission Actions: Read and write, then create the app.
+# 3. Open the app -> Private keys -> Generate a private key (downloads .pem once).
+# 4. Store full PEM contents as secret variable GITHUB_APP_PRIVATE_KEY in Dadabase.Demo.
+# 5. Add GITHUB_APP_ID and GITHUB_APP_INSTALLATION_ID as secrets and run with authMode: GITHUB_APP.
+# ------------------------------------------------------------------------------------------------------------------------
+parameters:
+- name: authMode
+  default: 'GITHUB_APP' # 'GITHUB_PAT_TOKEN' or 'GITHUB_APP'
+
+steps:
+- ${{ if eq(parameters.authMode, 'GITHUB_PAT_TOKEN') }}:
+  - task: Bash@3
+    displayName: 'Auth: Use PAT token'
+    env:
+      GITHUB_PAT: $(GITHUB_PAT)
+    inputs:
+      targetType: 'inline'
+      script: |
+        set -euo pipefail
+        if [ -z "${GITHUB_PAT:-}" ]; then
+          echo "GITHUB_PAT is not set. Add it as a secret variable in the variable group."
+          exit 1
+        fi
+        echo "##vso[task.setvariable variable=GH_API_TOKEN]$GITHUB_PAT"
+
+- ${{ if eq(parameters.authMode, 'GITHUB_APP') }}:
+  - task: Bash@3
+    displayName: 'Auth: Use GitHub App installation token'
+    env:
+      GITHUB_APP_ID: $(GITHUB_APP_ID)
+      GITHUB_APP_INSTALLATION_ID: $(GITHUB_APP_INSTALLATION_ID)
+      GITHUB_APP_PRIVATE_KEY: $(GITHUB_APP_PRIVATE_KEY)
+    inputs:
+      targetType: 'inline'
+      script: |
+        set -euo pipefail
+
+        if [ -z "${GITHUB_APP_ID:-}" ] || [ -z "${GITHUB_APP_INSTALLATION_ID:-}" ] || [ -z "${GITHUB_APP_PRIVATE_KEY:-}" ]; then
+          echo "GitHub App auth requires GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID, and GITHUB_APP_PRIVATE_KEY secrets."
+          exit 1
+        fi
+
+        printf '%b' "$GITHUB_APP_PRIVATE_KEY" > /tmp/gh-app.pem
+        chmod 600 /tmp/gh-app.pem
+
+        if ! grep -q "BEGIN .*PRIVATE KEY" /tmp/gh-app.pem; then
+          echo "GITHUB_APP_PRIVATE_KEY does not look like a valid PEM private key."
+          echo "Store the full .pem content (including BEGIN/END lines) in the secret variable."
+          exit 1
+        fi
+
+        if ! openssl pkey -in /tmp/gh-app.pem -noout >/dev/null 2>&1; then
+          echo "Could not parse private key from GITHUB_APP_PRIVATE_KEY."
+          echo "Ensure the full PEM was copied correctly (multiline or escaped with \\n)."
+          exit 1
+        fi
+
+        b64url() {
+          openssl base64 -A | tr '+/' '-_' | tr -d '='
+        }
+
+        NOW=$(date +%s)
+        EXP=$((NOW + 540))
+        HEADER='{"alg":"RS256","typ":"JWT"}'
+        PAYLOAD=$(printf '{"iat":%s,"exp":%s,"iss":"%s"}' "$NOW" "$EXP" "$GITHUB_APP_ID")
+
+        HEADER_B64=$(printf '%s' "$HEADER" | b64url)
+        PAYLOAD_B64=$(printf '%s' "$PAYLOAD" | b64url)
+        UNSIGNED_TOKEN="$HEADER_B64.$PAYLOAD_B64"
+        SIGNATURE_B64=$(printf '%s' "$UNSIGNED_TOKEN" | openssl dgst -binary -sha256 -sign /tmp/gh-app.pem | b64url)
+        APP_JWT="$UNSIGNED_TOKEN.$SIGNATURE_B64"
+
+        TOKENS_URL="https://api.github.com/app/installations/$GITHUB_APP_INSTALLATION_ID/access_tokens"
+        HTTP_CODE=$(curl -sS -o /tmp/gh-app-token-response.txt -w "%{http_code}" -X POST "$TOKENS_URL" \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer $APP_JWT" \
+          -H "X-GitHub-Api-Version: 2022-11-28")
+
+        if [ "$HTTP_CODE" != "201" ]; then
+          echo "Failed to create GitHub App installation token. HTTP status: $HTTP_CODE"
+          cat /tmp/gh-app-token-response.txt
+          exit 1
+        fi
+
+        APP_TOKEN=$(python -c "import json; data=json.load(open('/tmp/gh-app-token-response.txt', encoding='utf-8')); print(data.get('token',''))")
+        if [ -z "$APP_TOKEN" ]; then
+          echo "GitHub App token response did not contain a token."
+          exit 1
+        fi
+
+        echo "##vso[task.setvariable variable=GH_API_TOKEN]$APP_TOKEN"

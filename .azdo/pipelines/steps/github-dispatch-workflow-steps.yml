@@ -1,0 +1,97 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Steps Template: Trigger a GitHub workflow via workflow_dispatch and expose githubRunId output variable
+# ------------------------------------------------------------------------------------------------------------------------
+parameters:
+- name: githubOwner
+  default: ''
+- name: githubRepository
+  default: ''
+- name: githubWorkflowFile
+  default: '7-scan-code.yml'
+- name: githubRef
+  default: 'main'
+- name: runMSDevSecOpsScan
+  default: false
+- name: runGHASScan
+  default: true
+- name: authMode
+  default: 'GITHUB_APP'
+- name: stepName
+  default: 'dispatchStep'
+
+steps:
+- task: Bash@3
+  displayName: 'Trigger GitHub Workflow via workflow_dispatch'
+  name: ${{ parameters.stepName }}
+  env:
+    GH_API_TOKEN: $(GH_API_TOKEN)
+  inputs:
+    targetType: 'inline'
+    script: |
+      set -euo pipefail
+
+      if [ -z "${GH_API_TOKEN:-}" ]; then
+        echo "GH_API_TOKEN was not resolved by the selected auth mode (${{ parameters.authMode }})."
+        exit 1
+      fi
+
+      DISPATCH_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+      API_URL="https://api.github.com/repos/${{ parameters.githubOwner }}/${{ parameters.githubRepository }}/actions/workflows/${{ parameters.githubWorkflowFile }}/dispatches"
+      PAYLOAD=$(cat <<EOF
+      {
+        "ref": "${{ parameters.githubRef }}",
+        "inputs": {
+          "runMSDevSecOpsScan": "${{ parameters.runMSDevSecOpsScan }}",
+          "runGHASScan": "${{ parameters.runGHASScan }}"
+        }
+      }
+      EOF
+      )
+
+      HTTP_CODE=$(curl -sS -o /tmp/gh-dispatch-response.txt -w "%{http_code}" -X POST "$API_URL" \
+        -H "Accept: application/vnd.github+json" \
+        -H "Authorization: Bearer $GH_API_TOKEN" \
+        -H "X-GitHub-Api-Version: 2022-11-28" \
+        -H "Content-Type: application/json" \
+        -d "$PAYLOAD")
+
+      if [ "$HTTP_CODE" != "204" ]; then
+        echo "Failed to dispatch GitHub event. HTTP status: $HTTP_CODE"
+        cat /tmp/gh-dispatch-response.txt
+        exit 1
+      fi
+
+      echo "Successfully dispatched ${{ parameters.githubWorkflowFile }} to ${{ parameters.githubOwner }}/${{ parameters.githubRepository }} on ref ${{ parameters.githubRef }} with runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }} and runGHASScan: ${{ parameters.runGHASScan }}"
+
+      RUNS_API_URL="https://api.github.com/repos/${{ parameters.githubOwner }}/${{ parameters.githubRepository }}/actions/workflows/${{ parameters.githubWorkflowFile }}/runs?event=workflow_dispatch&branch=${{ parameters.githubRef }}&per_page=20"
+      RUN_ID=""
+
+      for attempt in {1..50}; do
+        HTTP_CODE=$(curl -sS -o /tmp/gh-runs-response.txt -w "%{http_code}" -X GET "$RUNS_API_URL" \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer $GH_API_TOKEN" \
+          -H "X-GitHub-Api-Version: 2022-11-28")
+
+        if [ "$HTTP_CODE" != "200" ]; then
+          echo "Failed to query workflow runs. HTTP status: $HTTP_CODE"
+          cat /tmp/gh-runs-response.txt
+          exit 1
+        fi
+
+        RUN_ID=$(DISPATCH_AT="$DISPATCH_AT" python -c "import json,os; data=json.load(open('/tmp/gh-runs-response.txt', encoding='utf-8')); ts=os.environ.get('DISPATCH_AT',''); print(next((str(r.get('id','')) for r in data.get('workflow_runs', []) if r.get('created_at','') >= ts), ''))")
+
+        if [ -n "$RUN_ID" ]; then
+          echo "Detected GitHub Actions run id: $RUN_ID"
+          break
+        fi
+
+        sleep 10
+      done
+
+      if [ -z "$RUN_ID" ]; then
+        echo "Could not detect a newly dispatched GitHub run after waiting."
+        exit 1
+      fi
+
+      echo "##vso[task.setvariable variable=githubRunId;isOutput=true]$RUN_ID"
