@@ -8,6 +8,10 @@
     <IsPackable>false</IsPackable>
 
     <ApplicationIcon>favicon.ico</ApplicationIcon>
+
+    <!-- Auto-apply the centralised coverage exclusions file so that dotnet test always picks it up,
+         whether run locally, in CI, or from VS Test Explorer. -->
+    <RunSettingsFilePath>$(MSBuildProjectDirectory)/coverage.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
   <ItemGroup>
