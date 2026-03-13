@@ -6,7 +6,7 @@
 # See: https://learn.microsoft.com/en-us/azure/devops/repos/security/github-advanced-security-code-scanning?view=azure-devops#codeql-alerts
 # See: https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security
 # ------------------------------------------------------------------------------------------------------------------------
-name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r) ${{ parameters.githubOwner }}-${{ parameters.githubRepository }} 
+name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r) ${{ parameters.githubOwner }}.${{ parameters.githubRepository }} via ${{ parameters.authMode }} 
 pool:
   vmImage: ubuntu-latest
 trigger:
