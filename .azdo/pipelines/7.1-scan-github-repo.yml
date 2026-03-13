@@ -1,0 +1,42 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Pipeline to Run Security Scan on a GitHub Repository but triggered from Azure DevOps Pipeline
+# GHAzDO will scan Azure DevOps Repositories but will NOT scan linked GitHub Repositories.
+# You have to trigger a GitHub Action remotely with a PAT token.  See stage file for details.
+# ------------------------------------------------------------------------------------------------------------------------
+# See: https://learn.microsoft.com/en-us/azure/devops/repos/security/github-advanced-security-code-scanning?view=azure-devops#codeql-alerts
+# See: https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security
+# ------------------------------------------------------------------------------------------------------------------------
+name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r) ${{ parameters.githubOwner }}-${{ parameters.githubRepository }} 
+pool:
+  vmImage: ubuntu-latest
+trigger:
+ - none
+
+# ----------------------------------------------------------------------------------------------------
+parameters:
+  - name: githubOwner
+    displayName: GitHub Owner
+    type: string
+    default: lluppesms
+  - name: githubRepository
+    displayName: GitHub Repository
+    type: string
+    default: dadabase.azdo.demo
+  - name: githubWorkflowFile
+    displayName: GitHub Workflow File
+    type: string
+    default: 7-scan-code.yml
+
+# ----------------------------------------------------------------------------------------------------
+variables:
+  - group: Dadabase.Demo
+  - template: vars/var-service-connections.yml
+
+# ----------------------------------------------------------------------------------------------------
+stages:
+- template: stages/scan-github-repo-stages.yml
+  parameters:
+    githubOwner: ${{ parameters.githubOwner }}
+    githubRepository: ${{ parameters.githubRepository }}
+    githubWorkflowFile: ${{ parameters.githubWorkflowFile }}
+

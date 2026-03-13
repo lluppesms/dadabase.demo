@@ -3,7 +3,6 @@
 @inject IBuildInfoService BuildInfoService
 @inject IJSRuntime JS
 @inject DadABase.Web.Repositories.ThemeService ThemeService
-@implements IDisposable
 
 <PageTitle>@(isNinetiesTheme ? "The Grand-Dad-A-Base" : Data.Constants.ApplicationTitle)</PageTitle>
 
@@ -42,54 +41,3 @@
         </span>
     }
 </div>
-
-@code {
-    int thisYear = DateTime.Today.Year;
-    string assemblyVersionNumber => Assembly.GetEntryAssembly().GetName().Version.ToString();
-    private BuildInfo buildInfo;
-    private NinetiesThemeDecorations ninetiesDecorations;
-    private NinetiesThemeConstructionBanner ninetiesConstructionBanner;
-    private bool isNinetiesTheme = false;
-    private const string ThemeKey = "theme-mode";
-
-    protected override void OnInitialized()
-    {
-        ThemeService.OnThemeChanged += HandleThemeChanged;
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        buildInfo = await BuildInfoService.GetBuildInfoAsync();
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            var theme = await JS.InvokeAsync<string>("localStorage.getItem", ThemeKey);
-            isNinetiesTheme = theme == "nineties";
-            StateHasChanged();
-        }
-    }
-
-    private async void HandleThemeChanged()
-    {
-        var theme = await JS.InvokeAsync<string>("localStorage.getItem", ThemeKey);
-        isNinetiesTheme = theme == "nineties";
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private string FormatBuildDate(string buildDate)
-    {
-        if (DateTime.TryParse(buildDate, out var date))
-        {
-            return $"Compiled {date.ToString("yyyy-MM-dd HH:mm:ss")}";
-        }
-        return buildDate;
-    }
-
-    public void Dispose()
-    {
-        ThemeService.OnThemeChanged -= HandleThemeChanged;
-    }
-}

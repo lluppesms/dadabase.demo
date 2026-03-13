@@ -1,0 +1,166 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Pipeline Stage Template to Trigger and Monitor GitHub Code Scan Workflow -- this will trigger a GitHub Action remotely.
+# ------------------------------------------------------------------------------------------------------------------------
+# Ensure secret GITHUB_PAT exists in variable group Dadabase.Demo with permissions to trigger actions in the target GH repo.
+#   Fine-grained PAT Permissions needed (recommended):
+#     Repository access:
+#     - Select only the target repo (or multiple repos)
+#     Repository permissions:
+#     - Actions: Read and write
+#   Classic PAT Permissions needed (if you still use classic tokens):
+#     - repo
+#     - workflow
+# ------------------------------------------------------------------------------------------------------------------------
+parameters:
+- name: githubOwner
+  default: ''
+- name: githubRepository
+  default: ''
+- name: githubWorkflowFile
+  default: '7-scan-code.yml'
+- name: githubRef
+  default: 'main'
+- name: runMSDevSecOpsScan
+  default: false
+- name: runGHASScan
+  default: true
+
+# ----------------------------------------------------------------------------------------------------
+stages:
+- stage: ScanRemoteRepoStage
+  displayName: Scan Remote Repo
+  jobs:
+  - job: ScanRemoteRepoJob
+    displayName: Scan Remote Repo Job
+    steps:
+      - bash: |
+          set -euo pipefail
+
+          if [ -z "${GITHUB_PAT:-}" ]; then
+            echo "GITHUB_PAT is not set. Add it as a secret variable in the Dadabase.Demo variable group."
+            exit 1
+          fi
+
+          DISPATCH_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          API_URL="https://api.github.com/repos/${{ parameters.githubOwner }}/${{ parameters.githubRepository }}/actions/workflows/${{ parameters.githubWorkflowFile }}/dispatches"
+          PAYLOAD=$(cat <<EOF
+          {
+            "ref": "${{ parameters.githubRef }}",
+            "inputs": {
+              "runMSDevSecOpsScan": "${{ parameters.runMSDevSecOpsScan }}",
+              "runGHASScan": "${{ parameters.runGHASScan }}"
+            }
+          }
+          EOF
+          )
+
+          HTTP_CODE=$(curl -sS -o /tmp/gh-dispatch-response.txt -w "%{http_code}" -X POST "$API_URL" \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GITHUB_PAT" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+
+          if [ "$HTTP_CODE" != "204" ]; then
+            echo "Failed to dispatch GitHub event. HTTP status: $HTTP_CODE"
+            cat /tmp/gh-dispatch-response.txt
+            exit 1
+          fi
+
+          echo "Successfully dispatched ${{ parameters.githubWorkflowFile }} to ${{ parameters.githubOwner }}/${{ parameters.githubRepository }} on ref ${{ parameters.githubRef }} with runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }} and runGHASScan: ${{ parameters.runGHASScan }}"
+
+          RUNS_API_URL="https://api.github.com/repos/${{ parameters.githubOwner }}/${{ parameters.githubRepository }}/actions/workflows/${{ parameters.githubWorkflowFile }}/runs?event=workflow_dispatch&branch=${{ parameters.githubRef }}&per_page=20"
+          RUN_ID=""
+
+          for attempt in {1..50}; do
+            HTTP_CODE=$(curl -sS -o /tmp/gh-runs-response.txt -w "%{http_code}" -X GET "$RUNS_API_URL" \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer $GITHUB_PAT" \
+              -H "X-GitHub-Api-Version: 2022-11-28")
+
+            if [ "$HTTP_CODE" != "200" ]; then
+              echo "Failed to query workflow runs. HTTP status: $HTTP_CODE"
+              cat /tmp/gh-runs-response.txt
+              exit 1
+            fi
+
+            RUN_ID=$(DISPATCH_AT="$DISPATCH_AT" python -c "import json,os; data=json.load(open('/tmp/gh-runs-response.txt', encoding='utf-8')); ts=os.environ.get('DISPATCH_AT',''); print(next((str(r.get('id','')) for r in data.get('workflow_runs', []) if r.get('created_at','') >= ts), ''))")
+
+            if [ -n "$RUN_ID" ]; then
+              echo "Detected GitHub Actions run id: $RUN_ID"
+              break
+            fi
+
+            sleep 10
+          done
+
+          if [ -z "$RUN_ID" ]; then
+            echo "Could not detect a newly dispatched GitHub run after waiting."
+            exit 1
+          fi
+
+          echo "##vso[task.setvariable variable=githubRunId;isOutput=true]$RUN_ID"
+        displayName: 'Trigger GitHub Workflow via workflow_dispatch'
+        name: dispatchStep
+        env:
+          GITHUB_PAT: $(GITHUB_PAT)
+
+  - job: PollGitHubWorkflowJob
+    displayName: Poll GitHub Workflow Result
+    dependsOn: ScanRemoteRepoJob
+    variables:
+      githubRunId: $[ dependencies.ScanRemoteRepoJob.outputs['dispatchStep.githubRunId'] ]
+    steps:
+      - bash: |
+          set -euo pipefail
+
+          if [ -z "${GITHUB_PAT:-}" ]; then
+            echo "GITHUB_PAT is not set. Add it as a secret variable in the Dadabase.Demo variable group."
+            exit 1
+          fi
+
+          RUN_ID="$(githubRunId)"
+          if [ -z "$RUN_ID" ]; then
+            echo "No GitHub run id was received from the dispatch job."
+            exit 1
+          fi
+
+          RUN_URL="https://github.com/${{ parameters.githubOwner }}/${{ parameters.githubRepository }}/actions/runs/$RUN_ID"
+          RUN_STATUS_API="https://api.github.com/repos/${{ parameters.githubOwner }}/${{ parameters.githubRepository }}/actions/runs/$RUN_ID"
+
+          for attempt in {1..90}; do
+            HTTP_CODE=$(curl -sS -o /tmp/gh-run-status-response.txt -w "%{http_code}" -X GET "$RUN_STATUS_API" \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer $GITHUB_PAT" \
+              -H "X-GitHub-Api-Version: 2022-11-28")
+
+            if [ "$HTTP_CODE" != "200" ]; then
+              echo "Failed to query GitHub run status. HTTP status: $HTTP_CODE"
+              cat /tmp/gh-run-status-response.txt
+              exit 1
+            fi
+
+            STATUS=$(python -c "import json; data=json.load(open('/tmp/gh-run-status-response.txt', encoding='utf-8')); print(data.get('status',''))")
+            CONCLUSION=$(python -c "import json; data=json.load(open('/tmp/gh-run-status-response.txt', encoding='utf-8')); print(data.get('conclusion') or '')")
+
+            echo "Attempt $attempt: status=$STATUS conclusion=${CONCLUSION:-n/a}"
+
+            if [ "$STATUS" = "completed" ]; then
+              if [ "$CONCLUSION" = "success" ]; then
+                echo "GitHub workflow succeeded: $RUN_URL"
+                exit 0
+              fi
+
+              echo "GitHub workflow failed with conclusion '$CONCLUSION': $RUN_URL"
+              exit 1
+            fi
+
+            sleep 10
+          done
+
+          echo "Timed out waiting for GitHub workflow completion: $RUN_URL"
+          exit 1
+        displayName: 'Wait for GitHub workflow completion'
+        env:
+          GITHUB_PAT: $(GITHUB_PAT)

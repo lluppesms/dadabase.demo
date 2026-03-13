@@ -1,0 +1,121 @@
+//-----------------------------------------------------------------------
+// <copyright file="JokeDisplayComponent.razor.cs" company="Luppes Consulting, Inc.">
+// Copyright 2026, Luppes Consulting, Inc. All rights reserved.
+// </copyright>
+// <summary>
+// Joke display component code-behind
+// </summary>
+//-----------------------------------------------------------------------
+namespace DadABase.Web.Components;
+
+/// <summary>
+/// Renders a joke and prepares formatted display text.
+/// </summary>
+public partial class JokeDisplayComponent : ComponentBase
+{
+    /// <summary>
+    /// Gets or sets the joke to display.
+    /// </summary>
+    [Parameter]
+    public Joke myJoke { get; set; }
+
+    [Inject] IJokeRepository JokeRepository { get; set; }
+    [Inject] HttpContextAccessor Context { get; set; }
+    [Inject] SweetAlertService SweetAlert { get; set; }
+    [Inject] ISnackbar Snackbar { get; set; }
+
+    private string myJokeText = string.Empty;
+    private string myFullText = string.Empty;
+    //private int displayRatingValue = 0;
+    //private bool supportsRatings = false;
+    // private bool showJokeEditor = false;
+    // private Joke editJoke = new Joke();
+
+    /// <summary>
+    /// Recomputes the display text when parameter values change.
+    /// </summary>
+    protected override void OnParametersSet()
+    {
+        ParseJokeText(myJoke);
+    }
+
+    /// <summary>
+    /// Converts raw joke content into HTML-formatted text for rendering.
+    /// </summary>
+    /// <param name="joke">The source joke.</param>
+    protected void ParseJokeText(Joke joke)
+    {
+        if (string.IsNullOrEmpty(joke.JokeTxt) || myJokeText == joke.JokeTxt) return;
+
+        //JokeEditorCancel();
+
+        // supportsRatings = joke.Rating != null;
+        // displayRatingValue = joke.Rating != null ? Convert.ToInt16(Math.Round((decimal)joke.Rating)) : 0;
+
+        myJokeText = System.Web.HttpUtility.HtmlEncode(joke.JokeTxt);
+        myJokeText = myJokeText.Replace("\n", "<br/>");
+        if (myJokeText.StartsWith("KK/WT:"))
+        {
+            var myFirstQuestionMark = myJokeText.IndexOf("?");
+            var myQuestion = myJokeText.Substring(6, myFirstQuestionMark - 6).Trim();
+            var myResponse = myJokeText.Substring(myFirstQuestionMark + 1, myJokeText.Length - myFirstQuestionMark - 1).Trim();
+            myFullText =
+              $"Knock Knock!<br/>" +
+              $"&nbsp;&nbsp;Who's There?<br />" +
+              $"{myQuestion}<br/>" +
+              $"&nbsp;&nbsp;{myQuestion} who?<br/>" +
+              $"{myResponse}";
+        }
+        else
+        {
+            myFullText = myJokeText.Replace("?", "?<br/>");
+        }
+
+        myFullText = myFullText.Replace("<br/><br/>", "<br/>").Replace("<br/> <br/>", "<br/>").Replace("<br/>  <br/>", "<br/>");
+        myFullText = myFullText.Replace("?<br/>!", "?!").Replace("?<br/>'", "?'").Replace("?<br/>\"", "?\"");
+        myFullText = myFullText.EndsWith("?<br/>") ? myFullText.Substring(0, myFullText.Length - 5) : myFullText;
+        if (!string.IsNullOrEmpty(joke.Attribution))
+        {
+            myFullText += $"<br /><i>({joke.Attribution})</i>";
+        }
+    }
+
+    // private async Task SubmitRating(MouseEventArgs e)
+    // {
+    //     var oldValue = myJoke.Rating != null ? Convert.ToInt16(Math.Round((decimal)myJoke.Rating)) : 0;
+    //     var newValue = displayRatingValue;
+    //     var newJokeRatingRecord = new JokeRating(myJoke.JokeId, displayRatingValue);
+    //     var userIdentity = Context.HttpContext.User;
+    //     var userName = userIdentity != null ? userIdentity.Identity.Name : "ANON";
+    //     var newAverageRatingValue = JokeRepository.AddRating(newJokeRatingRecord, userName);
+    //     displayRatingValue = Convert.ToInt16(Math.Round(newAverageRatingValue));
+    //     Snackbar.Add($"Your Rating: {newValue}, Average Rating: {newAverageRatingValue}", Severity.Info);
+    //     _ = await Task.FromResult(true);
+    // }
+
+    // private async Task ShowJokeEditor()
+    // {
+    //     showJokeEditor = !showJokeEditor;
+    //     editJoke = new Joke();
+    //     editJoke.JokeId = myJoke.JokeId;
+    //     editJoke.JokeTxt = myJoke.JokeTxt;
+    //     editJoke.JokeTxt = myJoke.JokeTxt;
+    //     Snackbar.Add($"Editor is not complete and changes will not be saved!", Severity.Warning);
+    //     _ = await Task.FromResult(true);
+    // }
+    // private async void JokeEditorSave()
+    // {
+    //     myJoke.JokeId = editJoke.JokeId;
+    //     myJoke.JokeTxt = editJoke.JokeTxt;
+    //     // TODO: put code here to update the database...
+    //     // HOWEVER... the current edit form blows away all the line breaks and other formatting so it's not ready for prime time...!
+    //     Snackbar.Add("This feature is not complete and the edits have NOT been saved!", Severity.Error);
+    //     showJokeEditor = !showJokeEditor;
+    // }
+    // private void JokeEditorCancel()
+    // {
+    //     editJoke.JokeId = 0;
+    //     editJoke.JokeTxt = string.Empty;
+    //     showJokeEditor = false;
+    // }
+}
