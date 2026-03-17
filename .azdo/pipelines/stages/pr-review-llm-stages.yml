@@ -1,0 +1,40 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# BETA: (Untested!) Pipeline Template: PR Review with LLM
+# ------------------------------------------------------------------------------------------------------------------------
+# This stage summarizes a Pull Request using an LLM (e.g., Azure OpenAI) and outputs the summary to pipeline results.
+#
+# Required pipeline variables/secrets:
+#   - LLMEndpoint:     The endpoint URL for your LLM (e.g., Azure OpenAI chat/completions endpoint)
+#   - LLMApiKey:       The API key/secret for your LLM endpoint
+#   - System.AccessToken: Provided by Azure DevOps for REST API access (ensure 'Allow scripts to access OAuth token' is enabled)
+#
+# Usage:
+#   - Include this stage template in your pipeline YAML after PR trigger.
+#   - Ensure the above variables are set in your pipeline or variable group.
+#   - The summary will be published as a pipeline artifact and set as a variable.
+# ------------------------------------------------------------------------------------------------------------------------
+stages:
+- stage: PrReview
+  displayName: PR Review with LLM
+  jobs:
+    - job: ReviewPR
+      displayName: Summarize PR with LLM
+      steps:
+        - checkout: self
+        - task: PowerShell@2
+          displayName: Run PR Review with LLM
+          inputs:
+            targetType: 'filePath'
+            filePath: '.azdo/pipelines/scripts/Review-PR-Using-LLM.ps1'
+            arguments: >
+              -Organization "$(System.TeamFoundationCollectionUri)" \
+              -Project "$(System.TeamProject)" \
+              -RepositoryId "$(Build.Repository.ID)" \
+              -PullRequestId "$(System.PullRequest.PullRequestId)" \
+              -SystemAccessToken "$(System.AccessToken)" \
+              -LLMEndpoint "$(LLMEndpoint)" \
+              -LLMApiKey "$(LLMApiKey)"
+          env:
+            System_AccessToken: $(System.AccessToken)
+        - publish: $(Build.ArtifactStagingDirectory)/pr-summary.md
+          artifact: pr-summary
