@@ -56,6 +56,14 @@
                 <p class="text-muted small mb-3">Selected: <strong>@importFileName</strong></p>
             }
 
+            <div class="form-check mb-3">
+                <InputCheckbox id="replaceAllCheck" class="form-check-input" @bind-Value="importReplaceAll" disabled="@isBusy" />
+                <label class="form-check-label" for="replaceAllCheck">
+                    <strong>Delete and replace all existing jokes</strong>
+                    <span class="text-muted small ms-1">(clears all jokes, categories &amp; ratings, then reseeds identity columns before importing)</span>
+                </label>
+            </div>
+
             <button class="btn btn-success" @onclick="RunImport" disabled="@(isBusy || importFileContent == null)">
                 @if (isBusy && activeAction == "import")
                 {

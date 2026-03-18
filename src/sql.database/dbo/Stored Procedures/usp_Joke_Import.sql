@@ -1,5 +1,6 @@
 CREATE PROCEDURE [dbo].[usp_Joke_Import]
-    @tsvData NVARCHAR(MAX)  -- Full tab-separated export (with header row), one joke per line
+    @tsvData              NVARCHAR(MAX),  -- Full tab-separated export (with header row), one joke per line
+    @RemovePreviousJokes  BIT = 0         -- When 1: DELETE all existing jokes/categories and RESEED identities before importing
 AS
 /*
   Description: Imports jokes from a tab-delimited (TSV) string.
@@ -9,13 +10,32 @@ AS
                new categories, new jokes, and their category associations.
                Duplicate jokes (matched by JokeTxt) are silently skipped.
                No permanent tables are created.
+               When @RemovePreviousJokes = 1, all existing joke data is removed and
+               identity columns are reseeded to 1 before the import runs.
   Returns:     A single-row result set with ImportedCount INT.
   Example Usage:
+    -- Merge import (keep existing jokes):
     EXEC usp_Joke_Import @tsvData = N'JokeId	Categories	JokeTxt	ImageTxt	Attribution	Rating	VoteCount
+1	Chuck Norris	Chuck Norris can divide by zero.			0	0'
+
+    -- Replace import (wipe all existing jokes first):
+    EXEC usp_Joke_Import @RemovePreviousJokes = 1, @tsvData = N'JokeId	Categories	JokeTxt	ImageTxt	Attribution	Rating	VoteCount
 1	Chuck Norris	Chuck Norris can divide by zero.			0	0'
 */
 BEGIN
     SET NOCOUNT ON;
+
+    -- ── Step 0 (optional): Wipe all existing joke data and reseed identities ────
+    IF @RemovePreviousJokes = 1
+    BEGIN
+        DELETE FROM JokeRating
+        DELETE FROM JokeJokeCategory
+        DELETE FROM JokeCategory
+        DELETE FROM Joke
+        DBCC CHECKIDENT('JokeRating',  RESEED, 1)
+        DBCC CHECKIDENT('JokeCategory', RESEED, 1)
+        DBCC CHECKIDENT('Joke',         RESEED, 1)
+    END
 
     -- ── Step 1: Parse the TSV into a temp table ────────────────────────────────
     CREATE TABLE #ImportRows

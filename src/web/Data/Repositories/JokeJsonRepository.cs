@@ -369,7 +369,7 @@ public class JokeJsonRepository : IJokeRepository
     /// <param name="tabData">Not used.</param>
     /// <param name="requestingUserName">Not used.</param>
     /// <returns>This method always throws because the JSON repository is read-only.</returns>
-    public (bool Success, int ImportedCount, string Message) ImportFromTabDelimitedViaSproc(string tabData, string requestingUserName = "ANON")
+    public (bool Success, int ImportedCount, string Message) ImportFromTabDelimitedViaSproc(string tabData, bool removePreviousJokes = false, string requestingUserName = "ANON")
     {
         throw new NotSupportedException("ImportFromTabDelimitedViaSproc is not supported for the JSON-based repository.");
     }

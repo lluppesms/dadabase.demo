@@ -97,9 +97,10 @@ public interface IJokeRepository
     /// are created — all in a single database round-trip.
     /// </summary>
     /// <param name="tabData">The tab-delimited content including a header row.</param>
+    /// <param name="removePreviousJokes">When <see langword="true"/>, all existing jokes, categories, and ratings are deleted and identity columns are reseeded before importing.</param>
     /// <param name="requestingUserName">The username of the user performing the import. The default is "ANON".</param>
     /// <returns>A tuple indicating success, the count of newly imported jokes, and a status message.</returns>
-    (bool Success, int ImportedCount, string Message) ImportFromTabDelimitedViaSproc(string tabData, string requestingUserName = "ANON");
+    (bool Success, int ImportedCount, string Message) ImportFromTabDelimitedViaSproc(string tabData, bool removePreviousJokes = false, string requestingUserName = "ANON");
 
     /// <summary>
     /// Updates an existing joke.

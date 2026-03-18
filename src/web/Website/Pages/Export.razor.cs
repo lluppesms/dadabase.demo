@@ -35,6 +35,7 @@ public partial class Export : ComponentBase
     private string importAlertClass = "alert-info";
     private string importFileName = string.Empty;
     private string importFileContent = null;
+    private bool importReplaceAll = false;
 
     /// <summary>
     /// Initialization
@@ -170,7 +171,7 @@ public partial class Export : ComponentBase
             // Yield briefly so Blazor can re-render the spinner before the synchronous import runs
             await Task.Yield();
 
-            var (success, importedCount, message) = JokeRepository.ImportFromTabDelimitedViaSproc(importFileContent);
+            var (success, importedCount, message) = JokeRepository.ImportFromTabDelimitedViaSproc(importFileContent, importReplaceAll);
 
             importStatusMessage = message;
             importAlertClass = success ? "alert-success" : "alert-warning";

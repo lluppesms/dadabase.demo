@@ -655,9 +655,10 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     /// are created — all in a single database round-trip.
     /// </summary>
     /// <param name="tabData">The tab-delimited content including a header row.</param>
+    /// <param name="removePreviousJokes">When <see langword="true"/>, all existing jokes, categories, and ratings are deleted and identity columns are reseeded before importing.</param>
     /// <param name="requestingUserName">The username of the user performing the import.</param>
     /// <returns>A tuple with success flag, count of newly inserted jokes, and a status message.</returns>
-    public (bool Success, int ImportedCount, string Message) ImportFromTabDelimitedViaSproc(string tabData, string requestingUserName = "ANON")
+    public (bool Success, int ImportedCount, string Message) ImportFromTabDelimitedViaSproc(string tabData, bool removePreviousJokes = false, string requestingUserName = "ANON")
     {
         try
         {
@@ -686,12 +687,18 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
             {
                 _context.Database.OpenConnection();
             }
-            command.CommandText = "EXEC [dbo].[usp_Joke_Import] @tsvData";
+            command.CommandText = "EXEC [dbo].[usp_Joke_Import] @tsvData, @RemovePreviousJokes";
             command.CommandType = System.Data.CommandType.Text;
-            var param = command.CreateParameter();
-            param.ParameterName = "@tsvData";
-            param.Value = normalised;
-            command.Parameters.Add(param);
+
+            var paramTsv = command.CreateParameter();
+            paramTsv.ParameterName = "@tsvData";
+            paramTsv.Value = normalised;
+            command.Parameters.Add(paramTsv);
+
+            var paramReplace = command.CreateParameter();
+            paramReplace.ParameterName = "@RemovePreviousJokes";
+            paramReplace.Value = removePreviousJokes ? 1 : 0;
+            command.Parameters.Add(paramReplace);
 
             using var reader = command.ExecuteReader();
             if (reader.Read())
@@ -699,7 +706,10 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
                 importedCount = reader.GetInt32(0);
             }
 
-            return (true, importedCount, $"Successfully imported {importedCount} new joke(s) from {totalLines} record(s) in the file.");
+            var actionMsg = removePreviousJokes
+                ? $"Successfully replaced all existing jokes with {importedCount} joke(s) from the file."
+                : $"Successfully imported {importedCount} new joke(s) from {totalLines} record(s) in the file.";
+            return (true, importedCount, actionMsg);
         }
         catch (Exception ex)
         {
