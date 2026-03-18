@@ -424,6 +424,229 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
+    /// Sanitizes a field value for inclusion in a tab-separated file by replacing tabs and newlines.
+    /// </summary>
+    /// <param name="input">The raw field value.</param>
+    /// <returns>A sanitized string safe for use in a TSV field.</returns>
+    private static string EscapeTabField(string? input)
+    {
+        if (string.IsNullOrEmpty(input)) return string.Empty;
+        return input.Replace("\t", " ").Replace("\r\n", " ").Replace("\n", " ").Replace("\r", " ");
+    }
+
+    /// <summary>
+    /// Exports all active jokes to a tab-delimited text format with fields:
+    /// JokeId, Categories, JokeTxt, ImageTxt, Attribution, Rating, VoteCount.
+    /// </summary>
+    /// <param name="requestingUserName">The username of the user requesting the export.</param>
+    /// <returns>A string containing the tab-delimited content with a header row.</returns>
+    public string ExportToTabDelimited(string requestingUserName = "ANON")
+    {
+        var sb = new StringBuilder();
+
+        // Header row
+        sb.AppendLine("JokeId\tCategories\tJokeTxt\tImageTxt\tAttribution\tRating\tVoteCount");
+
+        // Get all active jokes with their categories
+        var jokes = _context.Jokes
+            .FromSqlInterpolated($@"
+                SELECT j.JokeId,
+                    STUFF((SELECT ', ' + c.JokeCategoryTxt
+                           FROM JokeJokeCategory jjc
+                           INNER JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId
+                           WHERE jjc.JokeId = j.JokeId
+                           ORDER BY c.JokeCategoryTxt
+                           FOR XML PATH('')), 1, 2, '') AS Categories,
+                    j.JokeTxt, j.ImageTxt, j.Rating, j.ActiveInd, j.Attribution, j.VoteCount, j.SortOrderNbr,
+                    j.CreateDateTime, j.CreateUserName, j.ChangeDateTime, j.ChangeUserName
+                FROM Joke j
+                WHERE j.ActiveInd = 'Y'
+                ORDER BY Categories, j.JokeTxt")
+            .AsEnumerable()
+            .ToList();
+
+        foreach (var joke in jokes)
+        {
+            sb.AppendLine($"{joke.JokeId}\t{EscapeTabField(joke.Categories)}\t{EscapeTabField(joke.JokeTxt)}\t{EscapeTabField(joke.ImageTxt)}\t{EscapeTabField(joke.Attribution)}\t{joke.Rating ?? 0}\t{joke.VoteCount ?? 0}");
+        }
+
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Imports jokes from a tab-delimited text string. Parses the rows in C#, ensures all
+    /// referenced categories exist, then inserts new jokes and their category associations
+    /// using the existing repository methods.
+    /// </summary>
+    /// <param name="tabData">The tab-delimited content including a header row.</param>
+    /// <param name="requestingUserName">The username of the user performing the import.</param>
+    /// <returns>A tuple with success flag, count of newly inserted jokes, and a status message.</returns>
+    public (bool Success, int ImportedCount, string Message) ImportFromTabDelimited(string tabData, string requestingUserName = "ANON")
+    {
+        try
+        {
+            var jokeRows = ParseTabDelimitedData(tabData);
+            if (jokeRows.Count == 0)
+            {
+                return (false, 0, "No valid joke data found in the import file.");
+            }
+
+            var importedCount = 0;
+            var now = DateTime.UtcNow;
+
+            // Load existing joke texts once to check for duplicates
+            var existingJokeTexts = _context.Jokes
+                .Where(j => j.JokeTxt != null)
+                .Select(j => j.JokeTxt)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            // Load existing categories (name -> id) once; filter out any entries with null keys
+            var existingCategories = _context.JokeCategories
+                .Where(c => c.JokeCategoryTxt != null)
+                .ToDictionary(c => c.JokeCategoryTxt!, c => c.JokeCategoryId, StringComparer.OrdinalIgnoreCase);
+
+            // Collect all new category names referenced in the import that do not yet exist,
+            // then insert them in a single SaveChanges call to minimize round-trips.
+            var allImportCategoryNames = jokeRows
+                .SelectMany(r => (r.Categories ?? string.Empty).Split(','))
+                .Select(c => c.Trim())
+                .Where(c => !string.IsNullOrEmpty(c) && !existingCategories.ContainsKey(c))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (allImportCategoryNames.Count > 0)
+            {
+                foreach (var catName in allImportCategoryNames)
+                {
+                    var newCategory = new JokeCategory
+                    {
+                        JokeCategoryTxt = catName,
+                        ActiveInd = "Y",
+                        SortOrderNbr = 50,
+                        CreateDateTime = now,
+                        CreateUserName = requestingUserName,
+                        ChangeDateTime = now,
+                        ChangeUserName = requestingUserName
+                    };
+                    _context.JokeCategories.Add(newCategory);
+                }
+                _context.SaveChanges();
+
+                // Refresh the category dictionary to include the newly inserted IDs
+                foreach (var cat in _context.JokeCategories.Where(c => c.JokeCategoryTxt != null && allImportCategoryNames.Contains(c.JokeCategoryTxt)))
+                {
+                    existingCategories[cat.JokeCategoryTxt!] = cat.JokeCategoryId;
+                }
+            }
+
+            foreach (var row in jokeRows)
+            {
+                if (string.IsNullOrWhiteSpace(row.JokeTxt)) continue;
+                if (existingJokeTexts.Contains(row.JokeTxt)) continue;
+
+                // Resolve category IDs for this joke
+                var categoryIds = (row.Categories ?? string.Empty)
+                    .Split(',')
+                    .Select(c => c.Trim())
+                    .Where(c => !string.IsNullOrEmpty(c) && existingCategories.ContainsKey(c))
+                    .Select(c => existingCategories[c])
+                    .Distinct()
+                    .ToList();
+
+                var joke = new Joke
+                {
+                    JokeTxt = row.JokeTxt,
+                    Attribution = row.Attribution,
+                    ImageTxt = row.ImageTxt,
+                    SortOrderNbr = 50,
+                    ActiveInd = "Y",
+                    Rating = row.Rating ?? 0,
+                    VoteCount = row.VoteCount ?? 0,
+                    CreateDateTime = now,
+                    CreateUserName = requestingUserName,
+                    ChangeDateTime = now,
+                    ChangeUserName = requestingUserName
+                };
+
+                var newJokeId = AddJoke(joke, requestingUserName);
+                if (newJokeId > 0)
+                {
+                    if (categoryIds.Count > 0)
+                    {
+                        UpdateJokeCategories(newJokeId, categoryIds, requestingUserName);
+                    }
+
+                    existingJokeTexts.Add(row.JokeTxt);
+                    importedCount++;
+                }
+            }
+
+            return (true, importedCount, $"Successfully imported {importedCount} new joke(s) from {jokeRows.Count} record(s) in the file.");
+        }
+        catch (Exception ex)
+        {
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error importing jokes: {msg}");
+            return (false, 0, $"Error importing jokes: {msg}");
+        }
+    }
+
+    /// <summary>
+    /// Represents a single row parsed from a tab-delimited joke import file.
+    /// </summary>
+    private sealed record JokeImportRow(
+        string JokeTxt,
+        string Categories,
+        string Attribution,
+        string ImageTxt,
+        decimal? Rating,
+        int? VoteCount);
+
+    /// <summary>
+    /// Parses tab-delimited joke data into a list of <see cref="JokeImportRow"/> records.
+    /// The expected column order is: JokeId, Categories, JokeTxt, ImageTxt, Attribution, Rating, VoteCount.
+    /// A leading header row (starting with "JokeId") is automatically skipped.
+    /// </summary>
+    /// <param name="tabData">The raw tab-delimited text.</param>
+    /// <returns>A list of parsed <see cref="JokeImportRow"/> records with non-empty joke text.</returns>
+    private static List<JokeImportRow> ParseTabDelimitedData(string tabData)
+    {
+        var rows = new List<JokeImportRow>();
+        var lines = tabData.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
+        var headerSkipped = false;
+
+        foreach (var line in lines)
+        {
+            // Skip the header row (identified by starting with "JokeId")
+            if (!headerSkipped)
+            {
+                headerSkipped = true;
+                if (line.TrimStart().StartsWith("JokeId", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+            }
+
+            var fields = line.Split('\t');
+            if (fields.Length < 3) continue;
+
+            // Column order: JokeId(0), Categories(1), JokeTxt(2), ImageTxt(3), Attribution(4), Rating(5), VoteCount(6)
+            var jokeTxt = fields[2].Trim();
+            if (string.IsNullOrWhiteSpace(jokeTxt)) continue;
+
+            rows.Add(new JokeImportRow(
+                JokeTxt: jokeTxt,
+                Categories: fields.Length > 1 ? fields[1].Trim() : string.Empty,
+                Attribution: fields.Length > 4 && !string.IsNullOrWhiteSpace(fields[4]) ? fields[4].Trim() : string.Empty,
+                ImageTxt: fields.Length > 3 && !string.IsNullOrWhiteSpace(fields[3]) ? fields[3].Trim() : string.Empty,
+                Rating: fields.Length > 5 && decimal.TryParse(fields[5].Trim(), out var rating) ? rating : null,
+                VoteCount: fields.Length > 6 && int.TryParse(fields[6].Trim(), out var voteCount) ? voteCount : null));
+        }
+
+        return rows;
+    }
+
+    /// <summary>
     /// Updates an existing joke.
     /// </summary>
     /// <param name="joke">The joke entity containing the updated information.</param>

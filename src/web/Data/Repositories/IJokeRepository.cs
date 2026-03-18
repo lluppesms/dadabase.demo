@@ -71,6 +71,23 @@ public interface IJokeRepository
     string ExportToSql(string requestingUserName = "ANON");
 
     /// <summary>
+    /// Exports all jokes to a tab-delimited text format with fields: JokeId, Categories, JokeTxt, ImageTxt, Attribution, Rating, VoteCount.
+    /// </summary>
+    /// <param name="requestingUserName">The username of the user requesting the export. The default is "ANON".</param>
+    /// <returns>A string containing the tab-delimited content including a header row.</returns>
+    string ExportToTabDelimited(string requestingUserName = "ANON");
+
+    /// <summary>
+    /// Imports jokes from a tab-delimited text string into the database. Parses the rows in C#,
+    /// ensures all referenced categories exist, then inserts new jokes and their category associations
+    /// using the existing repository methods. Jokes whose text already exists in the database are skipped.
+    /// </summary>
+    /// <param name="tabData">The tab-delimited content including a header row.</param>
+    /// <param name="requestingUserName">The username of the user performing the import. The default is "ANON".</param>
+    /// <returns>A tuple indicating success, the count of newly imported jokes, and a status message.</returns>
+    (bool Success, int ImportedCount, string Message) ImportFromTabDelimited(string tabData, string requestingUserName = "ANON");
+
+    /// <summary>
     /// Updates an existing joke.
     /// </summary>
     /// <param name="joke">The <see cref="Joke"/> entity to update.</param>
