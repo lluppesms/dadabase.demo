@@ -170,7 +170,7 @@ public partial class Export : ComponentBase
             // Yield briefly so Blazor can re-render the spinner before the synchronous import runs
             await Task.Yield();
 
-            var (success, importedCount, message) = JokeRepository.ImportFromTabDelimited(importFileContent);
+            var (success, importedCount, message) = JokeRepository.ImportFromTabDelimitedViaSproc(importFileContent);
 
             importStatusMessage = message;
             importAlertClass = success ? "alert-success" : "alert-warning";

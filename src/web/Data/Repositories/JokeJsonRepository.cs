@@ -357,9 +357,21 @@ public class JokeJsonRepository : IJokeRepository
     /// <param name="tabData">Not used.</param>
     /// <param name="requestingUserName">Not used.</param>
     /// <returns>This method always throws because the JSON repository is read-only.</returns>
+    [Obsolete("Use ImportFromTabDelimitedViaSproc instead, which delegates batch import to usp_Joke_Import.")]
     public (bool Success, int ImportedCount, string Message) ImportFromTabDelimited(string tabData, string requestingUserName = "ANON")
     {
         throw new NotSupportedException("ImportFromTabDelimited is not supported for the JSON-based repository.");
+    }
+
+    /// <summary>
+    /// Import via stored procedure is not supported for the JSON-based repository.
+    /// </summary>
+    /// <param name="tabData">Not used.</param>
+    /// <param name="requestingUserName">Not used.</param>
+    /// <returns>This method always throws because the JSON repository is read-only.</returns>
+    public (bool Success, int ImportedCount, string Message) ImportFromTabDelimitedViaSproc(string tabData, string requestingUserName = "ANON")
+    {
+        throw new NotSupportedException("ImportFromTabDelimitedViaSproc is not supported for the JSON-based repository.");
     }
 
     /// <summary>

@@ -85,7 +85,21 @@ public interface IJokeRepository
     /// <param name="tabData">The tab-delimited content including a header row.</param>
     /// <param name="requestingUserName">The username of the user performing the import. The default is "ANON".</param>
     /// <returns>A tuple indicating success, the count of newly imported jokes, and a status message.</returns>
+    /// <remarks>Deprecated: use <see cref="ImportFromTabDelimitedViaSproc"/> instead, which delegates all
+    /// parsing and batch-insert work to the <c>usp_Joke_Import</c> stored procedure.</remarks>
+    [Obsolete("Use ImportFromTabDelimitedViaSproc instead, which delegates batch import to usp_Joke_Import.")]
     (bool Success, int ImportedCount, string Message) ImportFromTabDelimited(string tabData, string requestingUserName = "ANON");
+
+    /// <summary>
+    /// Imports jokes from a tab-delimited text string by passing the raw TSV to the
+    /// <c>usp_Joke_Import</c> stored procedure, which parses and batch-inserts data entirely in SQL.
+    /// New categories are inserted, duplicate jokes (by text) are skipped, and category associations
+    /// are created — all in a single database round-trip.
+    /// </summary>
+    /// <param name="tabData">The tab-delimited content including a header row.</param>
+    /// <param name="requestingUserName">The username of the user performing the import. The default is "ANON".</param>
+    /// <returns>A tuple indicating success, the count of newly imported jokes, and a status message.</returns>
+    (bool Success, int ImportedCount, string Message) ImportFromTabDelimitedViaSproc(string tabData, string requestingUserName = "ANON");
 
     /// <summary>
     /// Updates an existing joke.

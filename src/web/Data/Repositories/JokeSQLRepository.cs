@@ -481,6 +481,8 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     /// <param name="tabData">The tab-delimited content including a header row.</param>
     /// <param name="requestingUserName">The username of the user performing the import.</param>
     /// <returns>A tuple with success flag, count of newly inserted jokes, and a status message.</returns>
+    /// <remarks>Deprecated: use <see cref="ImportFromTabDelimitedViaSproc"/> instead.</remarks>
+    [Obsolete("Use ImportFromTabDelimitedViaSproc instead, which delegates batch import to usp_Joke_Import.")]
     public (bool Success, int ImportedCount, string Message) ImportFromTabDelimited(string tabData, string requestingUserName = "ANON")
     {
         try
@@ -644,6 +646,67 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
         }
 
         return rows;
+    }
+
+    /// <summary>
+    /// Imports jokes from a tab-delimited text string by passing the raw TSV to the
+    /// <c>usp_Joke_Import</c> stored procedure, which parses and batch-inserts data entirely in SQL.
+    /// New categories are inserted, duplicate jokes (by text) are skipped, and category associations
+    /// are created — all in a single database round-trip.
+    /// </summary>
+    /// <param name="tabData">The tab-delimited content including a header row.</param>
+    /// <param name="requestingUserName">The username of the user performing the import.</param>
+    /// <returns>A tuple with success flag, count of newly inserted jokes, and a status message.</returns>
+    public (bool Success, int ImportedCount, string Message) ImportFromTabDelimitedViaSproc(string tabData, string requestingUserName = "ANON")
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(tabData))
+            {
+                return (false, 0, "No data provided for import.");
+            }
+
+            // Count non-header, non-empty lines so we can include the total in the message
+            var totalLines = tabData
+                .Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries)
+                .Count(l => !string.IsNullOrWhiteSpace(l)
+                    && !l.TrimStart().StartsWith("JokeId", StringComparison.OrdinalIgnoreCase));
+
+            if (totalLines == 0)
+            {
+                return (false, 0, "No valid joke data found in the import file.");
+            }
+
+            // Normalise line endings to LF so STRING_SPLIT(…, CHAR(10)) works consistently
+            var normalised = tabData.Replace("\r\n", "\n").Replace("\r", "\n");
+
+            var importedCount = 0;
+            using var command = _context.Database.GetDbConnection().CreateCommand();
+            if (command.Connection.State != System.Data.ConnectionState.Open)
+            {
+                _context.Database.OpenConnection();
+            }
+            command.CommandText = "EXEC [dbo].[usp_Joke_Import] @tsvData";
+            command.CommandType = System.Data.CommandType.Text;
+            var param = command.CreateParameter();
+            param.ParameterName = "@tsvData";
+            param.Value = normalised;
+            command.Parameters.Add(param);
+
+            using var reader = command.ExecuteReader();
+            if (reader.Read())
+            {
+                importedCount = reader.GetInt32(0);
+            }
+
+            return (true, importedCount, $"Successfully imported {importedCount} new joke(s) from {totalLines} record(s) in the file.");
+        }
+        catch (Exception ex)
+        {
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error importing jokes via stored procedure: {msg}");
+            return (false, 0, $"Error importing jokes: {msg}");
+        }
     }
 
     /// <summary>
