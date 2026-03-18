@@ -278,6 +278,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
                 FROM Joke j
                 WHERE j.ActiveInd = 'Y'
                 ORDER BY Categories, j.JokeTxt")
+            .AsNoTracking()
             .AsEnumerable()
             .ToList();
 
@@ -462,6 +463,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
                 FROM Joke j
                 WHERE j.ActiveInd = 'Y'
                 ORDER BY Categories, j.JokeTxt")
+            .AsNoTracking()
             .AsEnumerable()
             .ToList();
 
