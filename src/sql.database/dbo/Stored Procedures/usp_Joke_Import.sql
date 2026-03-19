@@ -50,20 +50,24 @@ BEGIN
         VoteCount   INT            NULL
     );
 
-    -- Split the input on newlines, then split each line on tabs
+    -- Split the input robustly on CRLF, LF, or CR, then trim and parse each line
+    ;WITH RawLines AS (
+      SELECT value AS line
+      FROM STRING_SPLIT(REPLACE(REPLACE(@tsvData, CHAR(13) + CHAR(10), CHAR(10)), CHAR(13), CHAR(10)), CHAR(10))
+    )
     INSERT INTO #ImportRows (JokeId, Categories, JokeTxt, ImageTxt, Attribution, Rating, VoteCount)
     SELECT
-        TRY_CAST(NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(line.value, CHAR(9), '","'), '"', '\"'), '"]'), '$[0]'))), '') AS INT),
-        NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(line.value, CHAR(9), '","'), '"', '\"'), '"]'), '$[1]'))), ''),
-        NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(line.value, CHAR(9), '","'), '"', '\"'), '"]'), '$[2]'))), ''),
-        NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(line.value, CHAR(9), '","'), '"', '\"'), '"]'), '$[3]'))), ''),
-        NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(line.value, CHAR(9), '","'), '"', '\"'), '"]'), '$[4]'))), ''),
-        TRY_CAST(NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(line.value, CHAR(9), '","'), '"', '\"'), '"]'), '$[5]'))), '') AS DECIMAL(3,1)),
-        TRY_CAST(NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(line.value, CHAR(9), '","'), '"', '\"'), '"]'), '$[6]'))), '') AS INT)
-    FROM STRING_SPLIT(@tsvData, CHAR(10)) AS line
-    WHERE LTRIM(RTRIM(line.value)) <> ''
+      TRY_CAST(NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(REPLACE(REPLACE(line, '"', '\"'), CHAR(9), '","'), CHAR(13), ''), CHAR(10), ''), '"]'), '$[0]'))), '') AS INT),
+      NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(REPLACE(REPLACE(line, '"', '\"'), CHAR(9), '","'), CHAR(13), ''), CHAR(10), ''), '"]'), '$[1]'))), ''),
+      NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(REPLACE(REPLACE(line, '"', '\"'), CHAR(9), '","'), CHAR(13), ''), CHAR(10), ''), '"]'), '$[2]'))), ''),
+      NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(REPLACE(REPLACE(line, '"', '\"'), CHAR(9), '","'), CHAR(13), ''), CHAR(10), ''), '"]'), '$[3]'))), ''),
+      NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(REPLACE(REPLACE(line, '"', '\"'), CHAR(9), '","'), CHAR(13), ''), CHAR(10), ''), '"]'), '$[4]'))), ''),
+      TRY_CAST(NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(REPLACE(REPLACE(line, '"', '\"'), CHAR(9), '","'), CHAR(13), ''), CHAR(10), ''), '"]'), '$[5]'))), '') AS DECIMAL(3,1)),
+      TRY_CAST(NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(REPLACE(REPLACE(line, '"', '\"'), CHAR(9), '","'), CHAR(13), ''), CHAR(10), ''), '"]'), '$[6]'))), '') AS INT)
+    FROM RawLines
+    WHERE LTRIM(RTRIM(line)) <> ''
       -- Skip the header row
-      AND LEFT(LTRIM(line.value), 6) <> 'JokeId';
+      AND LEFT(LTRIM(line), 6) <> 'JokeId';
 
     -- ── Step 2: Ensure all referenced categories exist ─────────────────────────
     INSERT INTO JokeCategory (JokeCategoryTxt, ActiveInd, SortOrderNbr, CreateDateTime, CreateUserName, ChangeDateTime, ChangeUserName)

@@ -160,6 +160,22 @@ public partial class Export : ComponentBase
     {
         if (string.IsNullOrEmpty(importFileContent)) return;
 
+        // If Delete and Replace is checked, show a confirmation dialog
+        if (importReplaceAll)
+        {
+            var confirmed = await JsInterop.InvokeAsync<bool>(
+                "confirm",
+                "WARNING: This will permanently delete ALL jokes, categories, and ratings in the database before importing.\n\nAre you sure you want to continue?"
+            );
+            if (!confirmed)
+            {
+                importStatusMessage = "Import cancelled by user.";
+                importAlertClass = "alert-warning";
+                StateHasChanged();
+                return;
+            }
+        }
+
         try
         {
             isBusy = true;

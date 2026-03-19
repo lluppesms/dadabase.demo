@@ -11,20 +11,20 @@
             <p>Export all jokes and categories from the database.</p>
 
             <div class="d-flex flex-wrap gap-3 mt-4">
-                <button class="btn btn-primary" @onclick="DownloadSqlExport" disabled="@isBusy">
+                <button class="btn btn-success" @onclick="DownloadSqlExport" disabled="@isBusy">
                     @if (isBusy && activeAction == "sql")
                     {
                         <span class="spinner-border spinner-border-sm me-2"></span>
                     }
-                    <i class="fas fa-database me-2"></i>Download SQL Export
+                    <i class="fas fa-database me-2"></i>Export as SQL
                 </button>
 
-                <button class="btn btn-secondary" @onclick="DownloadTabExport" disabled="@isBusy">
+                <button class="btn btn-success" @onclick="DownloadTabExport" disabled="@isBusy">
                     @if (isBusy && activeAction == "tab")
                     {
                         <span class="spinner-border spinner-border-sm me-2"></span>
                     }
-                    <i class="fas fa-file-alt me-2"></i>Download Tab-Delimited Export
+                    <i class="fas fa-file-alt me-2"></i>Export as Tab-Delimited
                 </button>
             </div>
 
@@ -64,7 +64,7 @@
                 </label>
             </div>
 
-            <button class="btn btn-success" @onclick="RunImport" disabled="@(isBusy || importFileContent == null)">
+            <button class="btn btn-danger" @onclick="RunImport" disabled="@(isBusy || importFileContent == null)">
                 @if (isBusy && activeAction == "import")
                 {
                     <span class="spinner-border spinner-border-sm me-2"></span>
