@@ -448,21 +448,12 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
         // Header row
         sb.AppendLine("JokeId\tCategories\tJokeTxt\tImageTxt\tAttribution\tRating\tVoteCount");
 
-        // Get all active jokes with their categories
+        // Get all active jokes with their comma-separated categories via the search stored proc
+        // Calling with NULL params returns all jokes; the proc's correlated subquery aggregates ALL categories per joke
+        var categoryParam = (string?)null;
+        var searchParam = (string?)null;
         var jokes = _context.Jokes
-            .FromSqlInterpolated($@"
-                SELECT j.JokeId,
-                    STUFF((SELECT ', ' + c.JokeCategoryTxt
-                           FROM JokeJokeCategory jjc
-                           INNER JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId
-                           WHERE jjc.JokeId = j.JokeId
-                           ORDER BY c.JokeCategoryTxt
-                           FOR XML PATH('')), 1, 2, '') AS Categories,
-                    j.JokeTxt, j.ImageTxt, j.Rating, j.ActiveInd, j.Attribution, j.VoteCount, j.SortOrderNbr,
-                    j.CreateDateTime, j.CreateUserName, j.ChangeDateTime, j.ChangeUserName
-                FROM Joke j
-                WHERE j.ActiveInd = 'Y'
-                ORDER BY Categories, j.JokeTxt")
+            .FromSqlInterpolated($"EXEC [dbo].[usp_Joke_Search] @category = {categoryParam}, @searchTxt = {searchParam}")
             .AsNoTracking()
             .AsEnumerable()
             .ToList();
