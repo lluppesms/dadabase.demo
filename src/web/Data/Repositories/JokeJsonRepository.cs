@@ -320,6 +320,61 @@ public class JokeJsonRepository : IJokeRepository
     }
 
     /// <summary>
+    /// Sanitizes a field value for inclusion in a tab-separated file by replacing tabs and newlines.
+    /// </summary>
+    /// <param name="input">The raw field value.</param>
+    /// <returns>A sanitized string safe for use in a TSV field.</returns>
+    private static string EscapeTabField(string? input)
+    {
+        if (string.IsNullOrEmpty(input)) return string.Empty;
+        return input.Replace("\t", " ").Replace("\r\n", " ").Replace("\n", " ").Replace("\r", " ");
+    }
+
+    /// <summary>
+    /// Exports all jokes from the JSON repository to a tab-delimited text format with fields:
+    /// JokeId, Categories, JokeTxt, ImageTxt, Attribution, Rating, VoteCount.
+    /// </summary>
+    /// <param name="requestingUserName">The username of the caller requesting the export.</param>
+    /// <returns>A string containing the tab-delimited content with a header row.</returns>
+    public string ExportToTabDelimited(string requestingUserName = "ANON")
+    {
+        var sb = new System.Text.StringBuilder();
+
+        // Header row
+        sb.AppendLine("JokeId\tCategories\tJokeTxt\tImageTxt\tAttribution\tRating\tVoteCount");
+
+        foreach (var joke in _jokes.OrderBy(j => j.Categories).ThenBy(j => j.JokeTxt))
+        {
+            sb.AppendLine($"{joke.JokeId}\t{EscapeTabField(joke.Categories)}\t{EscapeTabField(joke.JokeTxt)}\t{EscapeTabField(joke.ImageTxt)}\t{EscapeTabField(joke.Attribution)}\t{joke.Rating ?? 0}\t{joke.VoteCount ?? 0}");
+        }
+
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Import from tab-delimited is not supported for the JSON-based repository.
+    /// </summary>
+    /// <param name="tabData">Not used.</param>
+    /// <param name="requestingUserName">Not used.</param>
+    /// <returns>This method always throws because the JSON repository is read-only.</returns>
+    [Obsolete("Use ImportFromTabDelimitedViaSproc instead, which delegates batch import to usp_Joke_Import.")]
+    public (bool Success, int ImportedCount, string Message) ImportFromTabDelimited(string tabData, string requestingUserName = "ANON")
+    {
+        throw new NotSupportedException("ImportFromTabDelimited is not supported for the JSON-based repository.");
+    }
+
+    /// <summary>
+    /// Import via stored procedure is not supported for the JSON-based repository.
+    /// </summary>
+    /// <param name="tabData">Not used.</param>
+    /// <param name="requestingUserName">Not used.</param>
+    /// <returns>This method always throws because the JSON repository is read-only.</returns>
+    public (bool Success, int ImportedCount, string Message) ImportFromTabDelimitedViaSproc(string tabData, bool removePreviousJokes = false, string requestingUserName = "ANON")
+    {
+        throw new NotSupportedException("ImportFromTabDelimitedViaSproc is not supported for the JSON-based repository.");
+    }
+
+    /// <summary>
     /// Updates an existing joke.
     /// </summary>
     /// <param name="joke">The joke to update.</param>

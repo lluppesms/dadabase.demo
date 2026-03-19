@@ -22,6 +22,7 @@
   </ItemGroup>
   <ItemGroup>
     <Build Include="dbo\Stored Procedures\usp_Get_Random_Joke.sql" />
+    <Build Include="dbo\Stored Procedures\usp_Joke_Import.sql" />
     <Build Include="dbo\Stored Procedures\usp_Joke_Search.sql" />
     <Build Include="dbo\Tables\Joke.sql" />
     <Build Include="dbo\Tables\JokeCategory.sql" />
