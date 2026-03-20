@@ -163,6 +163,37 @@ The default configuration assumes Phi-4 is running on the standard port:
 
 If you're using a different port or endpoint, update these values accordingly.
 
+### Azure OpenAI Configuration
+
+The analyzer supports identity-based authentication for Azure OpenAI, which is more secure than API keys:
+
+```json
+{
+  "ModelProvider": "AzureOpenAI",
+  "AzureOpenAI": {
+    "Endpoint": "https://your-resource.openai.azure.com/",
+    "DeploymentName": "gpt-4.1-mini",
+    "ModelName": "gpt-4.1-mini"
+  }
+}
+```
+
+**Authentication Methods:**
+- **Managed Identity** (Azure deployments): Automatically uses the managed identity assigned to your Azure resource
+- **Azure CLI** (Local development): Uses your Azure CLI login (`az login`)
+- **Visual Studio** (Local development): Uses your Visual Studio Azure account
+- **Service Principal** (CI/CD): Uses environment variables `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, and `AZURE_TENANT_ID`
+
+**For Local Development with Multiple Tenants:**
+If you have access to multiple Azure AD tenants and need to specify which one to use:
+```json
+{
+  "VisualStudioTenantId": "your-tenant-id-here"
+}
+```
+
+**Important:** Only set `VisualStudioTenantId` for local development. Never use this setting in Azure environments.
+
 ### User Secrets (Optional)
 
 For enhanced security, you can store sensitive configuration in user secrets:
@@ -194,13 +225,38 @@ dotnet user-secrets set "ConnectionStrings:DefaultConnection" "your-connection-s
 
 1. **Ensure Prerequisites are Running:**
    - SQL Server is running and accessible
-   - Phi-4 model is loaded and server is started (see installation steps above)
+   - The configured AI model is available (local model server running, or Azure OpenAI credentials set)
 
 2. **Run the Application:**
+
+   The analyzer uses optional flags to control which operations are performed. By default **no operations are enabled**, so you must specify at least one flag:
+
+   | Flag | Short | Description |
+   |------|-------|-------------|
+   | `--images` | `-i` | Generate image descriptions for jokes that do not have one |
+   | `--categories` | `-c` | Evaluate and simplify joke category assignments |
+   | `--category-list "..."` | `-cl` | Comma-separated list of allowed categories (used with `--categories`) |
+
+   **Examples:**
+
    ```bash
-   cd src/analyzer
-   dotnet run
+   # Generate image descriptions only
+   dotnet run -- --images
+
+   # Evaluate and simplify categories only (uses built-in default category list)
+   dotnet run -- --categories
+
+   # Generate images AND evaluate categories together
+   dotnet run -- --images --categories
+
+   # Evaluate categories with a custom category list
+   dotnet run -- --categories --category-list "Dad,Puns,Science,Random"
    ```
+
+   **Default category list** (used when `--categories` is specified without `--category-list`):
+   > Aging, Bad Puns, Camping, Chickens, Christmas, Chuck Norris, Corona, Dad, Did'ya Hear, Don't Say It!, Dyslexics, Engineers, Facts, Good Question!, Halloween, Hipsters, Insults, Jobs, Knock Knock, Pirates, Programmers, Quotes, Random, Science, Steven Wright, Thanksgiving, What do you call...
+
+   > **Note on category evaluation:** When `--categories` is used, the analyzer evaluates each joke and assigns the single best matching category from the allowed list, adding a second category *only* if there is a strong correlation. All existing category assignments for each processed joke are replaced with the new simplified assignments.
 
 3. **Monitor Progress:**
    - The application will display a progress bar
@@ -209,27 +265,43 @@ dotnet user-secrets set "ConnectionStrings:DefaultConnection" "your-connection-s
 
 ## How It Works
 
+### Processing Modes
+
+The analyzer supports two independent processing modes that can be used individually or together:
+
+| Mode | Flag | Description |
+|------|------|-------------|
+| **Image Description** | `--images` | Generates a family-friendly cartoon scene description for each joke that does not already have one |
+| **Category Evaluation** | `--categories` | Re-evaluates each joke and assigns one (or at most two) categories from a predefined list, replacing existing category assignments |
+
 ### Processing Flow
 
 1. **Initialization**
+   - Parses command-line flags to determine which modes are active
    - Connects to the SQL Server database
-   - Verifies connection to the Phi-4 local model
+   - Verifies connection to the configured AI model
    - Loads existing joke categories
 
-2. **For Each Joke:**
-   - **Image Description Generation:**
-     - Sends the joke to Phi-4 with a specific prompt
-     - Phi-4 generates a family-friendly image description
+2. **Query Selection**
+   - `--images` only: fetches jokes that do not yet have an image description
+   - `--categories` only or both flags: fetches **all** active jokes
+
+3. **For Each Joke:**
+
+   - **Image Description Generation** (when `--images` is active):
+     - Sends the joke to the AI with a specific prompt
+     - The AI generates a family-friendly image description
      - Updates the `ImageTxt` field in the database
      - Skips if the joke already has an image description
 
-   - **Category Assignment:**
-     - Asks Phi-4 to categorize the joke
-     - Checks if suggested categories exist in the database
-     - Creates new categories if needed
-     - Links the joke to appropriate categories
+   - **Category Evaluation** (when `--categories` is active):
+     - Sends the joke to the AI along with the allowed category list
+     - The AI selects the single best-matching category
+     - A second category is only assigned if there is a strong, clear correlation
+     - **Replaces** all existing category assignments with the new simplified result
+     - Only categories from the allowed list are used; new categories are created in the database if an allowed category does not yet exist
 
-3. **Summary Report:**
+4. **Summary Report:**
    - Total records processed
    - Successfully updated records
    - Any errors encountered

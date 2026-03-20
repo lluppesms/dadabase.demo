@@ -12,7 +12,63 @@ using Microsoft.SemanticKernel.ChatCompletion;
 
 // Display Banner
 AnsiConsole.Write(new FigletText("Joke Analyzer").LeftJustified().Color(Color.Green));
-AnsiConsole.MarkupLine("[yellow]Analyzing jokes with an AI models to create images and categories[/]\n");
+AnsiConsole.MarkupLine("[yellow]Analyzing jokes with AI models to create images and categories[/]\n");
+
+// Parse command-line arguments
+var createImages = false;
+var evaluateCategories = true;
+string? categoryListArg = null;
+
+for (var i = 0; i < args.Length; i++)
+{
+    var argLower = args[i].ToLowerInvariant();
+    if (argLower is "--images" or "-i" or "/images")
+    {
+        createImages = true;
+    }
+    else if (argLower is "--categories" or "-c" or "/categories")
+    {
+        evaluateCategories = true;
+    }
+    else if ((argLower is "--category-list" or "-cl") && i + 1 < args.Length)
+    {
+        categoryListArg = args[++i];
+    }
+}
+
+// Display active run modes
+AnsiConsole.MarkupLine("[yellow]Run options:[/]");
+AnsiConsole.MarkupLine($"  [cyan]Create image descriptions:[/] {(createImages ? "[green]Yes[/]" : "[grey]No[/]")}");
+AnsiConsole.MarkupLine($"  [cyan]Evaluate joke categories:[/]  {(evaluateCategories ? "[green]Yes[/]" : "[grey]No[/]")}");
+
+if (!createImages && !evaluateCategories)
+{
+    AnsiConsole.MarkupLine("\n[yellow]No processing modes enabled. Specify at least one of the following options:[/]");
+    AnsiConsole.MarkupLine("[grey]  --images                    Generate image descriptions for jokes that do not have one[/]");
+    AnsiConsole.MarkupLine("[grey]  --categories                Evaluate and simplify joke category assignments[/]");
+    AnsiConsole.MarkupLine("[grey]  --category-list \"cat1,...\"   CSV list of allowed categories (optional, used with --categories)[/]");
+    AnsiConsole.MarkupLine("\n[grey]Examples:[/]");
+    AnsiConsole.MarkupLine("[grey]  dotnet run -- --images[/]");
+    AnsiConsole.MarkupLine("[grey]  dotnet run -- --categories[/]");
+    AnsiConsole.MarkupLine("[grey]  dotnet run -- --images --categories[/]");
+    AnsiConsole.MarkupLine("[grey]  dotnet run -- --categories --category-list \"Dad,Puns,Science\"[/]");
+    return;
+}
+
+// Build allowed categories list when category evaluation is enabled
+List<string>? allowedCategories = null;
+if (evaluateCategories)
+{
+    var rawList = categoryListArg ?? JokeAnalyzer.RecordProcessor.DefaultCategoryList;
+    allowedCategories = rawList.Split(',')
+        .Select(s => s.Trim())
+        .Where(s => !string.IsNullOrWhiteSpace(s))
+        .ToList();
+    AnsiConsole.MarkupLine($"\n[yellow]Category list ({allowedCategories.Count} categories):[/]");
+    AnsiConsole.MarkupLine($"  [grey]{string.Join(", ", allowedCategories)}[/]");
+}
+
+AnsiConsole.WriteLine();
 
 // Load configuration
 var configuration = new ConfigurationBuilder()
@@ -74,25 +130,29 @@ if (useAzureOpenAI)
 {
     // Azure OpenAI configuration
     var azureEndpoint = configuration["AzureOpenAI:Endpoint"];
-    var azureApiKey = configuration["AzureOpenAI:ApiKey"];
     var azureDeploymentName = configuration["AzureOpenAI:DeploymentName"];
     var azureModelName = configuration["AzureOpenAI:ModelName"] ?? azureDeploymentName ?? "gpt-5-mini";
+    var visualStudioTenantId = configuration["VisualStudioTenantId"];
 
-    if (string.IsNullOrEmpty(azureEndpoint) || string.IsNullOrEmpty(azureApiKey) || string.IsNullOrEmpty(azureDeploymentName))
+    if (string.IsNullOrEmpty(azureEndpoint) || string.IsNullOrEmpty(azureDeploymentName))
     {
         AnsiConsole.MarkupLine("[red]  Error: Azure OpenAI configuration is incomplete. Please check AzureOpenAI settings in appsettings.json[/]");
         return;
     }
 
+    // Get credentials using identity-based authentication
+    var credentials = Utilities.GetCredentials(visualStudioTenantId ?? string.Empty);
+
     kernelBuilder.AddAzureOpenAIChatCompletion(
         deploymentName: azureDeploymentName,
         endpoint: azureEndpoint,
-        apiKey: azureApiKey,
+        credentials: credentials,
         httpClient: httpClient
     );
 
     modelDisplayName = $"{azureModelName} (Azure OpenAI)";
     AnsiConsole.MarkupLine($"[green]✓ Using Cloud Model: {modelDisplayName} at {azureEndpoint}[/]");
+    AnsiConsole.MarkupLine("[green]✓ Using identity-based authentication (Managed Identity/DefaultAzureCredential)[/]");
     AnsiConsole.MarkupLine("[green]✓ Token tracking enabled for cloud model[/]\n");
 }
 else
@@ -129,7 +189,14 @@ else
 }
 
 // Process jokes using RecordProcessor
-var recordProcessor = new RecordProcessor(optionsBuilder.Options, chatCompletionService, useAzureOpenAI, maxBatchSize);
+var recordProcessor = new RecordProcessor(
+    optionsBuilder.Options,
+    chatCompletionService,
+    useAzureOpenAI,
+    maxBatchSize,
+    createImages,
+    evaluateCategories,
+    allowedCategories);
 await recordProcessor.ProcessJokesAsync();
 
 AnsiConsole.MarkupLine("\n[green]Processing complete![/]");

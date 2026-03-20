@@ -14,9 +14,13 @@
   },
   "AzureOpenAI": {
     "Endpoint": "https://your-resource.openai.azure.com/",
-    "ApiKey": "",
+    // Identity-based authentication is used (Managed Identity/DefaultAzureCredential)
+    // No ApiKey is required
     // gpt-4.1-mini seems to provide the best balance of performance vs cost (even better than gpt-5-mini for this task...)
     "DeploymentName": "gpt-4.1-mini",
     "ModelName": "gpt-4.1-mini"
-  }
+  },
+  // Optional: For local development with Visual Studio when you have access to multiple tenants
+  // This setting is only used locally and should NOT be set in Azure environments
+  "VisualStudioTenantId": ""
 }
