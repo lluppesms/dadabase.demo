@@ -39,16 +39,6 @@ public class RecordProcessor(
     IList<string>? allowedCategories = null)
 {
     /// <summary>
-    /// Default comma-separated list of joke categories used when evaluating categories without a custom list.
-    /// </summary>
-    public const string DefaultCategoryList =
-        "Aging,Animals,Bad Puns,Bars,Camping,Chickens,Christmas,Chuck Norris,Compliments,Corona,Corporate," +
-        "Dad,Did'ya Hear,Don't Say It!,Dyslexics,Education,Engineers,Fun Facts,Family,Farmers,Good Question!," +
-        "Government,Halloween,Hipsters,Insults,Jobs,Knock Knock,Lawyers,Love and Marriage,Money,Pirates,Politics,Programmers," +
-        "Quotes,Random,Religion,Riddles,Science,Space,Sports,Star Wars,Star Trek,Steven Wright,Technology,Thanksgiving," +
-        "Weather,What do you call...,Words of Wisdom,Zombies,";
-
-    /// <summary>
     /// Helper class to hold mutable category state during processing.
     /// </summary>
     private class CategoryState
@@ -79,14 +69,93 @@ public class RecordProcessor(
     private int _totalPromptTokens;
     private int _totalCompletionTokens;
 
-    // Prompt template for generating an image description only
-    private const string ImageOnlyPrompt =
+    // Reusable prompt sections for DRY principles
+    
+    /// <summary>
+    /// Image description instructions used across multiple prompts.
+    /// </summary>
+    private const string ImageDescriptionInstructions =
         """
         Describe this joke so an artist can draw a picture of the mental image it creates.
         - Give clear instructions on how the scene should look and what objects should be included.
         - Draw it in a humorous cartoon format.
         - Make sure the description does not ask for anything violent, sexual, or political.
         - Keep the scene description under 250 words.
+        """;
+
+    // /// <summary>
+    // /// Comma-separated list of PRIORITY joke categories - these should always be assigned not matter how many of the others are assigned.
+    // /// </summary>
+    // public const string PriorityCategoryList =
+    //     "Christmas,Good Question!,Knock Knock,Pirates,Star Wars,Star Trek,Thanksgiving,Zombies,";
+
+    /// <summary>
+    /// Default comma-separated list of joke categories used when evaluating categories without a custom list.
+    /// </summary>
+    public const string DefaultCategoryList =
+        "Aging,Animals,Bad Puns,Bars,Camping,Chickens,Christmas,Chuck Norris,Compliments,Corona,Corporate," +
+        "Dad,Dark,Did'ya Hear,Don't Say It!,Definitions,Dyslexics,Education,Engineers,Fun Facts,Family,Farmers,Good Question!," +
+        "Government,Halloween,Hipsters,Insults,Jobs,Knock Knock,Lawyers,Love and Marriage,Money,Pirates,Politics,Programmers," +
+        "Quotes,Random,Religion,Riddles,Science,Space,Sports,Star Wars,Star Trek,Steven Wright,Technology,Thanksgiving," +
+        "Weather,What do you call...,Words of Wisdom,Zombies,";
+
+    // /// <summary>
+    // /// Use this if no other categories are relevant - it is better to have a catch-all than to force jokes into irrelevant categories.
+    // /// </summary>
+    // public const string DefaultCategory = "Random";
+
+// --> I need to add these additional rules to categorization
+
+// // Did'ya Hear -- starts did you hear about...  or some form similar to that
+// // Don't Say It! -- starts with I don't always... or I don't make jokes about...
+// // Good Questions! -- for those jokes that are in the form of a question and ask a question that is silly or redundant
+// // Definitions:  things that look like a dictionary entry
+// // add the other categories to the prompt authorized categories list...
+
+// -->  Also need to make category rules prompt DRY - have this merge them into the other prompts so they are only in one spot
+
+    /// <summary>
+    /// Category evaluation rules used across multiple prompts.
+    /// </summary>
+    private const string CategoryEvaluationRules =
+        """
+        STEP 1 - Check Attribution Match:
+        - If the attribution matches ANY category name in the available categories list, automatically assign it as the primaryCategory.
+        - Attribution-based matches do NOT count against the regular category limit.
+        - If no match, proceed to Step 2.
+
+        STEP 2 - Check Priority Categories:
+        - Priority categories rules:
+            If a joke is obviously about Christmas, Halloween, Pirates, Star Wars, Star Trek, Thanksgiving, or Zombies, assign it to that category.
+            If a joke is obviously a Knock Knock joke or starts with KK/WT, assign it to the Knock Knock category.
+            If it starts with 'Did you hear about...'  (or some form similar to that) - assign it to the Did'ya Hear category.
+            If it starts with 'I don't always...' or 'I don't make jokes about...' - assign it to the Don't Say It!  category.
+            For those jokes that are in the form of a question and ask a question that is silly or redundant - assign it to the Good Questions! category.
+            For jokes that look like a dictionary entry - assign it to the Definitions category.
+         - If the joke clearly fits ANY of these priority categories, assign it as the primaryCategory (or secondaryCategory if attribution already assigned).
+        - Priority category assignments do NOT count against the regular category limit.
+
+        STEP 3 - Assign Regular Categories:
+        If a primary category has not been assigned from the previous steps, evaluate the joke against the full list of available categories and assign the best fit.
+        - Choose the SINGLE BEST regular category that most accurately describes this joke.
+        - Only assign a second category if there is a STRONG and clear correlation (not just a weak connection).
+        - If a priority/attribution category was assigned in previous steps, you can still assign 1-2 additional regular categories.
+        - Try not to use the "Dad" category unless the joke clearly references a father figure telling a joke to a child.
+        - If the joke does NOT obviously fit into any specific category, assign "Random" as the primaryCategory.
+        - It is better to use "Random" than to force a joke into an irrelevant category that does not fit.
+
+        - ONLY use categories from this list. Do NOT suggest new categories.
+        - Available categories:
+        """ +
+        DefaultCategoryList +
+        """
+
+        """;
+
+    // Prompt template for generating an image description only
+    private static readonly string ImageOnlyPrompt =
+        ImageDescriptionInstructions +
+        """
 
         Joke: {0}
 
@@ -95,65 +164,63 @@ public class RecordProcessor(
         """;
 
     // Prompt template for evaluating categories only (restricted to the allowed list)
-    private const string CategoryEvaluationPrompt =
+    private static readonly string CategoryEvaluationPrompt =
         """
         Analyze the following joke and identify the most appropriate category from the provided list.
 
-        Rules:
-        - Choose the SINGLE BEST category that most accurately describes this joke.
-        - Only assign a second category if there is a STRONG and clear correlation (not just a weak connection).
-        - ONLY use categories from the provided list. Do NOT suggest new categories.
-        - Try not to use the "Dad" category unless the joke clearly references a father figure.
-        - Available categories: {0}
-
+        """ +
+        CategoryEvaluationRules +
+        """
         Joke: {1}
+        Attribution: {2}
 
         Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
         {{"primaryCategory": "best matching category", "secondaryCategory": "second category only if strongly relevant, otherwise empty string"}}
         """;
 
     // Combined prompt for image description and free-form category assignment (when evaluateCategories is off)
-    private const string CombinedAnalysisPrompt =
+    private static readonly string CombinedAnalysisPrompt =
         """
         Analyze the following joke and provide two things:
 
-        1. IMAGE DESCRIPTION: Describe this joke so an artist can draw a picture of the mental image it creates.
-           - Give clear instructions on how the scene should look and what objects should be included.
-           - Draw it in a humorous cartoon format.
-           - Make sure the description does not ask for anything violent, sexual, or political.
-           - Keep the scene description under 250 words.
+        1. IMAGE DESCRIPTION: 
+        """ +
+        ImageDescriptionInstructions +
+        """
 
-        2. CATEGORIES: Identify the one, two, or three of the most appropriate categories this joke belongs to.
-           - Choose from existing categories if they fit, or suggest a new category if needed.
-           - Try not to put everything into the Dad category - only use that for jokes clearly referencing Dad
-           - If it is clearly of one type, only suggest one category. If it matches several categories, suggest two or three.
-           - Existing categories: {0}
 
-        Joke: {1}
+        2. CATEGORIES: Analyze the following joke and identify the most appropriate category from the provided list.
+
+        """ +
+        CategoryEvaluationRules +
+        """
+
+        Joke: {0}
+        Attribution: {1}
 
         Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
         {{"imageDescription": "your description here", "categories": ["category1", "category2"]}}
         """;
 
     // Combined prompt for image description with restricted category evaluation
-    private const string CombinedEvaluationPrompt =
+    private static readonly string CombinedEvaluationPrompt =
         """
         Analyze the following joke and provide two things:
 
-        1. IMAGE DESCRIPTION: Describe this joke so an artist can draw a picture of the mental image it creates.
-           - Give clear instructions on how the scene should look and what objects should be included.
-           - Draw it in a humorous cartoon format.
-           - Make sure the description does not ask for anything violent, sexual, or political.
-           - Keep the scene description under 250 words.
+        1. IMAGE DESCRIPTION: 
+        """ +
+        ImageDescriptionInstructions +
+        """
 
-        2. CATEGORIES: Identify the most appropriate category from the provided list only.
-           - Choose the SINGLE BEST category that most accurately describes this joke.
-           - Only assign a second category if there is a STRONG and clear correlation (not just a weak connection).
-           - ONLY use categories from the provided list. Do NOT suggest new categories.
-           - Try not to use the "Dad" category unless the joke clearly references a father figure.
-           - Available categories: {0}
 
-        Joke: {1}
+        2. CATEGORIES: Analyze the following joke and identify the most appropriate category from the provided list.
+
+        """ +
+        CategoryEvaluationRules +
+        """
+
+        Joke: {0}
+        Attribution: {1}
 
         Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
         {{"imageDescription": "your description here", "primaryCategory": "best matching category", "secondaryCategory": "second category only if strongly relevant, otherwise empty string"}}
@@ -339,7 +406,8 @@ public class RecordProcessor(
     {
         AnsiConsole.MarkupLine($"  [blue]Analyzing joke (image + categories)...[/]");
 
-        var combinedPrompt = string.Format(CombinedAnalysisPrompt, categoryState.CategoryNames, joke.JokeTxt);
+        var attribution = string.IsNullOrWhiteSpace(joke.Attribution) ? "unknown" : joke.Attribution;
+        var combinedPrompt = string.Format(CombinedAnalysisPrompt, joke.JokeTxt, attribution);
         var chatHistory = new ChatHistory();
         chatHistory.AddUserMessage(combinedPrompt);
 
@@ -425,7 +493,8 @@ public class RecordProcessor(
             ? string.Join(", ", _allowedCategories)
             : categoryState.CategoryNames;
 
-        var prompt = string.Format(CategoryEvaluationPrompt, allowedCategoryNames, joke.JokeTxt);
+        var attribution = string.IsNullOrWhiteSpace(joke.Attribution) ? "unknown" : joke.Attribution;
+        var prompt = string.Format(CategoryEvaluationPrompt, allowedCategoryNames, joke.JokeTxt, attribution);
         var chatHistory = new ChatHistory();
         chatHistory.AddUserMessage(prompt);
 
@@ -458,7 +527,8 @@ public class RecordProcessor(
             // Joke needs both image and category evaluation – use the combined evaluation prompt
             AnsiConsole.MarkupLine($"  [blue]Analyzing joke (image + category evaluation)...[/]");
 
-            var prompt = string.Format(CombinedEvaluationPrompt, allowedCategoryNames, joke.JokeTxt);
+            var attribution = string.IsNullOrWhiteSpace(joke.Attribution) ? "unknown" : joke.Attribution;
+            var prompt = string.Format(CombinedEvaluationPrompt, joke.JokeTxt, attribution);
             var chatHistory = new ChatHistory();
             chatHistory.AddUserMessage(prompt);
 
