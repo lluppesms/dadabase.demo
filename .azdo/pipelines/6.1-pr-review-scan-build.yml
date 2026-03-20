@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------------------------------
-# Pipeline to scan/build an app upon Pull Request
+# BETA: (Untested!) Pipeline to scan/build an app upon Pull Request and do a PR review summary with an LLM
 # ----------------------------------------------------------------------------------------------------
 name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r)
 pool:
@@ -10,8 +10,8 @@ pool:
 # ----------------------------------------------------------------------------------------------------
 trigger:
   - none
-# pr:
-# - main
+pr:
+- main
 
 # ----------------------------------------------------------------------------------------------------
 variables:
@@ -28,3 +28,6 @@ stages:
 - template: stages/webapp-build-stages.yml
   parameters:
     runUnitTests: true
+
+# Include an LLM PR Review with LLM stage
+- template: stages/pr-review-llm-stages.yml
