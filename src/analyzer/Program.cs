@@ -16,7 +16,7 @@ AnsiConsole.MarkupLine("[yellow]Analyzing jokes with AI models to create images 
 
 // Parse command-line arguments
 var createImages = false;
-var evaluateCategories = false;
+var evaluateCategories = true;
 string? categoryListArg = null;
 
 for (var i = 0; i < args.Length; i++)
@@ -130,25 +130,29 @@ if (useAzureOpenAI)
 {
     // Azure OpenAI configuration
     var azureEndpoint = configuration["AzureOpenAI:Endpoint"];
-    var azureApiKey = configuration["AzureOpenAI:ApiKey"];
     var azureDeploymentName = configuration["AzureOpenAI:DeploymentName"];
     var azureModelName = configuration["AzureOpenAI:ModelName"] ?? azureDeploymentName ?? "gpt-5-mini";
+    var visualStudioTenantId = configuration["VisualStudioTenantId"];
 
-    if (string.IsNullOrEmpty(azureEndpoint) || string.IsNullOrEmpty(azureApiKey) || string.IsNullOrEmpty(azureDeploymentName))
+    if (string.IsNullOrEmpty(azureEndpoint) || string.IsNullOrEmpty(azureDeploymentName))
     {
         AnsiConsole.MarkupLine("[red]  Error: Azure OpenAI configuration is incomplete. Please check AzureOpenAI settings in appsettings.json[/]");
         return;
     }
 
+    // Get credentials using identity-based authentication
+    var credentials = Utilities.GetCredentials(visualStudioTenantId ?? string.Empty);
+
     kernelBuilder.AddAzureOpenAIChatCompletion(
         deploymentName: azureDeploymentName,
         endpoint: azureEndpoint,
-        apiKey: azureApiKey,
+        credentials: credentials,
         httpClient: httpClient
     );
 
     modelDisplayName = $"{azureModelName} (Azure OpenAI)";
     AnsiConsole.MarkupLine($"[green]✓ Using Cloud Model: {modelDisplayName} at {azureEndpoint}[/]");
+    AnsiConsole.MarkupLine("[green]✓ Using identity-based authentication (Managed Identity/DefaultAzureCredential)[/]");
     AnsiConsole.MarkupLine("[green]✓ Token tracking enabled for cloud model[/]\n");
 }
 else

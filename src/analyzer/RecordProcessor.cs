@@ -42,9 +42,11 @@ public class RecordProcessor(
     /// Default comma-separated list of joke categories used when evaluating categories without a custom list.
     /// </summary>
     public const string DefaultCategoryList =
-        "Aging,Bad Puns,Camping,Chickens,Christmas,Chuck Norris,Corona,Dad,Did'ya Hear,Don't Say It!," +
-        "Dyslexics,Engineers,Facts,Good Question!,Halloween,Hipsters,Insults,Jobs,Knock Knock,Pirates," +
-        "Programmers,Quotes,Random,Science,Steven Wright,Thanksgiving,What do you call...";
+        "Aging,Animals,Bad Puns,Bars,Camping,Chickens,Christmas,Chuck Norris,Compliments,Corona,Corporate," +
+        "Dad,Did'ya Hear,Don't Say It!,Dyslexics,Education,Engineers,Fun Facts,Family,Farmers,Good Question!," +
+        "Government,Halloween,Hipsters,Insults,Jobs,Knock Knock,Lawyers,Love and Marriage,Money,Pirates,Politics,Programmers," +
+        "Quotes,Random,Religion,Riddles,Science,Space,Sports,Star Wars,Star Trek,Steven Wright,Technology,Thanksgiving," +
+        "Weather,What do you call...,Words of Wisdom,Zombies,";
 
     /// <summary>
     /// Helper class to hold mutable category state during processing.
@@ -199,10 +201,33 @@ public class RecordProcessor(
 
         await using var context = new JokeDbContext(_dbContextOptions);
 
-        // When evaluating categories we need all active jokes; otherwise only those without an image
-        var jokesQuery = _evaluateCategories
-            ? context.Jokes.Where(j => j.ActiveInd == "Y").OrderBy(j => j.JokeId)
-            : context.Jokes.Where(j => j.ActiveInd == "Y" && (j.ImageTxt == null || j.ImageTxt == "")).OrderBy(j => j.JokeId);
+        // Build query based on processing modes
+        IQueryable<Joke> jokesQuery;
+
+        if (_evaluateCategories && _createImages)
+        {
+            // Both modes: process jokes missing images OR missing categories
+            jokesQuery = context.Jokes
+                .Where(j => j.ActiveInd == "Y")
+                .Where(j => (j.ImageTxt == null || j.ImageTxt == "") || 
+                            !context.JokeJokeCategories.Any(jjc => jjc.JokeId == j.JokeId))
+                .OrderBy(j => j.JokeId);
+        }
+        else if (_evaluateCategories)
+        {
+            // Categories only: process jokes without assigned categories
+            jokesQuery = context.Jokes
+                .Where(j => j.ActiveInd == "Y")
+                .Where(j => !context.JokeJokeCategories.Any(jjc => jjc.JokeId == j.JokeId))
+                .OrderBy(j => j.JokeId);
+        }
+        else
+        {
+            // Images only: process jokes without images
+            jokesQuery = context.Jokes
+                .Where(j => j.ActiveInd == "Y" && (j.ImageTxt == null || j.ImageTxt == ""))
+                .OrderBy(j => j.JokeId);
+        }
 
         var jokes = _maxBatchSize > 0
             ? await jokesQuery.Take(_maxBatchSize).ToListAsync()
@@ -211,9 +236,9 @@ public class RecordProcessor(
         var totalJokes = jokes.Count;
         var modeLabel = (_createImages, _evaluateCategories) switch
         {
-            (true, true) => "jokes to generate images and evaluate categories for",
+            (true, true) => "jokes missing images or categories",
             (true, false) => "jokes needing image descriptions",
-            (false, true) => "jokes to evaluate categories for",
+            (false, true) => "jokes without assigned categories",
             _ => "jokes to process"
         };
         AnsiConsole.MarkupLine($"[cyan]Found {totalJokes} {modeLabel}[/]\n");
@@ -522,6 +547,10 @@ public class RecordProcessor(
 
             await AssignSingleRestrictedCategoryAsync(context, joke, categoryName, categoryState);
         }
+
+        // Update the joke's change timestamp to reflect the category updates
+        joke.ChangeDateTime = DateTime.UtcNow;
+        joke.ChangeUserName = "JokeAnalyzer";
 
         await context.SaveChangesAsync();
     }

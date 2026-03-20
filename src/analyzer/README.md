@@ -163,6 +163,37 @@ The default configuration assumes Phi-4 is running on the standard port:
 
 If you're using a different port or endpoint, update these values accordingly.
 
+### Azure OpenAI Configuration
+
+The analyzer supports identity-based authentication for Azure OpenAI, which is more secure than API keys:
+
+```json
+{
+  "ModelProvider": "AzureOpenAI",
+  "AzureOpenAI": {
+    "Endpoint": "https://your-resource.openai.azure.com/",
+    "DeploymentName": "gpt-4.1-mini",
+    "ModelName": "gpt-4.1-mini"
+  }
+}
+```
+
+**Authentication Methods:**
+- **Managed Identity** (Azure deployments): Automatically uses the managed identity assigned to your Azure resource
+- **Azure CLI** (Local development): Uses your Azure CLI login (`az login`)
+- **Visual Studio** (Local development): Uses your Visual Studio Azure account
+- **Service Principal** (CI/CD): Uses environment variables `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, and `AZURE_TENANT_ID`
+
+**For Local Development with Multiple Tenants:**
+If you have access to multiple Azure AD tenants and need to specify which one to use:
+```json
+{
+  "VisualStudioTenantId": "your-tenant-id-here"
+}
+```
+
+**Important:** Only set `VisualStudioTenantId` for local development. Never use this setting in Azure environments.
+
 ### User Secrets (Optional)
 
 For enhanced security, you can store sensitive configuration in user secrets:
