@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------------------------------
-# BETA: Pipeline to scan/build an app upon Pull Request and do a PR review summary with an LLM
+# BETA: (Untested!) Pipeline to scan/build an app upon Pull Request and do a PR review summary with an LLM
 # ----------------------------------------------------------------------------------------------------
 name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r)
 pool:
