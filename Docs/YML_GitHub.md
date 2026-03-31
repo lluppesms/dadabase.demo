@@ -67,12 +67,12 @@ jobs:
    - `8-smoke-test-webapp.yml`: Post-deployment validation
    - `azure-dev.yml`: Integration with Azure Developer CLI
 
-2. **Template Workflows**: Reusable components
+2. **Template Workflows**: Reusable components (in `.github/workflows/`)
+   - `template-bicep-deploy.yml`: Infrastructure deployment
    - `template-containerapp-build.yml`: Container image build and push
    - `template-containerapp-deploy.yml`: Container app deployment
    - `template-dacpac-build.yml`: Database DacPac build
    - `template-dacpac-deploy.yml`: Database DacPac deployment
-   - `template-bicep-deploy.yml`: Infrastructure deployment
    - `template-function-build.yml`: Azure Functions build
    - `template-function-deploy.yml`: Azure Functions deployment
    - `template-load-config.yml`: Configuration loading helper
@@ -81,6 +81,10 @@ jobs:
    - `template-smoke-test.yml`: Post-deployment testing
    - `template-webapp-build.yml`: Web application build
    - `template-webapp-deploy.yml`: Web application deployment
+
+3. **Composite Actions**: Reusable composite actions (in `.github/actions/`)
+   - `login-action/action.yml`: Reusable composite action for Azure login supporting both OIDC and client secret authentication
+   - `load-project-config/action.yml`: Loads all project configurations from `.github/config/projects.yml` and exposes them as step outputs
 
 ## Workflow Types
 
@@ -269,10 +273,11 @@ on:
 
 ### Initial Setup Steps
 1. Create `.github/workflows` directory
-2. Configure repository secrets
-3. Define GitHub environments
+2. Configure repository secrets (see `.github/CreateGitHubSecrets.md` for detailed instructions)
+3. Define GitHub environments (`dev`, `qa`, `prod`)
 4. Set up repository variables
 5. Implement base workflows
+6. Reference composite actions from `.github/actions/` for Azure login and project config loading
 
 ### Example Secrets Configuration
 ```

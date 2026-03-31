@@ -15,21 +15,29 @@ This document outlines the coding standards and conventions used in the DadABase
 ## Project Structure
 
 ### Solution Organization
-- **DadABase.Web:** Main web application project containing Blazor components, pages, and API controllers.
-- **DadABase.Tests:** Test project containing unit and integration tests.
+- **DadABase.Web** (`src/web/Website/`): Main web application project containing Blazor components, pages, and API controllers.
+- **DadABase.Data** (`src/web/Data/`): Class library project for data access, domain models, and repository interfaces/implementations.
+- **DadABase.Tests** (`src/web/Tests/`): Test project containing unit and integration tests.
 
-### Folder Structure
+### DadABase.Web Folder Structure
 - **API/**: Contains API controllers with RESTful endpoints.
-- **Components/**: Reusable Blazor UI components.
-- **Data/**: Data models and constants.
+- **Components/**: Reusable Blazor UI components (each with matching `.razor.cs` and `.razor.css` files).
+- **Data/**: Static data files (e.g., `Jokes.json`).
 - **Helpers/**: Utility and helper classes.
-- **Models/**: Domain model classes and view models.
-  - **Application/**: Application-specific models like AppSettings.
-- **Pages/**: Blazor pages.
-- **Repositories/**: Repository pattern implementation for data access.
-  - **Interfaces/**: Repository interfaces.
-- **Shared/**: Shared components and layouts.
+- **Models/**: Application-level models and view models.
+  - **AIModels/**: Models for AI/chat completions.
+  - **Application/**: Application-level models like `AppSettings`, `BuildInfo`, and `Constants`.
+  - **DbContext/**: EF Core `ApplicationDbContext` and identity entities.
+  - **ViewModels/**: View-specific models used in pages and components.
+- **Pages/**: Blazor pages (each with matching `.razor.cs` and `.razor.css` files).
+- **Repositories/**: Service implementations and their interfaces (interfaces co-located with implementations, not in a subfolder).
+- **Shared/**: Shared layout components and navigation.
 - **wwwroot/**: Static assets (CSS, JS, images).
+
+### DadABase.Data Folder Structure
+- **Helpers/**: Shared utility classes.
+- **Models/**: Domain entity classes.
+- **Repositories/**: Repository interfaces and implementations co-located (e.g., `IJokeRepository.cs` alongside `JokeSQLRepository.cs`).
 
 ## Naming Conventions
 
@@ -58,7 +66,8 @@ This document outlines the coding standards and conventions used in the DadABase
 ### Type Suffixes
 - Controllers: `JokeController`
 - Repositories: `JokeRepository`
-- Tests: `Joke_API_Tests`
+- Repository Interfaces: `IJokeRepository`
+- Tests: `Joke_API_Tests`, `JokeRepository_Tests`
 
 ## Code Organization
 
@@ -116,19 +125,26 @@ public Joke GetJokeById(int id)
 
 ## Testing
 
+### Test Folder Structure
+- **APITests/**: Tests for API controller endpoints (e.g., `Joke_API_Tests.cs`, `Category_API_Tests.cs`).
+- **ModelTests/**: Tests for domain model logic (e.g., `Model_Tests.cs`).
+- **RepositoryTests/**: Tests for repository implementations (e.g., `JokeRepository_Tests.cs`).
+- **SampleData/**: Test data and data management classes.
+
 ### Test Organization
-- Organize tests by component and type.
+- Organize tests by component type into the appropriate subfolder.
 - Use clear naming conventions:
-  - `ClassName_MethodName_ExpectedBehavior`
-  - Or category-based like `Category_API_Tests`
+  - Category-based: `Category_API_Tests.cs`, `JokeRepository_Tests.cs`
+  - Or method-based: `ClassName_MethodName_ExpectedBehavior`
 
 ### Test Base Classes
-- Use base classes like `BaseTest` and `BaseWebTest` for common test functionality.
-- Separate test data from test logic using classes like `TestingDataManager`.
+- Use `BaseTest` for common test setup, data initialization, and mock HTTP context.
+- Separate test data from test logic using the `SampleData/` folder.
 
 ### Test Data
-- Use dedicated test data classes (e.g., `TestingData_Joke`).
-- Keep test data separate from test implementation.
+- Use the `TestingData` partial class strategy: a `TestingDataManager.cs` base with separate per-entity files (e.g., `TestingData_Joke.cs`, `TestingData_JokeCategory.cs`).
+- Use `TestingDataModelCoverage.cs` and `TestingDataStoredProcDatasets.cs` for coverage and stored proc tests.
+- Keep all sample data separated from test implementation in the `SampleData/` folder.
 
 ## Conclusion
 
@@ -136,4 +152,4 @@ These standards are designed to ensure code consistency, readability, and mainta
 
 ---
 
-*This document was generated based on the code analysis of the DadABase project as of May 28, 2025.*
+*This document was generated based on the code analysis of the DadABase project as of March 31, 2026.*
