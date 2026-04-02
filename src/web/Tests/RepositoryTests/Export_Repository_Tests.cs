@@ -109,4 +109,81 @@ public class Export_Repository_Tests : BaseTest
         
         output.WriteLine($"Found {insertLines.Count} joke-category combinations");
     }
+
+    [Fact]
+    public void Repository_ExportToJson_Returns_Valid_Json_Array()
+    {
+        // Arrange
+
+        // Act
+        var jsonContent = repo.ExportToJson("TEST_USER");
+
+        // Assert
+        Assert.NotNull(jsonContent);
+        Assert.NotEmpty(jsonContent);
+
+        // Verify it's valid JSON by parsing it
+        var jokes = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(jsonContent);
+        Assert.Equal(System.Text.Json.JsonValueKind.Array, jokes.ValueKind);
+        Assert.True(jokes.GetArrayLength() > 0, "Should have at least one joke in the export");
+
+        output.WriteLine($"Generated JSON length: {jsonContent.Length} characters");
+        output.WriteLine($"Total jokes exported: {jokes.GetArrayLength()}");
+    }
+
+    [Fact]
+    public void Repository_ExportToJson_Contains_Expected_Fields()
+    {
+        // Arrange
+
+        // Act
+        var jsonContent = repo.ExportToJson("TEST_USER");
+
+        // Assert
+        Assert.NotNull(jsonContent);
+
+        var jokes = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(jsonContent);
+        var firstJoke = jokes[0];
+
+        // Verify all expected fields are present
+        Assert.True(firstJoke.TryGetProperty("JokeId", out _), "Should have JokeId field");
+        Assert.True(firstJoke.TryGetProperty("Categories", out _), "Should have Categories field");
+        Assert.True(firstJoke.TryGetProperty("JokeTxt", out _), "Should have JokeTxt field");
+        Assert.True(firstJoke.TryGetProperty("ImageTxt", out _), "Should have ImageTxt field");
+        Assert.True(firstJoke.TryGetProperty("Attribution", out _), "Should have Attribution field");
+        Assert.True(firstJoke.TryGetProperty("ActiveInd", out _), "Should have ActiveInd field");
+        Assert.True(firstJoke.TryGetProperty("SortOrderNbr", out _), "Should have SortOrderNbr field");
+        Assert.True(firstJoke.TryGetProperty("Rating", out _), "Should have Rating field");
+        Assert.True(firstJoke.TryGetProperty("VoteCount", out _), "Should have VoteCount field");
+
+        output.WriteLine("First joke in export:");
+        output.WriteLine(System.Text.Json.JsonSerializer.Serialize(firstJoke, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+    }
+
+    [Fact]
+    public void Repository_ConvertJsonToTabDelimited_Produces_Valid_Tsv()
+    {
+        // Arrange - export to JSON first
+        var jsonContent = repo.ExportToJson("TEST_USER");
+
+        // Act - convert JSON to TSV
+        var tsvContent = DadABase.Data.Repositories.JokeSQLRepository.ConvertJsonToTabDelimited(jsonContent);
+
+        // Assert
+        Assert.NotNull(tsvContent);
+        Assert.NotEmpty(tsvContent);
+
+        // Verify header row
+        var lines = tsvContent.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+        Assert.True(lines.Length > 1, "Should have header and at least one data row");
+        Assert.StartsWith("JokeId\t", lines[0]);
+
+        // Verify data rows have the right number of tab-separated fields (9)
+        var dataLine = lines[1].Split('\t');
+        Assert.Equal(9, dataLine.Length);
+
+        output.WriteLine($"TSV has {lines.Length - 1} data rows");
+        output.WriteLine($"Header: {lines[0]}");
+        output.WriteLine($"First data row: {lines[1]}");
+    }
 }

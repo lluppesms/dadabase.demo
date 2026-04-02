@@ -37,6 +37,9 @@ public partial class Export : ComponentBase
     private string importFileContent = null;
     private bool importReplaceAll = false;
 
+    // Data source info
+    private string dataSource = string.Empty;
+
     /// <summary>
     /// Initialization
     /// </summary>
@@ -47,6 +50,17 @@ public partial class Export : ComponentBase
         if (firstRender)
         {
             await JsInterop.InvokeVoidAsync("syncHeaderTitle");
+
+            if (!string.IsNullOrEmpty(Settings.DefaultConnection))
+            {
+                var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(Settings.DefaultConnection);
+                dataSource = $"SQL Server: {builder.DataSource}, Database: {builder.InitialCatalog}";
+            }
+            else
+            {
+                dataSource = "JSON File";
+            }
+
             StateHasChanged();
         }
     }
@@ -126,6 +140,43 @@ public partial class Export : ComponentBase
     }
 
     /// <summary>
+    /// Downloads the JSON export.
+    /// </summary>
+    private async Task DownloadJsonExport()
+    {
+        try
+        {
+            isBusy = true;
+            activeAction = "json";
+            exportStatusMessage = "Generating JSON export file...";
+            exportAlertClass = "alert-info";
+            StateHasChanged();
+
+            var jsonContent = JokeRepository.ExportToJson();
+            var byteArray = Encoding.UTF8.GetBytes(jsonContent);
+            var fileName = $"JokeExport_{DateTime.UtcNow:yyyyMMdd_HHmmss}.json";
+
+            using var stream = new MemoryStream(byteArray);
+            using var streamRef = new DotNetStreamReference(stream: stream);
+            await JsInterop.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+
+            exportStatusMessage = $"Export file '{fileName}' downloaded successfully!";
+            exportAlertClass = "alert-success";
+        }
+        catch (Exception ex)
+        {
+            exportStatusMessage = $"Error generating JSON export: {Helpers.Utilities.GetExceptionMessage(ex)}";
+            exportAlertClass = "alert-danger";
+        }
+        finally
+        {
+            isBusy = false;
+            activeAction = string.Empty;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
     /// Reads the selected import file into memory.
     /// </summary>
     private async Task OnImportFileSelected(InputFileChangeEventArgs e)
@@ -187,7 +238,19 @@ public partial class Export : ComponentBase
             // Yield briefly so Blazor can re-render the spinner before the synchronous import runs
             await Task.Yield();
 
-            var (success, importedCount, message) = JokeRepository.ImportFromTabDelimitedViaSproc(importFileContent, importReplaceAll);
+            // Auto-detect JSON format and convert to TSV for the stored procedure
+            var importData = importFileContent;
+            if (importData.TrimStart().StartsWith("["))
+            {
+                importData = DadABase.Data.Repositories.JokeSQLRepository.ConvertJsonToTabDelimited(importData);
+            }
+            else
+            {
+                // Normalize 9-column TSV exports back to 7-column format for the stored procedure
+                importData = DadABase.Data.Repositories.JokeSQLRepository.NormalizeTabDelimitedForImport(importData);
+            }
+
+            var (success, importedCount, message) = JokeRepository.ImportFromTabDelimitedViaSproc(importData, importReplaceAll);
 
             importStatusMessage = message;
             importAlertClass = success ? "alert-success" : "alert-warning";

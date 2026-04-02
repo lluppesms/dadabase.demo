@@ -332,7 +332,7 @@ public class JokeJsonRepository : IJokeRepository
 
     /// <summary>
     /// Exports all jokes from the JSON repository to a tab-delimited text format with fields:
-    /// JokeId, Categories, JokeTxt, ImageTxt, Attribution, Rating, VoteCount.
+    /// JokeId, Categories, JokeTxt, ImageTxt, Attribution, ActiveInd, SortOrderNbr, Rating, VoteCount.
     /// </summary>
     /// <param name="requestingUserName">The username of the caller requesting the export.</param>
     /// <returns>A string containing the tab-delimited content with a header row.</returns>
@@ -341,14 +341,42 @@ public class JokeJsonRepository : IJokeRepository
         var sb = new System.Text.StringBuilder();
 
         // Header row
-        sb.AppendLine("JokeId\tCategories\tJokeTxt\tImageTxt\tAttribution\tRating\tVoteCount");
+        sb.AppendLine("JokeId\tCategories\tJokeTxt\tImageTxt\tAttribution\tActiveInd\tSortOrderNbr\tRating\tVoteCount");
 
         foreach (var joke in _jokes.OrderBy(j => j.Categories).ThenBy(j => j.JokeTxt))
         {
-            sb.AppendLine($"{joke.JokeId}\t{EscapeTabField(joke.Categories)}\t{EscapeTabField(joke.JokeTxt)}\t{EscapeTabField(joke.ImageTxt)}\t{EscapeTabField(joke.Attribution)}\t{joke.Rating ?? 0}\t{joke.VoteCount ?? 0}");
+            sb.AppendLine($"{joke.JokeId}\t{EscapeTabField(joke.Categories)}\t{EscapeTabField(joke.JokeTxt)}\t{EscapeTabField(joke.ImageTxt)}\t{EscapeTabField(joke.Attribution)}\t{EscapeTabField(joke.ActiveInd)}\t{joke.SortOrderNbr}\t{joke.Rating ?? 0}\t{joke.VoteCount ?? 0}");
         }
 
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Exports all jokes from the JSON repository to a JSON-formatted string with fields:
+    /// JokeId, Categories, JokeTxt, ImageTxt, Attribution, ActiveInd, SortOrderNbr, Rating, VoteCount.
+    /// </summary>
+    /// <param name="requestingUserName">The username of the caller requesting the export.</param>
+    /// <returns>A JSON string containing an array of joke objects with indented formatting.</returns>
+    public string ExportToJson(string requestingUserName = "ANON")
+    {
+        var exportList = _jokes
+            .OrderBy(j => j.Categories)
+            .ThenBy(j => j.JokeTxt)
+            .Select(joke => new
+            {
+                joke.JokeId,
+                joke.Categories,
+                joke.JokeTxt,
+                joke.ImageTxt,
+                joke.Attribution,
+                ActiveInd = joke.ActiveInd ?? "Y",
+                joke.SortOrderNbr,
+                Rating = joke.Rating ?? 0,
+                VoteCount = joke.VoteCount ?? 0
+            })
+            .ToList();
+
+        return System.Text.Json.JsonSerializer.Serialize(exportList, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
     }
 
     /// <summary>

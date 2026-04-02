@@ -9,6 +9,7 @@
         <div class="card-body">
             <h1>Export Joke Data</h1>
             <p>Export all jokes and categories from the database.</p>
+            <p class="text-muted small">Data Source: @dataSource</p>
 
             <div class="d-flex flex-wrap gap-3 mt-4">
                 <button class="btn btn-success" @onclick="DownloadSqlExport" disabled="@isBusy">
@@ -26,6 +27,14 @@
                     }
                     <i class="fas fa-file-alt me-2"></i>Export as Tab-Delimited
                 </button>
+
+                <button class="btn btn-success" @onclick="DownloadJsonExport" disabled="@isBusy">
+                    @if (isBusy && activeAction == "json")
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                    }
+                    <i class="fas fa-file-code me-2"></i>Export as JSON
+                </button>
             </div>
 
             @if (!string.IsNullOrEmpty(exportStatusMessage))
@@ -40,15 +49,15 @@
     @* ── Tab-Delimited Import ─────────────────────────────────── *@
     <div class="card mb-4">
         <div class="card-body">
-            <h2>Import Jokes from Tab-Delimited File</h2>
+            <h2>Import Jokes from File</h2>
             <p>
-                Select a tab-delimited (<code>.tsv</code> or <code>.txt</code>) file previously exported from this application.
+                Select a tab-delimited (<code>.tsv</code>, <code>.txt</code>) or JSON (<code>.json</code>) file previously exported from this application.
                 New jokes and categories will be added; existing jokes (matched by joke text) are skipped.
             </p>
 
             <div class="mb-3">
                 <label class="form-label fw-semibold" for="importFile">Select file:</label>
-                <InputFile id="importFile" class="form-control" accept=".tsv,.txt,.tab" OnChange="OnImportFileSelected" disabled="@isBusy" />
+                <InputFile id="importFile" class="form-control" accept=".tsv,.txt,.tab,.json" OnChange="OnImportFileSelected" disabled="@isBusy" />
             </div>
 
             @if (!string.IsNullOrEmpty(importFileName))

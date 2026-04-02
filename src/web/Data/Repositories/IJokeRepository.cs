@@ -71,11 +71,18 @@ public interface IJokeRepository
     string ExportToSql(string requestingUserName = "ANON");
 
     /// <summary>
-    /// Exports all jokes to a tab-delimited text format with fields: JokeId, Categories, JokeTxt, ImageTxt, Attribution, Rating, VoteCount.
+    /// Exports all jokes to a tab-delimited text format with fields: JokeId, Categories, JokeTxt, ImageTxt, Attribution, ActiveInd, SortOrderNbr, Rating, VoteCount.
     /// </summary>
     /// <param name="requestingUserName">The username of the user requesting the export. The default is "ANON".</param>
     /// <returns>A string containing the tab-delimited content including a header row.</returns>
     string ExportToTabDelimited(string requestingUserName = "ANON");
+
+    /// <summary>
+    /// Exports all jokes to a JSON array format with fields: JokeId, Categories, JokeTxt, ImageTxt, Attribution, ActiveInd, SortOrderNbr, Rating, VoteCount.
+    /// </summary>
+    /// <param name="requestingUserName">The username of the user requesting the export. The default is "ANON".</param>
+    /// <returns>A string containing the JSON array of joke objects.</returns>
+    string ExportToJson(string requestingUserName = "ANON");
 
     /// <summary>
     /// Imports jokes from a tab-delimited text string into the database. Parses the rows in C#,

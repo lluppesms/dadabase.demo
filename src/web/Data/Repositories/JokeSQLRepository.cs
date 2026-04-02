@@ -437,7 +437,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
 
     /// <summary>
     /// Exports all active jokes to a tab-delimited text format with fields:
-    /// JokeId, Categories, JokeTxt, ImageTxt, Attribution, Rating, VoteCount.
+    /// JokeId, Categories, JokeTxt, ImageTxt, Attribution, ActiveInd, SortOrderNbr, Rating, VoteCount.
     /// </summary>
     /// <param name="requestingUserName">The username of the user requesting the export.</param>
     /// <returns>A string containing the tab-delimited content with a header row.</returns>
@@ -446,7 +446,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
         var sb = new StringBuilder();
 
         // Header row
-        sb.AppendLine("JokeId\tCategories\tJokeTxt\tImageTxt\tAttribution\tRating\tVoteCount");
+        sb.AppendLine("JokeId\tCategories\tJokeTxt\tImageTxt\tAttribution\tActiveInd\tSortOrderNbr\tRating\tVoteCount");
 
         // Get all active jokes with their comma-separated categories via the search stored proc
         // Calling with NULL params returns all jokes; the proc's correlated subquery aggregates ALL categories per joke
@@ -460,10 +460,43 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
 
         foreach (var joke in jokes)
         {
-            sb.AppendLine($"{joke.JokeId}\t{EscapeTabField(joke.Categories)}\t{EscapeTabField(joke.JokeTxt)}\t{EscapeTabField(joke.ImageTxt)}\t{EscapeTabField(joke.Attribution)}\t{joke.Rating ?? 0}\t{joke.VoteCount ?? 0}");
+            sb.AppendLine($"{joke.JokeId}\t{EscapeTabField(joke.Categories)}\t{EscapeTabField(joke.JokeTxt)}\t{EscapeTabField(joke.ImageTxt)}\t{EscapeTabField(joke.Attribution)}\t{EscapeTabField(joke.ActiveInd)}\t{joke.SortOrderNbr}\t{joke.Rating ?? 0}\t{joke.VoteCount ?? 0}");
         }
 
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Exports all active jokes to a JSON string. Each joke object contains the fields
+    /// JokeId, Categories, JokeTxt, ImageTxt, Attribution, ActiveInd, SortOrderNbr, Rating, VoteCount.
+    /// </summary>
+    /// <param name="requestingUserName">The username of the user requesting the export.</param>
+    /// <returns>A JSON array string with indented formatting.</returns>
+    public string ExportToJson(string requestingUserName = "ANON")
+    {
+        var categoryParam = (string?)null;
+        var searchParam = (string?)null;
+        var jokes = _context.Jokes
+            .FromSqlInterpolated($"EXEC [dbo].[usp_Joke_Search] @category = {categoryParam}, @searchTxt = {searchParam}")
+            .AsNoTracking()
+            .AsEnumerable()
+            .ToList();
+
+        var projected = jokes.Select(joke => new
+        {
+            joke.JokeId,
+            Categories = joke.Categories ?? string.Empty,
+            JokeTxt = joke.JokeTxt ?? string.Empty,
+            ImageTxt = joke.ImageTxt ?? string.Empty,
+            Attribution = joke.Attribution ?? string.Empty,
+            ActiveInd = joke.ActiveInd ?? "Y",
+            joke.SortOrderNbr,
+            Rating = joke.Rating ?? 0,
+            VoteCount = joke.VoteCount ?? 0
+        });
+
+        var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+        return System.Text.Json.JsonSerializer.Serialize(projected, options);
     }
 
     /// <summary>
@@ -639,6 +672,109 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
         }
 
         return rows;
+    }
+
+    /// <summary>
+    /// Converts a JSON array of joke objects into a 9-column tab-delimited string compatible with
+    /// <c>usp_Joke_Import</c>: JokeId, Categories, JokeTxt, ImageTxt, Attribution, ActiveInd,
+    /// SortOrderNbr, Rating, VoteCount.
+    /// </summary>
+    /// <param name="jsonData">A JSON array string produced by <see cref="ExportToJson"/>.</param>
+    /// <returns>A 9-column tab-delimited string for import, or an empty string if input is empty or malformed.</returns>
+    public static string ConvertJsonToTabDelimited(string jsonData)
+    {
+        if (string.IsNullOrWhiteSpace(jsonData))
+        {
+            return string.Empty;
+        }
+
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(jsonData);
+            var sb = new StringBuilder();
+            sb.AppendLine("JokeId\tCategories\tJokeTxt\tImageTxt\tAttribution\tActiveInd\tSortOrderNbr\tRating\tVoteCount");
+
+            foreach (var element in doc.RootElement.EnumerateArray())
+            {
+                var jokeId = element.TryGetProperty("JokeId", out var idProp) ? idProp.GetInt32() : 0;
+                var categories = element.TryGetProperty("Categories", out var catProp) ? catProp.GetString() : string.Empty;
+                var jokeTxt = element.TryGetProperty("JokeTxt", out var txtProp) ? txtProp.GetString() : string.Empty;
+                var imageTxt = element.TryGetProperty("ImageTxt", out var imgProp) ? imgProp.GetString() : string.Empty;
+                var attribution = element.TryGetProperty("Attribution", out var attrProp) ? attrProp.GetString() : string.Empty;
+                var activeInd = element.TryGetProperty("ActiveInd", out var aiProp) ? aiProp.GetString() : "Y";
+                var sortOrderNbr = element.TryGetProperty("SortOrderNbr", out var soProp) ? soProp.GetInt32() : 50;
+                var rating = element.TryGetProperty("Rating", out var ratProp) ? ratProp.GetDecimal() : 0;
+                var voteCount = element.TryGetProperty("VoteCount", out var vcProp) ? vcProp.GetInt32() : 0;
+
+                sb.AppendLine($"{jokeId}\t{EscapeTabField(categories)}\t{EscapeTabField(jokeTxt)}\t{EscapeTabField(imageTxt)}\t{EscapeTabField(attribution)}\t{EscapeTabField(activeInd)}\t{sortOrderNbr}\t{rating}\t{voteCount}");
+            }
+
+            return sb.ToString();
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return string.Empty;
+        }
+    }
+
+    /// <summary>
+    /// Normalizes a tab-delimited string for import by upgrading old 7-column exports
+    /// (JokeId, Categories, JokeTxt, ImageTxt, Attribution, Rating, VoteCount) to the
+    /// 9-column format expected by <c>usp_Joke_Import</c> (adds ActiveInd = "Y" and
+    /// SortOrderNbr = 50 as defaults). Files already in 9-column format are returned as-is.
+    /// </summary>
+    /// <param name="tabData">The raw tab-delimited content (7 or 9 columns).</param>
+    /// <returns>A 9-column tab-delimited string safe for the import stored procedure.</returns>
+    public static string NormalizeTabDelimitedForImport(string tabData)
+    {
+        if (string.IsNullOrWhiteSpace(tabData))
+        {
+            return tabData;
+        }
+
+        var lines = tabData.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
+        if (lines.Length == 0)
+        {
+            return tabData;
+        }
+
+        // Check if the header already has 9 columns (contains ActiveInd) — no upgrade needed
+        var headerFields = lines[0].Split('\t');
+        if (headerFields.Any(f => f.Trim().Equals("ActiveInd", StringComparison.OrdinalIgnoreCase)))
+        {
+            return tabData;
+        }
+
+        // Old 7-column format: insert ActiveInd and SortOrderNbr after Attribution (index 5)
+        var sb = new StringBuilder();
+        for (var i = 0; i < lines.Length; i++)
+        {
+            var line = lines[i];
+
+            // Preserve trailing empty lines
+            if (string.IsNullOrEmpty(line))
+            {
+                if (i < lines.Length - 1) sb.AppendLine();
+                continue;
+            }
+
+            var fields = line.Split('\t');
+            if (fields.Length >= 7)
+            {
+                // Insert "ActiveInd"/"SortOrderNbr" header or "Y"/"50" defaults at position 5
+                var upgraded = new List<string>(fields.Take(5));
+                upgraded.Add(i == 0 && fields[0].TrimStart().StartsWith("JokeId", StringComparison.OrdinalIgnoreCase) ? "ActiveInd" : "Y");
+                upgraded.Add(i == 0 && fields[0].TrimStart().StartsWith("JokeId", StringComparison.OrdinalIgnoreCase) ? "SortOrderNbr" : "50");
+                upgraded.AddRange(fields.Skip(5));
+                sb.AppendLine(string.Join("\t", upgraded));
+            }
+            else
+            {
+                sb.AppendLine(line);
+            }
+        }
+
+        return sb.ToString();
     }
 
     /// <summary>

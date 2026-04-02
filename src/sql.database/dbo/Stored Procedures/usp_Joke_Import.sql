@@ -5,7 +5,7 @@ AS
 /*
   Description: Imports jokes from a tab-delimited (TSV) string.
                Expected column order (header row is automatically skipped):
-                 JokeId  Categories  JokeTxt  ImageTxt  Attribution  Rating  VoteCount
+                 JokeId  Categories  JokeTxt  ImageTxt  Attribution  ActiveInd  SortOrderNbr  Rating  VoteCount
                The proc parses the data into a temp table, then does batch INSERTs for
                new categories, new jokes, and their category associations.
                Duplicate jokes (matched by JokeTxt) are silently skipped.
@@ -15,15 +15,18 @@ AS
   Returns:     A single-row result set with ImportedCount INT.
   Example Usage:
     -- Merge import (keep existing jokes):
-    EXEC usp_Joke_Import @tsvData = N'JokeId	Categories	JokeTxt	ImageTxt	Attribution	Rating	VoteCount
-1	Chuck Norris	Chuck Norris can divide by zero.			0	0'
+    EXEC usp_Joke_Import @tsvData = N'JokeId	Categories	JokeTxt	ImageTxt	Attribution	ActiveInd	SortOrderNbr	Rating	VoteCount
+1	Chuck Norris	Chuck Norris can divide by zero.			Y	50	0	0'
 
     -- Replace import (wipe all existing jokes first):
-    EXEC usp_Joke_Import @RemovePreviousJokes = 1, @tsvData = N'JokeId	Categories	JokeTxt	ImageTxt	Attribution	Rating	VoteCount
-1	Chuck Norris	Chuck Norris can divide by zero.			0	0'
+    EXEC usp_Joke_Import @RemovePreviousJokes = 1, @tsvData = N'JokeId	Categories	JokeTxt	ImageTxt	Attribution	ActiveInd	SortOrderNbr	Rating	VoteCount
+1	Chuck Norris	Chuck Norris can divide by zero.			Y	50	0	0'
 */
 BEGIN
     SET NOCOUNT ON;
+
+    -- Capture a single timestamp for all inserts so audit dates are consistent
+    DECLARE @ImportDateTime DATETIME = GETUTCDATE();
 
     -- ── Step 0 (optional): Wipe all existing joke data and reseed identities ────
     IF @RemovePreviousJokes = 1
@@ -40,14 +43,16 @@ BEGIN
     -- ── Step 1: Parse the TSV into a temp table ────────────────────────────────
     CREATE TABLE #ImportRows
     (
-        LineNum     INT            IDENTITY(1,1),
-        JokeId      INT            NULL,
-        Categories  NVARCHAR(500)  NULL,
-        JokeTxt     NVARCHAR(MAX)  NULL,
-        ImageTxt    NVARCHAR(MAX)  NULL,
-        Attribution NVARCHAR(500)  NULL,
-        Rating      DECIMAL(3,1)   NULL,
-        VoteCount   INT            NULL
+        LineNum      INT            IDENTITY(1,1),
+        JokeId       INT            NULL,
+        Categories   NVARCHAR(500)  NULL,
+        JokeTxt      NVARCHAR(MAX)  NULL,
+        ImageTxt     NVARCHAR(MAX)  NULL,
+        Attribution  NVARCHAR(500)  NULL,
+        ActiveInd    NCHAR(1)       NULL,
+        SortOrderNbr INT            NULL,
+        Rating       DECIMAL(3,1)   NULL,
+        VoteCount    INT            NULL
     );
 
     -- Split the input robustly on CRLF, LF, or CR, then trim and parse each line
@@ -55,15 +60,17 @@ BEGIN
       SELECT value AS line
       FROM STRING_SPLIT(REPLACE(REPLACE(@tsvData, CHAR(13) + CHAR(10), CHAR(10)), CHAR(13), CHAR(10)), CHAR(10))
     )
-    INSERT INTO #ImportRows (JokeId, Categories, JokeTxt, ImageTxt, Attribution, Rating, VoteCount)
+    INSERT INTO #ImportRows (JokeId, Categories, JokeTxt, ImageTxt, Attribution, ActiveInd, SortOrderNbr, Rating, VoteCount)
     SELECT
       TRY_CAST(NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(REPLACE(REPLACE(line, '"', '\"'), CHAR(9), '","'), CHAR(13), ''), CHAR(10), ''), '"]'), '$[0]'))), '') AS INT),
       NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(REPLACE(REPLACE(line, '"', '\"'), CHAR(9), '","'), CHAR(13), ''), CHAR(10), ''), '"]'), '$[1]'))), ''),
       NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(REPLACE(REPLACE(line, '"', '\"'), CHAR(9), '","'), CHAR(13), ''), CHAR(10), ''), '"]'), '$[2]'))), ''),
       NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(REPLACE(REPLACE(line, '"', '\"'), CHAR(9), '","'), CHAR(13), ''), CHAR(10), ''), '"]'), '$[3]'))), ''),
       NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(REPLACE(REPLACE(line, '"', '\"'), CHAR(9), '","'), CHAR(13), ''), CHAR(10), ''), '"]'), '$[4]'))), ''),
-      TRY_CAST(NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(REPLACE(REPLACE(line, '"', '\"'), CHAR(9), '","'), CHAR(13), ''), CHAR(10), ''), '"]'), '$[5]'))), '') AS DECIMAL(3,1)),
-      TRY_CAST(NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(REPLACE(REPLACE(line, '"', '\"'), CHAR(9), '","'), CHAR(13), ''), CHAR(10), ''), '"]'), '$[6]'))), '') AS INT)
+      NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(REPLACE(REPLACE(line, '"', '\"'), CHAR(9), '","'), CHAR(13), ''), CHAR(10), ''), '"]'), '$[5]'))), ''),
+      TRY_CAST(NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(REPLACE(REPLACE(line, '"', '\"'), CHAR(9), '","'), CHAR(13), ''), CHAR(10), ''), '"]'), '$[6]'))), '') AS INT),
+      TRY_CAST(NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(REPLACE(REPLACE(line, '"', '\"'), CHAR(9), '","'), CHAR(13), ''), CHAR(10), ''), '"]'), '$[7]'))), '') AS DECIMAL(3,1)),
+      TRY_CAST(NULLIF(LTRIM(RTRIM(JSON_VALUE(CONCAT('["', REPLACE(REPLACE(REPLACE(REPLACE(line, '"', '\"'), CHAR(9), '","'), CHAR(13), ''), CHAR(10), ''), '"]'), '$[8]'))), '') AS INT)
     FROM RawLines
     WHERE LTRIM(RTRIM(line)) <> ''
       -- Skip the header row
@@ -73,7 +80,7 @@ BEGIN
     INSERT INTO JokeCategory (JokeCategoryTxt, ActiveInd, SortOrderNbr, CreateDateTime, CreateUserName, ChangeDateTime, ChangeUserName)
     SELECT DISTINCT
         LTRIM(RTRIM(cat.value)) AS JokeCategoryTxt,
-        'Y', 50, GETUTCDATE(), 'IMPORT', GETUTCDATE(), 'IMPORT'
+        'Y', 50, @ImportDateTime, 'IMPORT', @ImportDateTime, 'IMPORT'
     FROM #ImportRows r
     CROSS APPLY STRING_SPLIT(ISNULL(r.Categories, ''), ',') cat
     WHERE LTRIM(RTRIM(cat.value)) <> ''
@@ -87,11 +94,11 @@ BEGIN
         r.JokeTxt,
         r.Attribution,
         r.ImageTxt,
-        'Y',
-        50,
+        ISNULL(r.ActiveInd, 'Y'),
+        ISNULL(r.SortOrderNbr, 50),
         ISNULL(r.Rating, 0),
         ISNULL(r.VoteCount, 0),
-        GETUTCDATE(), 'IMPORT', GETUTCDATE(), 'IMPORT'
+        @ImportDateTime, 'IMPORT', @ImportDateTime, 'IMPORT'
     FROM #ImportRows r
     WHERE r.JokeTxt IS NOT NULL
       AND r.JokeTxt NOT IN (SELECT JokeTxt FROM Joke WHERE JokeTxt IS NOT NULL);
