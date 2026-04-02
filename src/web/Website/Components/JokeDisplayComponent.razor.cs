@@ -68,11 +68,12 @@ public partial class JokeDisplayComponent : ComponentBase
         }
         else
         {
-            myFullText = myJokeText.Replace("?", "?<br/>");
+            // Only insert a line break after "?" when followed by whitespace or end-of-string,
+            // so characters like ), ', " immediately after ? don't get pushed to a new line.
+            myFullText = Regex.Replace(myJokeText, @"\?(?=\s|$)", "?<br/>");
         }
 
         myFullText = myFullText.Replace("<br/><br/>", "<br/>").Replace("<br/> <br/>", "<br/>").Replace("<br/>  <br/>", "<br/>");
-        myFullText = myFullText.Replace("?<br/>!", "?!").Replace("?<br/>'", "?'").Replace("?<br/>\"", "?\"");
         myFullText = myFullText.EndsWith("?<br/>") ? myFullText.Substring(0, myFullText.Length - 5) : myFullText;
         if (!string.IsNullOrEmpty(joke.Attribution))
         {
