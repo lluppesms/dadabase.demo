@@ -173,6 +173,16 @@ public class JokeJsonRepository : IJokeRepository
     }
 
     /// <summary>
+    /// Returns the first <paramref name="count"/> jokes from the JSON repository.
+    /// </summary>
+    /// <param name="count">The maximum number of jokes to return. The default is 100.</param>
+    /// <returns>An <see cref="IQueryable{T}"/> of <see cref="Joke"/> records.</returns>
+    public IQueryable<Joke> GetRecentAdditions(int count = 100)
+    {
+        return _jokes.Take(count).AsQueryable();
+    }
+
+    /// <summary>
     /// Updates the <see cref="Joke.ImageTxt"/> field for the specified joke.
     /// </summary>
     /// <param name="jokeId">The identifier of the joke to update.</param>

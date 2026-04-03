@@ -100,6 +100,33 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
+    /// Returns the most recently added active jokes, ordered by creation date descending and limited to <paramref name="count"/> records.
+    /// </summary>
+    /// <param name="count">The maximum number of jokes to return. The default is 100.</param>
+    /// <returns>An <see cref="IQueryable{T}"/> of the most recent <see cref="Joke"/> records.</returns>
+    public IQueryable<Joke> GetRecentAdditions(int count = 100)
+    {
+        var jokes = _context.Jokes
+            .FromSqlInterpolated($@"
+                SELECT TOP ({count}) j.JokeId,
+                    STUFF((SELECT ', ' + c.JokeCategoryTxt
+                           FROM JokeJokeCategory jjc
+                           INNER JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId
+                           WHERE jjc.JokeId = j.JokeId
+                           ORDER BY c.JokeCategoryTxt
+                           FOR XML PATH('')), 1, 2, '') AS Categories,
+                    j.JokeTxt, j.ImageTxt, j.Rating, j.ActiveInd, j.Attribution, j.VoteCount, j.SortOrderNbr,
+                    j.CreateDateTime, j.CreateUserName, j.ChangeDateTime, j.ChangeUserName
+                FROM Joke j
+                WHERE j.ActiveInd = 'Y'
+                ORDER BY j.CreateDateTime DESC")
+            .AsEnumerable()
+            .AsQueryable();
+
+        return jokes;
+    }
+
+    /// <summary>
     /// Updates the image text field for a specific joke.
     /// </summary>
     /// <param name="jokeId">The identifier of the joke.</param>

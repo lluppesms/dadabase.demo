@@ -23,7 +23,7 @@ public partial class Search : ComponentBase
     private List<string> JokeCategories = new();
     private readonly string AllJokesConstant = "ALL";
     private readonly string RecentAdditionsConstant = "RECENT";
-    private const int RecentDaysCount = 30;
+    private const int RecentAdditionsCount = 100;
 
 	/// <summary>
 	/// Initialization
@@ -68,8 +68,7 @@ public partial class Search : ComponentBase
 
         if (selectedCategories == RecentAdditionsConstant)
         {
-            var cutoffDate = DateTime.UtcNow.AddDays(-RecentDaysCount);
-            var query = JokeRepository.ListAll("Y").Where(j => j.CreateDateTime >= cutoffDate);
+            var query = JokeRepository.GetRecentAdditions(RecentAdditionsCount);
             if (!string.IsNullOrEmpty(SearchTerm))
             {
                 query = query.Where(j => j.JokeTxt != null && j.JokeTxt.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase));
