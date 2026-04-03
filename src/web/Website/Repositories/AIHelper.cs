@@ -7,6 +7,7 @@ using OpenAI;
 using OpenAI.Chat;
 using OpenAI.Images;
 using System.ClientModel;
+using System.Text.Json;
 
 namespace DadABase.Web.Repositories;
 
@@ -35,7 +36,11 @@ public class AIHelper : IAIHelper
     private readonly string blobStorageAccountName = string.Empty;
     private readonly string blobContainerName = "joke-images";
     private readonly DefaultAzureCredential azureCredential;
+
+    private static readonly HttpClient _httpClient = new();
     #endregion
+
+    private bool IsMaiModel => openaiImageDeploymentName.Contains("mai", StringComparison.OrdinalIgnoreCase);
 
     private const string JokeCategoryClassifierPrompt =
         "You are a joke classification assistant. Given a joke, identify which categories from a provided list best describe it. " +
@@ -169,6 +174,12 @@ public class AIHelper : IAIHelper
                     Console.WriteLine($"Image already exists for JokeId {jokeId}: {existingImageUrl}");
                     return (existingImageUrl, true, string.Empty);
                 }
+            }
+
+            // Route to MAI image generator if the deployment model is MAI-based
+            if (IsMaiModel)
+            {
+                return await GenerateMaiImageAsync(imageDescription, jokeId);
             }
 
             // gpt-image-1 parameters:
@@ -519,10 +530,81 @@ public class AIHelper : IAIHelper
     }
 
     /// <summary>
+    /// Generate an image using the MAI REST API (e.g. MAI-Image-2)
+    /// Endpoint: {endpoint}/mai/v1/images/generations
+    /// Response: { "data": [ { "b64_json": "..." } ] }
+    /// </summary>
+    private async Task<(string imageDataUrl, bool success, string message)> GenerateMaiImageAsync(string imageDescription, int jokeId)
+    {
+        if (string.IsNullOrEmpty(openaiImageApiKey))
+        {
+            return (string.Empty, false, "MAI Image API key not configured!");
+        }
+
+        var url = $"{openaiImageEndpointUrl.TrimEnd('/')}/mai/v1/images/generations";
+        var payload = JsonConvert.SerializeObject(new
+        {
+            model = openaiImageDeploymentName,
+            prompt = imageDescription,
+            width = 1024,
+            height = 1024
+        });
+
+        Console.WriteLine($"Generating MAI image for Joke {jokeId} using {url} model={openaiImageDeploymentName} prompt={imageDescription[..Math.Min(15, imageDescription.Length)]}...");
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("api-key", openaiImageApiKey);
+        request.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+        var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        var responseJson = await response.Content.ReadAsStringAsync();
+
+        string base64Data = null;
+        using var responseDoc = JsonDocument.Parse(responseJson);
+        if (responseDoc.RootElement.TryGetProperty("data", out var dataArray))
+        {
+            foreach (var item in dataArray.EnumerateArray())
+            {
+                if (item.TryGetProperty("b64_json", out var b64Element))
+                {
+                    base64Data = b64Element.GetString();
+                    break;
+                }
+            }
+        }
+
+        if (string.IsNullOrEmpty(base64Data))
+        {
+            return ("Blank!", false, $"No image data returned from MAI image generator! Response: {responseJson[..Math.Min(200, responseJson.Length)]}");
+        }
+
+        var imageBytes = Convert.FromBase64String(base64Data);
+
+        if (jokeId > 0)
+        {
+            var imageBlobUrl = await SaveImageToBlobAsync(imageBytes, jokeId);
+            if (!string.IsNullOrEmpty(imageBlobUrl))
+            {
+                Console.WriteLine($"Saved MAI image to blob storage ({imageBytes.Length} bytes)");
+                return (imageBlobUrl, true, string.Empty);
+            }
+        }
+
+        var imageDataUrl = $"data:image/png;base64,{base64Data}";
+        Console.WriteLine($"Generated MAI Image (base64 data URL, {imageBytes.Length} bytes)");
+        return (imageDataUrl, true, string.Empty);
+    }
+
+    /// <summary>
     /// Initialize the Image Generator
     /// </summary>
     private bool InitializeImageGenerator()
     {
+        // MAI models use HttpClient directly — no SDK ImageClient needed
+        if (IsMaiModel) return !string.IsNullOrEmpty(openaiImageEndpointUrl);
+
         if (imageGenerator != null) return true;
 
         if (string.IsNullOrEmpty(openaiImageEndpointUrl))

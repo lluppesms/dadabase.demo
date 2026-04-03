@@ -24,6 +24,15 @@ public interface IJokeRepository
     IQueryable<Joke> ListAll(string activeInd = "Y", string requestingUserName = "ANON");
 
     /// <summary>
+    /// Returns the most recently added jokes, limited to the specified count.
+    /// For SQL repositories, results are ordered by <see cref="Joke.CreateDateTime"/> descending.
+    /// For JSON repositories, the first <paramref name="count"/> entries are returned.
+    /// </summary>
+    /// <param name="count">The maximum number of jokes to return. The default is 100.</param>
+    /// <returns>An <see cref="IQueryable{T}"/> of the most recent <see cref="Joke"/> records.</returns>
+    IQueryable<Joke> GetRecentAdditions(int count = 100);
+
+    /// <summary>
     /// Finds a specific joke by its identifier.
     /// </summary>
     /// <param name="id">The identifier of the joke.</param>

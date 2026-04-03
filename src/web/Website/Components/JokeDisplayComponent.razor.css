@@ -70,3 +70,41 @@ body[data-bs-theme='dark'] .joke-attribution,
 .theme-dark .joke-attribution {
     color: #a0aec0;
 }
+
+/* Positioned within .JokeCard which already has position: relative */
+.joke-edit-link {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    background: rgba(102, 126, 234, 0.12);
+    color: var(--primary-gradient-start, #667eea);
+    text-decoration: none;
+    opacity: 0.65;
+    transition: opacity 0.2s ease, background 0.2s ease;
+    border: 1px solid rgba(102, 126, 234, 0.25);
+    line-height: 1.4;
+    z-index: 1;
+}
+
+.joke-edit-link:hover {
+    opacity: 1;
+    background: rgba(102, 126, 234, 0.22);
+    color: var(--primary-gradient-start, #667eea);
+    text-decoration: none;
+}
+
+body[data-bs-theme='dark'] .joke-edit-link,
+.theme-dark .joke-edit-link {
+    background: rgba(118, 75, 162, 0.18);
+    color: var(--primary-gradient-end, #a78bfa);
+    border-color: rgba(167, 139, 250, 0.3);
+}
+
+body[data-bs-theme='dark'] .joke-edit-link:hover,
+.theme-dark .joke-edit-link:hover {
+    background: rgba(118, 75, 162, 0.3);
+    color: var(--primary-gradient-end, #a78bfa);
+}

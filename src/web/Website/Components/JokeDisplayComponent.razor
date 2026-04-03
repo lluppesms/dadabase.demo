@@ -2,6 +2,11 @@
 {
     <div class="joke-wrapper">
         <div class="JokeCard">
+            <AuthorizeView Roles="Admin">
+                <Authorized>
+                    <a href="/jokeeditor?jokeId=@myJoke.JokeId" class="joke-edit-link" title="Edit this joke">Edit</a>
+                </Authorized>
+            </AuthorizeView>
             <div class="JokeCategory">
                 @myJoke.Categories
             </div>

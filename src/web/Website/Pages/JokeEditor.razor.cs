@@ -21,6 +21,12 @@ public partial class JokeEditor : ComponentBase
     [Inject] IDialogService DialogService { get; set; }
     [Inject] IAIHelper GenAIAgent { get; set; }
 
+    /// <summary>
+    /// Gets or sets the joke identifier passed via query string for direct navigation to a specific joke.
+    /// </summary>
+    [Parameter, SupplyParameterFromQuery(Name = "jokeId")]
+    public int InitialJokeId { get; set; }
+
     private List<Joke> allJokes;
     private IEnumerable<Joke> filteredJokes;
     private List<JokeCategory> allCategories;
@@ -80,6 +86,12 @@ public partial class JokeEditor : ComponentBase
 
             // Get user's timezone offset (returns minutes, negative for ahead of UTC)
             userTimezoneOffsetMinutes = await JsInterop.InvokeAsync<int>("eval", "new Date().getTimezoneOffset()");
+
+            if (InitialJokeId > 0)
+            {
+                EditJoke(InitialJokeId);
+            }
+
             StateHasChanged();
         }
     }
