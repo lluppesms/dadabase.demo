@@ -176,7 +176,7 @@ public class AIHelper : IAIHelper
             // - Quality: Low, Medium (default), or High
             // - Note: gpt-image-1 models only return base64, no URI option
             Console.WriteLine($"Generating Image for Joke {jokeId} using endpoint {openaiImageEndpointUrl} and model {openaiImageDeploymentName} with Prompt: {imageDescription[..Math.Min(15, imageDescription.Length)]}...");
-            var imageQuality = openaiImageDeploymentName == "dall-e-3" ? GeneratedImageQuality.High : GeneratedImageQuality.Medium;
+            var imageQuality = openaiImageDeploymentName == "dall-e-3" ? GeneratedImageQuality.HighQuality : GeneratedImageQuality.MediumQuality;
             var imageResult = await imageGenerator.GenerateImageAsync(imageDescription, new()
             {
                 Quality = imageQuality,
