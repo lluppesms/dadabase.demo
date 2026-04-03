@@ -85,3 +85,30 @@ body[data-bs-theme='dark'] .search-form .mud-input-input::placeholder,
     list-style: none;
     padding: 0;
 }
+
+.joke-numbered-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.joke-seq-number {
+    flex-shrink: 0;
+    min-width: 2rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary-gradient-start, #667eea);
+    padding-top: 1.5rem;
+    text-align: right;
+    opacity: 0.75;
+}
+
+body[data-bs-theme='dark'] .joke-seq-number,
+.theme-dark .joke-seq-number {
+    color: var(--primary-gradient-end, #764ba2);
+}
+
+.joke-item-content {
+    flex: 1;
+    min-width: 0;
+}

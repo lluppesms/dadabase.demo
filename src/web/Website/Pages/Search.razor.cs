@@ -22,6 +22,8 @@ public partial class Search : ComponentBase
     private List<Joke> myJokes = new();
     private List<string> JokeCategories = new();
     private readonly string AllJokesConstant = "ALL";
+    private readonly string RecentAdditionsConstant = "RECENT";
+    private const int RecentDaysCount = 30;
 
 	/// <summary>
 	/// Initialization
@@ -63,7 +65,22 @@ public partial class Search : ComponentBase
 
         await JsInterop.InvokeVoidAsync("focusOnInputField", "btnSearch");
         await JsInterop.InvokeVoidAsync("focusOnInputField", "inputText");
-        myJokes = JokeRepository.SearchJokes(SearchTerm, selectedCategories).ToList();
+
+        if (selectedCategories == RecentAdditionsConstant)
+        {
+            var cutoffDate = DateTime.UtcNow.AddDays(-RecentDaysCount);
+            var query = JokeRepository.ListAll("Y").Where(j => j.CreateDateTime >= cutoffDate);
+            if (!string.IsNullOrEmpty(SearchTerm))
+            {
+                query = query.Where(j => j.JokeTxt != null && j.JokeTxt.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase));
+            }
+            myJokes = query.ToList();
+        }
+        else
+        {
+            myJokes = JokeRepository.SearchJokes(SearchTerm, selectedCategories).ToList();
+        }
+
         StateHasChanged();
     }
 

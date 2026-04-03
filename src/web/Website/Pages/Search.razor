@@ -13,6 +13,7 @@
             <MudSelect T="string" @bind-Value="SelectedCategory" Label="Category" Variant="Variant.Outlined"
                        Style="border-radius: 12px;">
                 <MudSelectItem Value="@AllJokesConstant">All Categories</MudSelectItem>
+                <MudSelectItem Value="@RecentAdditionsConstant">Recent Additions</MudSelectItem>
                 @foreach (var category in JokeCategories)
                 {
                     <MudSelectItem Value="@category">@category</MudSelectItem>
@@ -24,9 +25,18 @@
 
     <div class="search-results">
         <ul id="jokeList" class="results-list">
+        @{ var jokeNumber = 0; }
         @foreach (var myJoke in myJokes)
         {
-            <li><JokeDisplayComponent myJoke="@myJoke" /></li>
+            jokeNumber++;
+            <li>
+                <div class="joke-numbered-item">
+                    <span class="joke-seq-number">@jokeNumber</span>
+                    <div class="joke-item-content">
+                        <JokeDisplayComponent myJoke="@myJoke" />
+                    </div>
+                </div>
+            </li>
         }
         </ul>
     </div>
