@@ -95,7 +95,7 @@ This application has been supercharged with **Generative AI capabilities** to br
 When viewing a joke, the app uses AI to:
 1. 📝 **Analyze the joke content** and understand the humor
 2. 🖼️ **Generate a visual scene description** that captures the essence of the joke
-3. 🎨 **Create an AI-generated image** that illustrates the joke visually
+3. 🎨 **Create an AI-generated image** that illustrates the joke visually (*using the brand new MAI-Image-2 model!*)
 
 Transform text-based dad jokes into visual masterpieces! Each joke can have its own unique, AI-generated illustration that brings the punchline to life.
 
@@ -107,7 +107,15 @@ When creating a **new joke**, the AI assistant works behind the scenes to:
 
 Just write your joke, and the AI figures out whether it's a pun, a knock-knock joke, animal humor, food-related, or any other category. It's like having a comedy curator in your pocket!
 
-> **Powered by Azure OpenAI** - Because even dad jokes deserve enterprise-grade AI
+> **Powered by Azure Foundry** - Because even dad jokes deserve enterprise-grade AI
+
+---
+
+## 🤖 GitHub Copilot Agents and Skills
+
+All of the GitHub Copilot Agents and Skills that used to live in this repo have relocated to a dedicated repository for better maintenance and discoverability. You could say they... moved to a better *repo-hood*. 🏘️
+
+Check out the [my.copilot.skills](https://github.com/lluppesms/my.copilot.skills) repo to see the full collection of AI agents and skills that can be used in this project by loading the [VS Code Workspace](./dadabase.demo.gh.code-workspace), and simple instructions on how to easily load these skills into **any** project using a VS Code Workspace.
 
 ---
 
@@ -189,14 +197,6 @@ Choose your adventure:
 | 🗃️ SQL DACPAC Deployment | [SQL-DacPac.md](./Docs/SQL-DacPac.md) |
 | 🔄 Azure DevOps Pipelines | [YML_AzDO.md](./Docs/YML_AzDO.md) |
 | 🐙 GitHub Actions | [YML_GitHub.md](./Docs/YML_GitHub.md) |
-
----
-
-## 🤖 GitHub Copilot Agents and Skills
-
-All of the GitHub Copilot Agents and Skills that used to live in this repo have relocated to a dedicated repository for better maintenance and discoverability. You could say they... moved to a better *repo-hood*. 🏘️
-
-Check it out at [github.com/lluppesms/dadabase.copilot.skills](https://github.com/lluppesms/my.copilot.skills) to see the full collection of AI prompts and skills used throughout this project, and simple instructions on how to easily load up these skills into a project using a VS Code Workspace.
 
 ---
 
