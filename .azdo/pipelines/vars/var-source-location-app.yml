@@ -5,7 +5,7 @@ variables:
   - name: appFolderName
     value: 'src/Dadabase'
   - name: appSolutionName
-    value: 'DadABase.Net8.Web'
+    value: 'dadabase.net10.web'
 
   - name: appProjectFolderName
     value: 'DadABase.Web'

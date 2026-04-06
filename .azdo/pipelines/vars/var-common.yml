@@ -74,7 +74,7 @@ variables:
   - name: consoleAppFolderName
     value: 'src/console'
   - name: consoleAppSolutionName
-    value: 'DadABase.Net8.Web'
+    value: 'DadABase.Console'
 
   - name: consoleAppProjectFolderName
     value: 'DadABase.Console'
