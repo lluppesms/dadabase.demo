@@ -192,6 +192,14 @@ Choose your adventure:
 
 ---
 
+## 🤖 GitHub Copilot Agents and Skills
+
+All of the GitHub Copilot Agents and Skills that used to live in this repo have relocated to a dedicated repository for better maintenance and discoverability. You could say they... moved to a better *repo-hood*. 🏘️
+
+Check it out at [github.com/lluppesms/dadabase.copilot.skills](https://github.com/lluppesms/my.copilot.skills) to see the full collection of AI prompts and skills used throughout this project, and simple instructions on how to easily load up these skills into a project using a VS Code Workspace.
+
+---
+
 ## 🎬 Quick Start
 
 ```bash

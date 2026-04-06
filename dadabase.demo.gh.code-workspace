@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../my.copilot.skills"
+		}
+	],
+	"settings": {
+		"dotnet.defaultSolution": "src\\DadABase.Web\\DadABase.Web.sln",
+		"powershell.cwd": "dadabase.demo.gh"
+	}
+}
