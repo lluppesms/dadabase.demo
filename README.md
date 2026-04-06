@@ -24,6 +24,7 @@ Because when you combine:
 - 🎯 A passion for clean code
 - 😄 An unhealthy collection of dad jokes
 - 🚀 A need to demonstrate DevOps best practices
+- 🤖 Agents begging for a place to call home
 
 ...you get this magnificent repository.
 
@@ -31,6 +32,8 @@ Because when you combine:
 - 📚 Learning modern .NET development
 - 🏗️ Understanding Infrastructure as Code
 - 🔄 Studying CI/CD pipeline patterns
+- 🗃️ Learning how to SQL schema and data with code
+- 🤖 Seeing how you can integrate AI into an existing app
 - 😂 Telling terrible jokes at work
 
 ---
@@ -43,6 +46,7 @@ Because when you combine:
 | ⚡ **Azure Function** | Serverless dad joke API - because jokes should be scalable | ![Flex Consumption](https://img.shields.io/badge/-Flex%20Consumption-blue) |
 | 💻 **Console App** | For when you need jokes in your terminal (we don't judge) | ![CLI Jokes](https://img.shields.io/badge/-CLI%20Jokes-yellow) |
 | 🗃️ **SQL Automation** | Schema + seed data deployed via SQL DACPAC because jokes need a a parent before they are fully groan | ![Schema Migration](https://img.shields.io/badge/-Schema%20Migration-lightgrey) |
+| 🤖 **AI Agent Integration** | Seeing how you can integrate AI into an existing app | ![Hallucination%20Free](https://img.shields.io/badge/-Hallucination%20Free-brightgreen) |
 | 🏗️ **Bicep IaC** | Full Azure resource deployment - infrastructure so clean it sparkles | ![100% Declarative](https://img.shields.io/badge/-100%25%20Declarative-informational) |
 | 🔄 **Azure DevOps Pipelines** | Full CI/CD pipelines built with reusable templates | ![Modular](https://img.shields.io/badge/-Modular%20Templates-orange) |
 | 🐙 **GitHub Actions** | Because we support *all* the CI/CD platforms | ![Multi-Platform](https://img.shields.io/badge/-Multi--Platform-blueviolet) |
@@ -87,6 +91,23 @@ Because when you combine:
 
 ---
 
+## 🎬 Quick Start (local test run)
+
+```bash
+# Clone the repo
+git clone https://github.com/lluppesms/dadabase.demo.git
+
+# Navigate to the web project
+cd src/web/Website
+
+# Run the Blazor app
+dotnet run
+
+# Open browser and enjoy the dad jokes!
+```
+
+---
+
 ## 🤖 GenAI-Powered Features
 
 This application has been supercharged with **Generative AI capabilities** to bring your dad jokes to life:
@@ -119,7 +140,21 @@ Check out the [my.copilot.skills](https://github.com/lluppesms/my.copilot.skills
 
 ---
 
-## 🔄 CI/CD Pipeline Showcase
+## 🚀 Deployment Options
+
+Choose your adventure:
+
+| Method | Documentation | Difficulty |
+|--------|---------------|------------|
+| 🔄 **Azure DevOps** | [Pipeline Guide](./.azdo/pipelines/readme.md) | ⭐⭐⭐ |
+| 🐙 **GitHub Actions** | [Actions Guide](./.github/workflows-readme.md) | ⭐⭐⭐ |
+| ⌨️ **AZD CLI** | [AZD Guide](./.azure/readme.md) | ⭐⭐ |
+
+[![azd Compatible](/Docs/images/AZD_Compatible.png)](/.azure/readme.md)
+
+---
+
+## 🔄 CI/CD Pipelines and Actions Showcase
 
 ### Azure DevOps Pipelines
 Our Azure DevOps pipelines are like a well-oiled machine... if that machine told puns:
@@ -163,28 +198,13 @@ Same great taste, GitHub flavor:
 
 ---
 
-## 🚀 Deployment Options
-
-Choose your adventure:
-
-| Method | Documentation | Difficulty |
-|--------|---------------|------------|
-| 🔄 **Azure DevOps** | [Pipeline Guide](./.azdo/pipelines/readme.md) | ⭐⭐⭐ |
-| 🐙 **GitHub Actions** | [Actions Guide](./.github/workflows-readme.md) | ⭐⭐⭐ |
-| ⌨️ **AZD CLI** | [AZD Guide](./.azure/readme.md) | ⭐⭐ |
-
-[![azd Compatible](/Docs/images/AZD_Compatible.png)](/.azure/readme.md)
-
----
-
 ## 🧪 Testing Philosophy
 
 > *"A dad joke without tests is just a dad statement."* - Ancient DevOps Proverb
 
 - ✅ **Unit Tests** with MSTest and Coverlet for code coverage
 - 🎭 **Playwright Tests** for end-to-end UI validation
-- 📊 **Test results** integrated directly into CI/CD pipelines
-- 🔍 **Code coverage reports** because metrics matter
+- 📊 **Test results and Code coverage** integrated directly into CI/CD pipelines - because metrics matter
 
 ---
 
@@ -197,23 +217,6 @@ Choose your adventure:
 | 🗃️ SQL DACPAC Deployment | [SQL-DacPac.md](./Docs/SQL-DacPac.md) |
 | 🔄 Azure DevOps Pipelines | [YML_AzDO.md](./Docs/YML_AzDO.md) |
 | 🐙 GitHub Actions | [YML_GitHub.md](./Docs/YML_GitHub.md) |
-
----
-
-## 🎬 Quick Start
-
-```bash
-# Clone the repo
-git clone https://github.com/lluppesms/dadabase.demo.git
-
-# Navigate to the web project
-cd src/web/Website
-
-# Run the Blazor app
-dotnet run
-
-# Open browser and enjoy the dad jokes!
-```
 
 ---
 
