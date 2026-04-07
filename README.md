@@ -136,7 +136,15 @@ Just write your joke, and the AI figures out whether it's a pun, a knock-knock j
 
 All of the GitHub Copilot Agents and Skills that used to live in this repo have relocated to a dedicated repository for better maintenance and discoverability. You could say they... moved to a better *repo-hood*. 🏘️
 
-Check out the [my.copilot.skills](https://github.com/lluppesms/my.copilot.skills) repo to see the full collection of AI agents and skills that can be used in this project by loading the [VS Code Workspace](./dadabase.demo.gh.code-workspace), and simple instructions on how to easily load these skills into **any** project using a VS Code Workspace.
+Check out the [my.copilot.skills](https://github.com/lluppesms/my.copilot.skills) repo to see the full collection of AI agents and skills that can be used in this project.
+
+### Loading in VS Code
+
+Load the [VS Code Workspace](./dadabase.demo.gh.code-workspace) to automatically make all shared skills available to GitHub Copilot Chat. The workspace file includes both this repo and the `my.copilot.skills` repo as workspace folders, so Copilot Chat discovers the skills from `.github/skills/` in both repositories.
+
+### Loading in GitHub Copilot CLI
+
+The CLI is a little different and does not support the VS Code Workspace. For details on loading skills into the GitHub Copilot CLI (and what to do about gents, and instructions), see the [Copilot CLI Skills Guide](./Docs/Copilot_CLI_Skills.md).
 
 ---
 
