@@ -1,0 +1,37 @@
+{
+  "servers": {
+    "my-dadjoke-server-5d14d5f3": {
+      "type": "stdio",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "C:\\AI\\mcp\\DadJokeMCP\\DadJokeMCPStdIO\\DadJokeMCPStdIO.csproj"
+      ]
+    },
+    // "dad-jokes-stdio-docker": {
+    //   "type": "stdio",
+    //   "command": "docker",
+    //   "args": [
+    //       "run",
+    //       "-i",
+    //       "--rm",
+    //       "dadjokemcp:local"
+    //   ]
+    // }
+    // "dad-jokes-sse-local": {
+    //   "type": "sse",
+    //   "url": "http://localhost:3001/mcp",
+    //   "command": "dotnet",
+    //   "args": [
+    //       "run",
+    //       "--project",
+    //       "C:\\AI\\mcp\\DadJokeMCP\\DadJokeMCPSSE\\DadJokeMCPSSE.csproj"
+    //   ]
+    // },
+    // "dad-jokes-hosted": {
+    //   "type": "sse",
+    //   "url": "http://localhost:3001/mcp"
+    // },
+  }
+}

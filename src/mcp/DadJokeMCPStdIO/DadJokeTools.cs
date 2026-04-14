@@ -33,6 +33,6 @@ public sealed class DadJokeTools
     public async Task<string> GetDadJokeCategories()
     {
         var categories = await DadJokeService.GetDadJokeCategories();
-        return JsonSerializer.Serialize(categories);
+        return JsonSerializer.Serialize(categories, DadJokeContext.Default.ListString);
     }
 }

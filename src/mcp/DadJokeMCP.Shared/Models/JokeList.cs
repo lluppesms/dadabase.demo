@@ -1,7 +1,9 @@
-﻿namespace DadJokeMCP;
+namespace DadJokeMCP.Shared;
 
+[JsonSerializable(typeof(JokeList))]
 [JsonSerializable(typeof(List<DadJoke>))]
-internal sealed partial class DadJokeContext : JsonSerializerContext { }
+[JsonSerializable(typeof(List<string>))]
+public sealed partial class DadJokeContext : JsonSerializerContext {}
 
 public class JokeList
 {
@@ -18,7 +20,7 @@ public class DadJoke
     public string JokeCategoryTxt { get; set; }
     public string JokeTxt { get; set; }
     public string Attribution { get; set; }
-    public string ImageTxt { get; set; }
+    public string? ImageTxt { get; set; }
     public DadJoke()
     {
         JokeTxt = string.Empty;

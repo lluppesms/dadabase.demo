@@ -4,29 +4,145 @@
 
 ## Overview
 
-This is a Model Context Protocol (MCP) server implementation built with .NET 9.0. The MCP server provides a communication protocol for facilitating interactions between various components in a model-driven system. This implementation demonstrates how to set up a basic MCP server with custom tools and services.
+This is a Model Context Protocol (MCP) server implementation built with .NET 10.0. The MCP server provides a communication protocol for facilitating interactions between various components in a model-driven system. This implementation demonstrates how to set up a basic MCP server with custom tools and services.
 
-## Try it
+## MCP Configuration Examples
 
-Configure in VS Code with GitHub Copilot, Claude Desktop, or other MCP clients:
+You can configure this server in different ways depending on where it is running.
 
-```json
+### Quick Setup Matrix
+
+| Option | Best for | Pros | Trade-offs |
+|---|---|---|---|
+| Hosted URL (`sse` + `url`) | Shared environments, team/dev server, cloud-hosted MCP | No local build/startup required; easy to share one endpoint | Requires always-on hosted service and network access |
+| Local source (`dotnet run`) | Active development and debugging | Fast edit/run loop; easiest to debug from source | Requires local .NET SDK and project dependencies |
+| Docker (`docker run`) | Consistent runtime across machines/CI | Reproducible environment; avoids local runtime drift | Requires Docker installed and images built/pulled |
+
+Rule of thumb:
+
+- Use hosted when you already have a reachable MCP endpoint.
+- Use local source when you are changing code frequently.
+- Use Docker when you want the same runtime behavior everywhere.
+
+### 1) Already-hosted MCP endpoint (HTTP/SSE)
+
+Use this when the server is already running on a host you can reach by URL.
+
+~~~json
 {
-    "inputs": [],
     "servers": {
-        "dadjokemcp": {
+        "dad-jokes-hosted": {
+            "type": "sse",
+            "url": "https://your-host.example.com/mcp"
+        }
+    }
+}
+~~~
+
+If your hosted endpoint is local during development, it may look like this:
+
+~~~json
+{
+    "servers": {
+        "dad-jokes-hosted-local": {
+            "type": "sse",
+            "url": "http://localhost:3001/mcp"
+        }
+    }
+}
+~~~
+
+### 2) Run from local source code (dotnet run)
+
+Use this when you want Copilot to start the project directly from source.
+
+StdIO project:
+
+~~~json
+{
+    "servers": {
+        "dad-jokes-stdio-local": {
+            "type": "stdio",
+            "command": "dotnet",
+            "args": [
+                "run",
+                "--project",
+                "C:\\AI\\mcp\\DadJokeMCP\\DadJokeMCPStdIO\\DadJokeMCPStdIO.csproj"
+            ]
+        }
+    }
+}
+~~~
+
+SSE project (starts local web server):
+
+~~~json
+{
+    "servers": {
+        "dad-jokes-sse-local": {
+            "type": "sse",
+            "url": "http://localhost:3001/mcp",
+            "command": "dotnet",
+            "args": [
+                "run",
+                "--project",
+                "C:\\AI\\mcp\\DadJokeMCP\\DadJokeMCPSSE\\DadJokeMCPSSE.csproj"
+            ]
+        }
+    }
+}
+~~~
+
+### 3) Run with Docker
+
+Use these examples after building images from the included Dockerfiles.
+
+Build commands:
+
+~~~powershell
+docker build -f DadJokeMCPStdIO/Dockerfile -t dadjokemcp:local .
+docker build -f DadJokeMCPSSE/Dockerfile -t dadjokemcp-sse:local .
+~~~
+
+StdIO container from mcp.json:
+
+~~~json
+{
+    "servers": {
+        "dad-jokes-stdio-docker": {
+            "type": "stdio",
             "command": "docker",
             "args": [
                 "run",
                 "-i",
                 "--rm",
-                "lluppesms/dadjokemcp"
-            ],
-            "env": {}
+                "dadjokemcp:local"
+            ]
         }
     }
 }
-```
+~~~
+
+SSE container from mcp.json:
+
+~~~json
+{
+    "servers": {
+        "dad-jokes-sse-docker": {
+            "type": "sse",
+            "url": "http://localhost:3001/mcp",
+            "command": "docker",
+            "args": [
+                "run",
+                "--rm",
+                "-p",
+                "3001:3001",
+                "dadjokemcp-sse:local"
+            ]
+        }
+    }
+}
+~~~
 
 ## Features
 
@@ -79,8 +195,9 @@ Several logging providers are available:
 
 ### Prerequisites
 
-- .NET 9.0 SDK or later
+- .NET 10.0 SDK or later
 - Basic understanding of the Model Context Protocol (MCP)
+- Docker Desktop (optional, only needed for Docker-based examples)
 
 ### Running the Server
 
@@ -89,17 +206,17 @@ Several logging providers are available:
 3. Build the project: `dotnet build`
 4. Configure with VS Code or other client:
 
-```json
+~~~json
 "dadjokeserver": {
     "type": "stdio",
     "command": "dotnet",
     "args": [
         "run",
         "--project",
-        "/AI/mcp/DadJokeMCP/DadJokeMCP.csproj"
+        "C:\\AI\\mcp\\DadJokeMCP\\DadJokeMCPStdIO\\DadJokeMCPStdIO.csproj"
     ]
 }
-```
+~~~
 
 > Update the path to the project
 
@@ -149,7 +266,7 @@ The SSE implementation uses ASP.NET Core's built-in web server capabilities whil
 
 ## Project Structure
 
-- **/DadJokeMCP**: Main project directory
+- **/DadJokeMCPStdIO**: Main stdio project directory
   - **DadJokeService.cs**: Implementation of the service to fetch Dad Joke data
   - **DadJokeTools.cs**: MCP tools for accessing Dad Joke data
   - **Program.cs**: Entry point that configures and starts the MCP server
