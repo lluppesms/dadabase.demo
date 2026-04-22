@@ -10,7 +10,7 @@ You need to set up the Azure Credentials secret in the GitHub Secrets at the Rep
 
 See [https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/deploy-github-actions](https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/deploy-github-actions) for more info.
 
-To create these secrets, customize and run this command::
+To create these secrets, customize and run this command:
 
 ``` bash
 gh auth login
@@ -24,7 +24,8 @@ gh secret set --env dev AZURE_SUBSCRIPTION_ID -b <yourAzureSubscriptionId>
 
 ## Bicep Configuration Values
 
-These variables and secrets are used by the Bicep templates to configure the resource names that are deployed.  Make sure the App_Name variable is unique to your deploy. It will be used as the basis for the website name and for all the other Azure resources, which must be globally unique.
+These variables and secrets are used by the Bicep templates to configure the resource names that are deployed.  Make sure the APP_NAME variable is unique to your deploy. It will be used as the basis for the website name and for all the other Azure resources, which must be globally unique.
+
 To create these additional secrets and variables, customize and run this command:
 
 Secret Values:
