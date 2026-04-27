@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------------
-// Azure Container App Module
+// Azure Container App Module using AVM
 // --------------------------------------------------------------------------------
 param containerAppName string
 param location string = resourceGroup().location
@@ -79,99 +79,59 @@ var customEnvVars = [for setting in items(customAppSettings): {
 var allEnvVars = union(baseEnvVars, customEnvVars)
 
 // --------------------------------------------------------------------------------
-resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
-  name: containerAppName
-  location: location
-  tags: tags
-  identity: {
-    type: 'SystemAssigned, UserAssigned'
-    userAssignedIdentities: {
-      '${managedIdentityId}': {}
+module containerApp 'br/public:avm/res/app/container-app:0.22.1' = {
+  name: 'containerApp-${uniqueString(containerAppName, resourceGroup().id)}'
+  params: {
+    name: containerAppName
+    location: location
+    tags: tags
+    environmentResourceId: containerAppsEnvironmentId
+    managedIdentities: {
+      systemAssigned: true
+      userAssignedResourceIds: [managedIdentityId]
     }
-  }
-  properties: {
-    managedEnvironmentId: containerAppsEnvironmentId
-    configuration: {
-      activeRevisionsMode: 'Single'
-      ingress: {
-        external: true
-        targetPort: 8080
-        transport: 'http'
-        allowInsecure: false
-        traffic: [
-          {
-            latestRevision: true
-            weight: 100
-          }
-        ]
-      }
-      registries: [
-        {
-          server: containerRegistryServer
-          identity: managedIdentityId
-        }
-      ]
-    }
-    template: {
-      containers: [
-        {
-          name: containerAppName
-          image: containerImage
-          resources: {
-            cpu: json(cpu)
-            memory: memory
-          }
-          env: allEnvVars
-        }
-      ]
-      scale: {
-        minReplicas: minReplicas
-        maxReplicas: maxReplicas
-        rules: [
-          {
-            name: 'http-scaling'
-            http: {
-              metadata: {
-                concurrentRequests: '100'
-              }
-            }
-          }
-        ]
-      }
-    }
-  }
-}
-
-// Enable diagnostic logging
-resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (!empty(workspaceId)) {
-  name: '${containerApp.name}-diagnostics'
-  scope: containerApp
-  properties: {
-    workspaceId: workspaceId
-    // logs: [
-    //   // it says this is not supported...
-    //   // {
-    //   //   category: 'ContainerAppConsoleLogs'
-    //   //   enabled: true
-    //   // }
-    //   {
-    //     category: 'ContainerAppSystemLogs'
-    //     enabled: true
-    //   }
-    // ]
-    metrics: [
+    registries: [
       {
-        category: 'AllMetrics'
-        enabled: true
+        server: containerRegistryServer
+        identity: managedIdentityId
       }
     ]
+    ingressExternal: true
+    ingressTargetPort: 8080
+    ingressTransport: 'http'
+    ingressAllowInsecure: false
+    activeRevisionsMode: 'Single'
+    scaleSettings: {
+      minReplicas: minReplicas
+      maxReplicas: maxReplicas
+    }
+    containers: [
+      {
+        name: containerAppName
+        image: containerImage
+        resources: {
+          cpu: json(cpu)
+          memory: memory
+        }
+        env: allEnvVars
+      }
+    ]
+    diagnosticSettings: workspaceId != '' ? [
+      {
+        workspaceResourceId: workspaceId
+        metricCategories: [
+          { category: 'AllMetrics' }
+        ]
+      }
+    ] : []
+    enableTelemetry: false
   }
 }
 
 // --------------------------------------------------------------------------------
-output id string = containerApp.id
-output name string = containerApp.name
-output fqdn string = containerApp.properties.configuration.ingress.fqdn
-output url string = 'https://${containerApp.properties.configuration.ingress.fqdn}'
-output systemPrincipalId string = containerApp.identity.principalId
+output id string = containerApp.outputs.resourceId
+output name string = containerApp.outputs.name
+output fqdn string = containerApp.outputs.fqdn
+output url string = 'https://${containerApp.outputs.fqdn}'
+output systemPrincipalId string = containerApp.outputs.?systemAssignedMIPrincipalId ?? ''
 output userManagedPrincipalId string = managedIdentityPrincipalId

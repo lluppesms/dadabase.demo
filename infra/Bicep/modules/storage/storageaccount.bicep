@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------
-// This BICEP file will create storage account
+// This BICEP file will create storage account using AVM
 // FYI: To purge a storage account with soft delete enabled: > az storage account purge --name storeName
 // --------------------------------------------------------------------------------
 param storageAccountName string = 'mystorageaccountname'
@@ -22,68 +22,38 @@ var securityControlIgnoreTag = addSecurityControlIgnoreTag ? { SecurityControl: 
 var tags = union(commonTags, templateTag, securityControlIgnoreTag)
 
 // --------------------------------------------------------------------------------
-resource storageAccountResource 'Microsoft.Storage/storageAccounts@2023-01-01' = {
+module storageAccount 'br/public:avm/res/storage/storage-account:0.32.0' = {
+  name: 'storageAccount-${uniqueString(storageAccountName, resourceGroup().id)}'
+  params: {
     name: storageAccountName
     location: location
-    sku: {
-        name: storageSku
-    }
     tags: tags
+    skuName: storageSku
     kind: 'StorageV2'
-    properties: {
-        publicNetworkAccess: publicNetworkAccess
-        networkAcls: {
-            bypass: 'AzureServices'
-            defaultAction: allowNetworkAccess
-            ipRules: []
-            virtualNetworkRules: []
-            //virtualNetworkRules: ((virtualNetworkType == 'External') ? json('[{"id": "${subscription().id}/resourceGroups/${vnetResource}/providers/Microsoft.Network/virtualNetworks/${vnetResource.name}/subnets/${subnetName}"}]') : json('[]'))
-        }
-        supportsHttpsTrafficOnly: true
-        encryption: {
-            services: {
-                file: {
-                    keyType: 'Account'
-                    enabled: true
-                }
-                blob: {
-                    keyType: 'Account'
-                    enabled: true
-                }
-            }
-            keySource: 'Microsoft.Storage'
-        }
-        accessTier: storageAccessTier
-        allowBlobPublicAccess: false
-        minimumTlsVersion: 'TLS1_2'
+    accessTier: storageAccessTier
+    allowBlobPublicAccess: false
+    minimumTlsVersion: 'TLS1_2'
+    publicNetworkAccess: publicNetworkAccess
+    networkAcls: {
+      defaultAction: allowNetworkAccess
+      bypass: 'AzureServices'
+      ipRules: []
+      virtualNetworkRules: []
     }
+    blobServices: {
+      deleteRetentionPolicyEnabled: true
+      deleteRetentionPolicyDays: 7
+      containerDeleteRetentionPolicyEnabled: true
+      containerDeleteRetentionPolicyDays: 7
+      containers: [for containerName in containerNames: {
+        name: containerName
+        publicAccess: 'None'
+      }]
+    }
+    enableTelemetry: false
+  }
 }
-
-resource blobServiceResource 'Microsoft.Storage/storageAccounts/blobServices@2023-01-01' = {
-    parent: storageAccountResource
-    name: 'default'
-    properties: {
-        cors: {
-            corsRules: [
-            ]
-        }
-        deleteRetentionPolicy: {
-            enabled: true
-            days: 7
-        }
-    }
-}
-
-resource containers 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = [for containerName in containerNames: {
-    name: '${containerName}'
-    parent: blobServiceResource
-    properties: {
-      publicAccess: 'None'
-      metadata: {}
-    }
-  }]
-
 
 // --------------------------------------------------------------------------------
-output id string = storageAccountResource.id
-output name string = storageAccountResource.name
+output id string = storageAccount.outputs.resourceId
+output name string = storageAccount.outputs.name
