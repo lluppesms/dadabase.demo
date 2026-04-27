@@ -173,13 +173,16 @@ public class JokeJsonRepository : IJokeRepository
     }
 
     /// <summary>
-    /// Returns the first <paramref name="count"/> jokes from the JSON repository.
+    /// Returns the most recently modified jokes from the JSON repository, ordered by last-modified date descending and limited to <paramref name="count"/> records.
     /// </summary>
     /// <param name="count">The maximum number of jokes to return. The default is 100.</param>
     /// <returns>An <see cref="IQueryable{T}"/> of <see cref="Joke"/> records.</returns>
     public IQueryable<Joke> GetRecentAdditions(int count = 100)
     {
-        return _jokes.Take(count).AsQueryable();
+        return _jokes
+            .OrderByDescending(j => j.ChangeDateTime)
+            .Take(count)
+            .AsQueryable();
     }
 
     /// <summary>
@@ -387,6 +390,58 @@ public class JokeJsonRepository : IJokeRepository
             .ToList();
 
         return System.Text.Json.JsonSerializer.Serialize(exportList, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+    }
+
+    /// <summary>
+    /// Exports all jokes from the JSON repository as a plain-text bulleted list grouped by category.
+    /// </summary>
+    /// <param name="requestingUserName">The username of the caller requesting the export.</param>
+    /// <returns>A plain-text bulleted list suitable for copying into OneNote or similar tools.</returns>
+    public string ExportToBulletedList(string requestingUserName = "ANON")
+    {
+        var jokes = _jokes.OrderBy(j => j.Categories).ThenBy(j => j.JokeTxt).ToList();
+        return BuildBulletedList(jokes);
+    }
+
+    /// <summary>
+    /// Builds a plain-text bulleted list of jokes organised by category.
+    /// Jokes with multiple categories appear under each applicable category.
+    /// </summary>
+    private static string BuildBulletedList(IEnumerable<Joke> jokes)
+    {
+        var byCategory = jokes
+            .SelectMany(j =>
+            {
+                var categories = string.IsNullOrWhiteSpace(j.Categories)
+                    ? new[] { "(Uncategorized)" }
+                    : j.Categories.Split(',').Select(c => c.Trim()).Where(c => !string.IsNullOrEmpty(c)).ToArray();
+                return categories.Select(cat => (Category: cat, Joke: j));
+            })
+            .GroupBy(x => x.Category, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(g => g.Key);
+
+        var sb = new System.Text.StringBuilder();
+        foreach (var group in byCategory)
+        {
+            sb.AppendLine();
+            sb.AppendLine($"## {group.Key}");
+            sb.AppendLine();
+            foreach (var (_, joke) in group.OrderBy(x => x.Joke.JokeTxt))
+            {
+                var jokeText = (joke.JokeTxt ?? string.Empty)
+                    .Replace("\r\n", " | ")
+                    .Replace("\n", " | ")
+                    .Replace("\r", " | ")
+                    .Trim();
+                if (!string.IsNullOrEmpty(joke.Attribution))
+                {
+                    jokeText += $"  ({joke.Attribution})";
+                }
+                sb.AppendLine($"• {jokeText}");
+            }
+        }
+
+        return sb.ToString().TrimStart();
     }
 
     /// <summary>

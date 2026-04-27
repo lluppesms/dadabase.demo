@@ -24,7 +24,9 @@
       "Image": {
         "Endpoint": "https://your-project-resource.openai.azure.com/",
         "ApiKey": "",
-        "DeploymentName": "gpt-image-1.5"
+        "DeploymentName": "gpt-image-1.5",
+        "ModelProvider": "",
+        "NOTE-ModelProvider": "Leave blank for auto-detect. Options: MAI (MAI-Image-2 or MAI-Image-2-Efficient), AzureOpenAI (dall-e-3/gpt-image-1/gpt-image-2 on Azure), OpenAI (gpt-image-2 GA via api.openai.com)"
       }
     }
   },

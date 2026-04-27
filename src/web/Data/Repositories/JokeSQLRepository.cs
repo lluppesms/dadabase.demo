@@ -100,10 +100,10 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
-    /// Returns the most recently added active jokes, ordered by creation date descending and limited to <paramref name="count"/> records.
+    /// Returns the most recently modified active jokes, ordered by last-modified date descending and limited to <paramref name="count"/> records.
     /// </summary>
     /// <param name="count">The maximum number of jokes to return. The default is 100.</param>
-    /// <returns>An <see cref="IQueryable{T}"/> of the most recent <see cref="Joke"/> records.</returns>
+    /// <returns>An <see cref="IQueryable{T}"/> of the most recently modified <see cref="Joke"/> records.</returns>
     public IQueryable<Joke> GetRecentAdditions(int count = 100)
     {
         var jokes = _context.Jokes
@@ -119,7 +119,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
                     j.CreateDateTime, j.CreateUserName, j.ChangeDateTime, j.ChangeUserName
                 FROM Joke j
                 WHERE j.ActiveInd = 'Y'
-                ORDER BY j.CreateDateTime DESC")
+                ORDER BY j.ChangeDateTime DESC")
             .AsEnumerable()
             .AsQueryable();
 
@@ -463,6 +463,49 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
+    /// Builds a plain-text bulleted list of jokes organised by category.
+    /// Jokes with multiple categories appear under each applicable category.
+    /// </summary>
+    private static string BuildBulletedList(IEnumerable<DadABase.Data.Models.Joke> jokes)
+    {
+        // Expand jokes by category so multi-category jokes appear under each category
+        var byCategory = jokes
+            .SelectMany(j =>
+            {
+                var categories = string.IsNullOrWhiteSpace(j.Categories)
+                    ? new[] { "(Uncategorized)" }
+                    : j.Categories.Split(',').Select(c => c.Trim()).Where(c => !string.IsNullOrEmpty(c)).ToArray();
+                return categories.Select(cat => (Category: cat, Joke: j));
+            })
+            .GroupBy(x => x.Category, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(g => g.Key);
+
+        var sb = new StringBuilder();
+        foreach (var group in byCategory)
+        {
+            sb.AppendLine();
+            sb.AppendLine($"## {group.Key}");
+            sb.AppendLine();
+            foreach (var (_, joke) in group.OrderBy(x => x.Joke.JokeTxt))
+            {
+                // Collapse internal newlines so each joke is a single bullet line
+                var jokeText = (joke.JokeTxt ?? string.Empty)
+                    .Replace("\r\n", " | ")
+                    .Replace("\n", " | ")
+                    .Replace("\r", " | ")
+                    .Trim();
+                if (!string.IsNullOrEmpty(joke.Attribution))
+                {
+                    jokeText += $"  ({joke.Attribution})";
+                }
+                sb.AppendLine($"• {jokeText}");
+            }
+        }
+
+        return sb.ToString().TrimStart();
+    }
+
+    /// <summary>
     /// Exports all active jokes to a tab-delimited text format with fields:
     /// JokeId, Categories, JokeTxt, ImageTxt, Attribution, ActiveInd, SortOrderNbr, Rating, VoteCount.
     /// </summary>
@@ -524,6 +567,27 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
 
         var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
         return System.Text.Json.JsonSerializer.Serialize(projected, options);
+    }
+
+    /// <summary>
+    /// Exports all active jokes as a simple bulleted list grouped by category with a header per category.
+    /// Each joke whose category list contains multiple categories will appear under each of its categories.
+    /// </summary>
+    /// <param name="requestingUserName">The username of the user requesting the export.</param>
+    /// <returns>A plain-text bulleted list suitable for copying into OneNote or similar tools.</returns>
+    public string ExportToBulletedList(string requestingUserName = "ANON")
+    {
+        var categoryParam = (string?)null;
+        var searchParam = (string?)null;
+        var jokes = _context.Jokes
+            .FromSqlInterpolated($"EXEC [dbo].[usp_Joke_Search] @category = {categoryParam}, @searchTxt = {searchParam}")
+            .AsNoTracking()
+            .AsEnumerable()
+            .OrderBy(j => j.Categories)
+            .ThenBy(j => j.JokeTxt)
+            .ToList();
+
+        return BuildBulletedList(jokes);
     }
 
     /// <summary>

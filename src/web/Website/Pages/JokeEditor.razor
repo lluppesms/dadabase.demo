@@ -82,7 +82,7 @@
 
                 @if (currentWizardStep == 0)
                 {
-                    <!-- Initial navigation: Next to reveal image section -->
+                    <!-- Initial navigation: Next to reveal image section, or Save without image -->
                     <MudStack Row="true" Spacing="2">
                         <MudButton Variant="Variant.Filled"
                                    Color="Color.Primary"
@@ -90,6 +90,15 @@
                                    Disabled="@(isSuggestingCategories)">
                             Next
                         </MudButton>
+                        <MudTooltip Text="Save the joke now and generate the description and image in the background">
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Secondary"
+                                       StartIcon="@Icons.Material.Filled.SaveAlt"
+                                       OnClick="SaveWithoutImageAsync"
+                                       Disabled="@(isSuggestingCategories || isSaving)">
+                                Save without Image
+                            </MudButton>
+                        </MudTooltip>
                         <MudButton Variant="Variant.Outlined"
                                    Color="Color.Default"
                                    OnClick="CancelEdit">
