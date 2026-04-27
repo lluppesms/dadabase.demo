@@ -50,6 +50,9 @@ public partial class JokeEditor : ComponentBase
     private bool isGeneratingImage = false;
     private string jokeImageUrl = string.Empty;
 
+    // Delay (ms) to show the save-success message before returning to the list
+    private const int SaveSuccessDisplayDelayMs = 1500;
+
     // MudDataGrid sorting
     private Func<Joke, object> _sortByJokeText = x => x.JokeTxt;
 
@@ -493,7 +496,7 @@ public partial class JokeEditor : ComponentBase
             editAlertClass = "alert-success";
             StateHasChanged();
 
-            await Task.Delay(1500);
+            await Task.Delay(SaveSuccessDisplayDelayMs);
 
             LoadData();
             editingJoke = null;
@@ -802,7 +805,7 @@ public partial class JokeEditor : ComponentBase
 
             // Brief delay to show success message
             StateHasChanged();
-            await Task.Delay(1500);
+            await Task.Delay(SaveSuccessDisplayDelayMs);
 
             // Reload data from database to get updated categories and relationships
             LoadData();

@@ -463,49 +463,6 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
-    /// Builds a plain-text bulleted list of jokes organised by category.
-    /// Jokes with multiple categories appear under each applicable category.
-    /// </summary>
-    private static string BuildBulletedList(IEnumerable<DadABase.Data.Models.Joke> jokes)
-    {
-        // Expand jokes by category so multi-category jokes appear under each category
-        var byCategory = jokes
-            .SelectMany(j =>
-            {
-                var categories = string.IsNullOrWhiteSpace(j.Categories)
-                    ? new[] { "(Uncategorized)" }
-                    : j.Categories.Split(',').Select(c => c.Trim()).Where(c => !string.IsNullOrEmpty(c)).ToArray();
-                return categories.Select(cat => (Category: cat, Joke: j));
-            })
-            .GroupBy(x => x.Category, StringComparer.OrdinalIgnoreCase)
-            .OrderBy(g => g.Key);
-
-        var sb = new StringBuilder();
-        foreach (var group in byCategory)
-        {
-            sb.AppendLine();
-            sb.AppendLine($"## {group.Key}");
-            sb.AppendLine();
-            foreach (var (_, joke) in group.OrderBy(x => x.Joke.JokeTxt))
-            {
-                // Collapse internal newlines so each joke is a single bullet line
-                var jokeText = (joke.JokeTxt ?? string.Empty)
-                    .Replace("\r\n", " | ")
-                    .Replace("\n", " | ")
-                    .Replace("\r", " | ")
-                    .Trim();
-                if (!string.IsNullOrEmpty(joke.Attribution))
-                {
-                    jokeText += $"  ({joke.Attribution})";
-                }
-                sb.AppendLine($"• {jokeText}");
-            }
-        }
-
-        return sb.ToString().TrimStart();
-    }
-
-    /// <summary>
     /// Exports all active jokes to a tab-delimited text format with fields:
     /// JokeId, Categories, JokeTxt, ImageTxt, Attribution, ActiveInd, SortOrderNbr, Rating, VoteCount.
     /// </summary>
@@ -587,7 +544,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
             .ThenBy(j => j.JokeTxt)
             .ToList();
 
-        return BuildBulletedList(jokes);
+        return Utilities.BuildBulletedList(jokes);
     }
 
     /// <summary>

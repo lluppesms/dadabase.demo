@@ -400,48 +400,7 @@ public class JokeJsonRepository : IJokeRepository
     public string ExportToBulletedList(string requestingUserName = "ANON")
     {
         var jokes = _jokes.OrderBy(j => j.Categories).ThenBy(j => j.JokeTxt).ToList();
-        return BuildBulletedList(jokes);
-    }
-
-    /// <summary>
-    /// Builds a plain-text bulleted list of jokes organised by category.
-    /// Jokes with multiple categories appear under each applicable category.
-    /// </summary>
-    private static string BuildBulletedList(IEnumerable<Joke> jokes)
-    {
-        var byCategory = jokes
-            .SelectMany(j =>
-            {
-                var categories = string.IsNullOrWhiteSpace(j.Categories)
-                    ? new[] { "(Uncategorized)" }
-                    : j.Categories.Split(',').Select(c => c.Trim()).Where(c => !string.IsNullOrEmpty(c)).ToArray();
-                return categories.Select(cat => (Category: cat, Joke: j));
-            })
-            .GroupBy(x => x.Category, StringComparer.OrdinalIgnoreCase)
-            .OrderBy(g => g.Key);
-
-        var sb = new System.Text.StringBuilder();
-        foreach (var group in byCategory)
-        {
-            sb.AppendLine();
-            sb.AppendLine($"## {group.Key}");
-            sb.AppendLine();
-            foreach (var (_, joke) in group.OrderBy(x => x.Joke.JokeTxt))
-            {
-                var jokeText = (joke.JokeTxt ?? string.Empty)
-                    .Replace("\r\n", " | ")
-                    .Replace("\n", " | ")
-                    .Replace("\r", " | ")
-                    .Trim();
-                if (!string.IsNullOrEmpty(joke.Attribution))
-                {
-                    jokeText += $"  ({joke.Attribution})";
-                }
-                sb.AppendLine($"• {jokeText}");
-            }
-        }
-
-        return sb.ToString().TrimStart();
+        return Helpers.Utilities.BuildBulletedList(jokes);
     }
 
     /// <summary>
