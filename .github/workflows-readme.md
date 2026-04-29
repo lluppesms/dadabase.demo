@@ -20,33 +20,13 @@ The GitHub workflows in this project require several secrets set at the reposito
 
 ## Sequence of Workflows
 
-When you first create the application, you will have to deploy the application using one of the workflows that deploy bicep.
-
-In order for the workflows to be able to update the database, you must grant rights to the CICD service principal and the application managed identity in the database.
-
-Grant full rights to your CICD Service Principal so it can deploy the DACPAC schema:
-
-```sql
-CREATE USER [yourServicePrincipalName] FROM EXTERNAL PROVIDER;
-ALTER ROLE db_owner ADD MEMBER [yourServicePrincipalName];
-```
-
-Grant user rights to your application managed identity so it can read and write data (not change the schema):
-
-```sql
-CREATE USER [yourAppManagedIdentityName] FROM EXTERNAL PROVIDER;
-ALTER ROLE db_datareader ADD MEMBER [yourAppManagedIdentityName];
-ALTER ROLE db_datawriter ADD MEMBER [yourAppManagedIdentityName];
-GRANT EXECUTE ON SCHEMA::[dbo] TO [yourAppManagedIdentityName];
-```
-
-Once these rights are in place, before the application can run successfully, then you can deploy the SQL database schema and data using the [DACPAC deployment workflow](./workflows/4-build-deploy-dacpac.yml) and the [SQL script workflow](./workflows/5-run-sql-script.yml).  In the SQL Script workflow, choose the [InsertDefaultData.sql](../src/sql.database/Patch/InsertDefaultData.sql) script to populate the database with some starter data.
+When you first create the application, you will have to deploy the application using one of the workflows that deploy bicep, then update the new database so that the pipelines have rights to deploy the database schema and data.  After those rights have been granted, run the deploy DACPAC workflow to deploy the database schema and populate the database with some starter data.  After that, you can use any of the workflows to deploy your application and database updates.
 
 ---
 
 ## Azure Credentials
 
-You will need to set up the Azure Credentials secrets in the GitHub Secrets at the Repository level (or the environment level) before you do anything else.
+Before you begin, you will need to set up the Azure Credentials secrets in the GitHub Secrets at the Repository level (or the environment level).  These secrets and credentials will allow the GitHub Actions to deploy into Azure.
 
 See [https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/deploy-github-actions](https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/deploy-github-actions) for more info on how to create the service principal and set up these credentials.
 
@@ -70,12 +50,36 @@ gh secret set --env <ENV-NAME> AZURE_TENANT_ID -b <GUID-Entra-tenant-where-SP-li
 gh secret set --env <ENV-NAME> CICD_CLIENT_ID -b <GUID-application/client-Id>
 ```
 
-These two secrets are optional if you want to grant an administrator access to the Key Vault and ACR and SQL database.  
+These two secrets are optional for this application if you want to grant an administrator access to the Key Vault and Container Registry and SQL database.  
 
 ```bash
 gh secret set ADMIN_IP_ADDRESS 192.168.1.1
 gh secret set ADMIN_PRINCIPAL_ID <yourGuid>
 ```
+
+---
+
+## Database Security
+
+In order for the workflows to be able to update the database, you must grant rights to the CICD service principal and the application managed identity in the database.
+
+Grant full rights to your CICD Service Principal so it can deploy the DACPAC schema:
+
+```sql
+CREATE USER [yourServicePrincipalName] FROM EXTERNAL PROVIDER;
+ALTER ROLE db_owner ADD MEMBER [yourServicePrincipalName];
+```
+
+Grant user rights to your application managed identity so it can read and write data (not change the schema):
+
+```sql
+CREATE USER [yourAppManagedIdentityName] FROM EXTERNAL PROVIDER;
+ALTER ROLE db_datareader ADD MEMBER [yourAppManagedIdentityName];
+ALTER ROLE db_datawriter ADD MEMBER [yourAppManagedIdentityName];
+GRANT EXECUTE ON SCHEMA::[dbo] TO [yourAppManagedIdentityName];
+```
+
+Once these rights are in place, before the application can run successfully, then you can deploy the SQL database schema and data using the [DACPAC deployment workflow](./workflows/4-build-deploy-dacpac.yml) and the [SQL script workflow](./workflows/5-run-sql-script.yml).  In the SQL Script workflow, choose the [InsertDefaultData.sql](../src/sql.database/Patch/InsertDefaultData.sql) script to populate the database with some starter data.
 
 ---
 
