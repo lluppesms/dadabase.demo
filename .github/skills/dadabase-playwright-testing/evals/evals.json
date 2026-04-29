@@ -1,0 +1,38 @@
+{
+  "skill_name": "dadabase-anonymous-playwright-testing",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Use the Dadabase anonymous Playwright testing skill in this repo without any supplied URL. Start the local app if needed, open the site, and document the navigation path from the home page into the Search page, including stable selectors and expected outcomes. Do not log in.",
+      "expected_output": "A concise anonymous-flow report that starts or reuses the local app, uses the local URL, and explains how the home page reaches the Search page with stable selectors and expected outcomes.",
+      "files": [],
+      "expectations": [
+        "The response starts or reuses the local app when no URL is given.",
+        "The response uses a local URL from the repository startup flow.",
+        "The response stays within anonymous browsing and does not attempt login."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Smoke test the anonymous joke search in this Dadabase repo with no URL provided. I need the navigation path, likely Playwright locators, and a short list of assertions for both a successful search and an empty-state search.",
+      "expected_output": "A focused test note covering local startup or reuse, the public joke-search flow on the Search page, selector choices, and stable assertions for both result and no-result states.",
+      "files": [],
+      "expectations": [
+        "The response describes the joke-search interaction on the Search page rather than generic web testing advice.",
+        "The response includes both happy-path and empty-state assertions.",
+        "The response avoids authenticated admin behavior."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Generate Playwright coverage for the anonymous Dadabase experience in this repository. No URL is supplied, so use the local app. I need separate tests for homepage availability, Search page navigation, category discovery, and public joke search. Skip admin pages for now.",
+      "expected_output": "A proposed anonymous-only Playwright test plan or test code split into focused flows for local homepage load, Search page navigation, category discovery, and joke search, with the admin workflow explicitly deferred.",
+      "files": [],
+      "expectations": [
+        "The response proposes separate anonymous-only tests instead of one large script.",
+        "The response includes local startup behavior when no URL is provided.",
+        "The response explicitly states that admin add-joke is deferred."
+      ]
+    }
+  ]
+}
