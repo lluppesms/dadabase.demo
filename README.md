@@ -53,6 +53,7 @@ Because when you combine:
 | 🔍 **Code Scanning** | Security scanning to keep the jokes safe from hackers | ![Secure](https://img.shields.io/badge/-Secure-red) |
 | 🎭 **Playwright Testing** | Automated smoke tests that actually click buttons | ![End-to-End](https://img.shields.io/badge/-End--to--End-9cf) |
 | ✅ **Unit Testing** | With code coverage, because untested jokes aren't funny | ![High Coverage](https://img.shields.io/badge/-High%20Coverage-brightgreen) |
+| 🪝 **Pre-Commit Hooks** | Auto-format C# and scan for secrets before every commit | ![Developer Experience](https://img.shields.io/badge/-Developer%20Experience-teal) |
 
 ---
 
@@ -97,6 +98,9 @@ Because when you combine:
 # Clone the repo
 git clone https://github.com/lluppesms/dadabase.demo.git
 
+# Install npm dependencies (also activates pre-commit hooks)
+npm install
+
 # Navigate to the web project
 cd src/web/Website
 
@@ -105,6 +109,57 @@ dotnet run
 
 # Open browser and enjoy the dad jokes!
 ```
+
+---
+
+## 🛠️ Developer Setup (Pre-Commit Hooks)
+
+This repo uses [Husky](https://typicode.github.io/husky/) to run pre-commit checks automatically before every `git commit`:
+
+- 🔍 **Secret scanning** via [gitleaks](https://github.com/gitleaks/gitleaks) — blocks commits containing API keys, tokens, or credentials
+- 🎨 **Auto-formatting** via `dotnet format` — fixes C# whitespace/style violations and re-stages the corrected files
+
+### One-time setup
+
+1. **Install gitleaks** (required for secret scanning):
+   - Windows: `winget install gitleaks`
+   - macOS: `brew install gitleaks`
+
+2. **Run `npm install`** — this activates the Husky hooks automatically via the `prepare` script.
+
+That's it! The hooks run on every commit from then on. See [CONTRIBUTING.md](./CONTRIBUTING.md) for full details.
+
+---
+
+## 🔧 Developer Setup
+
+This repo uses [Husky](https://typicode.github.io/husky/) pre-commit hooks to automatically format C# code and scan for secrets before every commit. Two one-time setup steps are required:
+
+### 1. Install gitleaks
+
+The secret scanner must be installed separately on each developer machine:
+
+| Platform | Command |
+|----------|---------|
+| 🪟 **Windows** | `winget install gitleaks` |
+| 🍎 **macOS** | `brew install gitleaks` |
+| 🐧 **Linux** | See [gitleaks releases](https://github.com/gitleaks/gitleaks/releases) |
+
+> If `gitleaks` is not found, the hook will skip secret scanning with a warning — it won't block your commit.
+
+### 2. Activate Husky hooks
+
+```bash
+npm install
+```
+
+That's it! The `prepare` script in `package.json` activates the hooks automatically. From this point on, every `git commit` will:
+
+1. 🔍 **Scan for secrets** using gitleaks (skipped gracefully if not installed)
+2. 🎨 **Auto-format staged `.cs` files** using `dotnet format` across all solution files
+3. ✅ **Re-stage any auto-formatted files** so they're included in your commit
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for full contributor guidelines.
 
 ---
 
@@ -225,6 +280,8 @@ Same great taste, GitHub flavor:
 | 🗃️ SQL DACPAC Deployment | [SQL-DacPac.md](./Docs/SQL-DacPac.md) |
 | 🔄 Azure DevOps Pipelines | [YML_AzDO.md](./Docs/YML_AzDO.md) |
 | 🐙 GitHub Actions | [YML_GitHub.md](./Docs/YML_GitHub.md) |
+| 🤝 Contributing & Dev Setup | [CONTRIBUTING.md](./CONTRIBUTING.md) |
+| 🤝 Contributing Guide | [CONTRIBUTING.md](./CONTRIBUTING.md) |
 
 ---
 
@@ -232,7 +289,9 @@ Same great taste, GitHub flavor:
 
 Found a bug? Want to add a feature? Have an even worse dad joke?
 
-Pull requests are welcome! Just remember: if your PR doesn't make at least one person groan, is it really worth it?
+Pull requests are welcome! Check out [CONTRIBUTING.md](./CONTRIBUTING.md) for developer setup (including pre-commit hooks), code style, and PR guidelines. Just remember: if your PR doesn't make at least one person groan, is it really worth it?
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for developer setup and contribution guidelines.
 
 ---
 

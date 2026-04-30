@@ -29,7 +29,7 @@ fi
 # ============================================================
 # Step 2: .NET code formatting with dotnet format
 # ============================================================
-STAGED_CS=$(git diff --cached --name-only --diff-filter=ACM | grep "\.cs$")
+STAGED_CS=$(git diff --cached --name-only --diff-filter=ACM | grep "\.cs$" || true)
 
 if [ -z "$STAGED_CS" ]; then
   echo "✅ No .cs files staged — skipping .NET format check."
