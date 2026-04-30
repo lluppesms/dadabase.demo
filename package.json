@@ -8,7 +8,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@azure/identity": "^4.11.1",
+    "@azure/identity": "^4.13.1",
     "@azure/playwright": "^1.0.0",
     "@playwright/test": "^1.58.2",
     "@types/node": "^20.11.0",
