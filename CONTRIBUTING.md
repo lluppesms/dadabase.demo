@@ -51,22 +51,6 @@ Configuration is in [`.gitleaks.toml`](./.gitleaks.toml). It uses the default gi
 - `*.lock` files
 - `*.env.example` files (intentionally contain placeholder values)
 
-### 0. 🛡️ Branch Protection (main/master)
-
-Direct commits to `main` or `master` are blocked by the hook. This prevents automated agents or AI tools from accidentally committing directly to protected branches.
-
-**Human developers** who intentionally work on `main` can opt in with a one-time local command:
-
-```bash
-git config hooks.allowDirectMainCommit true
-```
-
-This value is stored in your local `.git/config` and is **never committed to the repository**, so it won't affect other users or agents. To work on a feature instead:
-
-```bash
-git checkout -b feature/your-branch-name
-```
-
 ### 2. 🎨 C# Code Formatting (dotnet format)
 
 Automatically formats any staged `.cs` files to match the project code style using `dotnet format`. Formatted files are re-staged automatically so your commit always contains clean code.

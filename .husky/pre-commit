@@ -6,31 +6,6 @@ cd "$REPO_ROOT" || exit 1
 echo "🚀 Running pre-commit checks..."
 
 # ============================================================
-# Step 0: Block direct commits to main/master by agents
-# Users who intentionally commit to main should set this once:
-#   git config hooks.allowDirectMainCommit true
-# ============================================================
-CURRENT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null)
-if [ "$CURRENT_BRANCH" = "main" ] || [ "$CURRENT_BRANCH" = "master" ]; then
-  ALLOW=$(git config --local hooks.allowDirectMainCommit 2>/dev/null)
-  if [ "$ALLOW" != "true" ]; then
-    echo ""
-    echo "❌ BLOCKED: Direct commits to '$CURRENT_BRANCH' are not allowed."
-    echo ""
-    echo "   If you are a human developer and intentionally want to commit to '$CURRENT_BRANCH',"
-    echo "   run this once to opt in locally:"
-    echo ""
-    echo "     git config hooks.allowDirectMainCommit true"
-    echo ""
-    echo "   Otherwise, please create a feature branch:"
-    echo ""
-    echo "     git checkout -b feature/your-branch-name"
-    echo ""
-    exit 1
-  fi
-fi
-
-# ============================================================
 # Step 1: Secret scanning with gitleaks
 # ============================================================
 if command -v gitleaks > /dev/null 2>&1; then
