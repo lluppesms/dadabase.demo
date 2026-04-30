@@ -12,6 +12,13 @@ public sealed class DadJokeTools(DadJokeService DadJokeService)
         return dadJoke.ToString();
     }
 
+    [McpServerTool, Description("Get a list of Dad Joke categories.")]
+    public async Task<string> GetDadJokeCategories()
+    {
+        var categories = await DadJokeService.GetDadJokeCategories();
+        return JsonSerializer.Serialize(categories, DadJokeContext.Default.ListString);
+    }
+
     [McpServerTool, Description("Get a list of Dad Jokes by category.")]
     public async Task<string> GetDadJokesByCategory([Description("The name of the Category to get a list of jokes for")] string name)
     {
@@ -22,12 +29,5 @@ public sealed class DadJokeTools(DadJokeService DadJokeService)
             sb.AppendLine(joke.ToString());
         }
         return sb.ToString();
-    }
-
-    [McpServerTool, Description("Get a list of Dad Joke categories.")]
-    public async Task<string> GetDadJokeCategories()
-    {
-        var categories = await DadJokeService.GetDadJokeCategories();
-        return JsonSerializer.Serialize(categories, DadJokeContext.Default.ListString);
     }
 }
