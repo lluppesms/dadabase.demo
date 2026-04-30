@@ -860,7 +860,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
 
             var importedCount = 0;
             using var command = _context.Database.GetDbConnection().CreateCommand();
-            if (command.Connection.State != System.Data.ConnectionState.Open)
+            if (command.Connection?.State != System.Data.ConnectionState.Open)
             {
                 _context.Database.OpenConnection();
             }

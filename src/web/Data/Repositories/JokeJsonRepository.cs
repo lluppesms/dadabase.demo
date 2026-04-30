@@ -118,7 +118,7 @@ public class JokeJsonRepository : IJokeRepository
                     if (string.IsNullOrEmpty(joke.Categories)) return false;
                     var jokeCategories = joke.Categories.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                     return jokeCategoryList!.Any(category => jokeCategories.Contains(category, StringComparer.OrdinalIgnoreCase))
-                        && joke.JokeTxt.Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase);
+                        && (joke.JokeTxt ?? string.Empty).Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase);
                 })
                 .ToList();
             return jokesByTermAndCategory.AsQueryable();
@@ -142,7 +142,7 @@ public class JokeJsonRepository : IJokeRepository
         if (string.IsNullOrEmpty(jokeCategoryTxt) && !string.IsNullOrEmpty(searchTxt))
         {
             var jokesByTerm = _jokes
-                .Where(joke => joke.JokeTxt.Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase))
+                .Where(joke => (joke.JokeTxt ?? string.Empty).Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase))
                 .ToList();
             return jokesByTerm.AsQueryable();
         }
