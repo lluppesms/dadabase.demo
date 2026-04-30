@@ -32,7 +32,7 @@ public class JokeCategory
     [Required(ErrorMessage = "JokeCategoryId is required")]
     [Display(Name = "JokeCategoryId", Description = "This is the JokeCategoryId field.", Prompt = "Enter JokeCategoryId")]
     public int JokeCategoryId { get; set; }
-    
+
     /// <summary>
     /// Joke Category Text
     /// </summary>
