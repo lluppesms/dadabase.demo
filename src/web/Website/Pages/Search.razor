@@ -33,6 +33,10 @@
                 <div class="joke-numbered-item">
                     <span class="joke-seq-number">@jokeNumber</span>
                     <div class="joke-item-content">
+                        @if (isRecentMode && myJoke.ChangeDateTime != default)
+                        {
+                            <div class="joke-modified-date">Last modified: @myJoke.ChangeDateTime.ToLocalTime().ToString("yyyy-MM-dd")</div>
+                        }
                         <JokeDisplayComponent myJoke="@myJoke" />
                     </div>
                 </div>

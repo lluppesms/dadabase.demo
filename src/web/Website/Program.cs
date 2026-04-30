@@ -108,6 +108,8 @@ else
 }
 
 builder.Services.AddSingleton<IAIHelper, AIHelper>();
+builder.Services.AddSingleton<IJokeImageQueue, JokeImageQueue>();
+builder.Services.AddHostedService<JokeImageQueueService>();
 builder.Services.AddScoped<IBuildInfoService, BuildInfoService>();
 builder.Services.AddScoped<DadABase.Web.Repositories.ThemeService>();
 

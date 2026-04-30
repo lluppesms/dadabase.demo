@@ -75,128 +75,30 @@
                     <div class="mb-4"></div>
                 }
 
-                @if (!string.IsNullOrEmpty(editMessage) && currentWizardStep == 0)
+                @if (!string.IsNullOrEmpty(editMessage))
                 {
                     <MudAlert Severity="@GetAlertSeverity()" Class="mb-3">@editMessage</MudAlert>
                 }
 
-                @if (currentWizardStep == 0)
-                {
-                    <!-- Initial navigation: Next to reveal image section -->
-                    <MudStack Row="true" Spacing="2">
-                        <MudButton Variant="Variant.Filled"
-                                   Color="Color.Primary"
-                                   OnClick="NextWizardStep"
-                                   Disabled="@(isSuggestingCategories)">
-                            Next
-                        </MudButton>
-                        <MudButton Variant="Variant.Outlined"
-                                   Color="Color.Default"
-                                   OnClick="CancelEdit">
-                            Cancel
-                        </MudButton>
-                    </MudStack>
-                }
-                else
-                {
-                    <!-- Image section (revealed after Next) -->
-                    <MudDivider Class="my-4" />
-                    <MudText Typo="Typo.h6" Class="mb-3">Joke Image</MudText>
-
-                    @if (isGeneratingScenario || isGeneratingImage)
-                    {
-                        <div class="d-flex flex-column align-center my-5">
-                            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-                            <MudText Typo="Typo.body2" Class="mt-2">
-                                @(isGeneratingScenario ? "Creating scene description..." : "Asking artist AI to create an image...")
-                            </MudText>
-                        </div>
-                    }
-                    else if (!string.IsNullOrEmpty(jokeImageUrl) && jokeImageUrl != "skipped")
-                    {
-                        <!-- Image generated: show preview and description -->
-                        <div class="mb-4">
-                            <img src="@jokeImageUrl" alt="Generated joke image" class="joke-image-preview" />
-                        </div>
-                        @if (!string.IsNullOrEmpty(editingJoke.ImageTxt))
+                <MudStack Row="true" Spacing="2">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Save"
+                               OnClick="SaveWithoutImageAsync"
+                               Disabled="@(isSuggestingCategories || isSaving)">
+                        @if (isSaving)
                         {
-                            <MudTextField @bind-Value="editingJoke.ImageTxt"
-                                          Label="Scene Description"
-                                          Variant="Variant.Outlined"
-                                          Lines="3"
-                                          Class="mb-3" />
+                            <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
                         }
-                        <MudStack Row="true" Spacing="2" Class="mb-4">
-                            <MudButton Variant="Variant.Outlined"
-                                       Size="Size.Small"
-                                       Color="Color.Secondary"
-                                       OnClick="RegenerateWizardImageAsync"
-                                       StartIcon="@Icons.Material.Filled.Refresh">
-                                Regenerate Image
-                            </MudButton>
-                            <MudButton Variant="Variant.Outlined"
-                                       Size="Size.Small"
-                                       Color="Color.Default"
-                                       OnClick="ClearWizardImage"
-                                       StartIcon="@Icons.Material.Filled.Clear">
-                                Remove Image
-                            </MudButton>
-                        </MudStack>
-                    }
-                    else
-                    {
-                        <!-- No image yet: offer to create one -->
-                        <MudStack Row="true" Spacing="2" Class="mb-4">
-                            <MudButton Variant="Variant.Filled"
-                                       Color="Color.Primary"
-                                       StartIcon="@Icons.Material.Filled.Image"
-                                       OnClick="CreateJokeImageAsync">
-                                Create an Image of this Joke
-                            </MudButton>
-                            <MudButton Variant="Variant.Outlined"
-                                       Color="Color.Default"
-                                       StartIcon="@Icons.Material.Filled.SkipNext"
-                                       OnClick="SkipImageGeneration">
-                                Skip Image
-                            </MudButton>
-                        </MudStack>
-                    }
-
-                    @if (!string.IsNullOrEmpty(editMessage))
-                    {
-                        <MudAlert Severity="@GetAlertSeverity()" Class="mb-3">@editMessage</MudAlert>
-                    }
-
-                    <!-- Save / Back / Cancel -->
-                    <MudStack Row="true" Spacing="2">
-                        @if (!string.IsNullOrEmpty(jokeImageUrl))
-                        {
-                            <MudButton Variant="Variant.Filled"
-                                       Color="Color.Success"
-                                       OnClick="SaveJoke"
-                                       Disabled="@(isSaving || isGeneratingImage || isGeneratingScenario)"
-                                       StartIcon="@Icons.Material.Filled.Save">
-                                @if (isSaving)
-                                {
-                                    <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
-                                }
-                                Save Joke
-                            </MudButton>
-                        }
-                        <MudButton Variant="Variant.Outlined"
-                                   Color="Color.Secondary"
-                                   OnClick="PreviousWizardStep"
-                                   Disabled="@(isSuggestingCategories || isGeneratingScenario || isGeneratingImage || isSaving)">
-                            Back
-                        </MudButton>
-                        <MudButton Variant="Variant.Outlined"
-                                   Color="Color.Default"
-                                   OnClick="CancelEdit"
-                                   Disabled="@(isSaving)">
-                            Cancel
-                        </MudButton>
-                    </MudStack>
-                }
+                        Save Joke
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               OnClick="CancelEdit"
+                               Disabled="@(isSaving)">
+                        Cancel
+                    </MudButton>
+                </MudStack>
             </MudPaper>
         }
         else if (editingJoke != null && !isAddingNew)

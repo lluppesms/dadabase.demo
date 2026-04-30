@@ -252,4 +252,48 @@ public class Utilities
             throw;
         }
     }
+
+    /// <summary>
+    /// Builds a plain-text bulleted list of jokes grouped by category, with a Markdown-style
+    /// header per category and one bullet per joke. Jokes with multiple comma-separated
+    /// categories appear under each applicable category.
+    /// </summary>
+    /// <param name="jokes">The jokes to include in the list.</param>
+    /// <returns>A formatted plain-text string suitable for pasting into OneNote or similar tools.</returns>
+    public static string BuildBulletedList(IEnumerable<DadABase.Data.Models.Joke> jokes)
+    {
+        var byCategory = jokes
+            .SelectMany(j =>
+            {
+                var categories = string.IsNullOrWhiteSpace(j.Categories)
+                    ? new[] { "(Uncategorized)" }
+                    : j.Categories.Split(',').Select(c => c.Trim()).Where(c => !string.IsNullOrEmpty(c)).ToArray();
+                return categories.Select(cat => (Category: cat, Joke: j));
+            })
+            .GroupBy(x => x.Category, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(g => g.Key);
+
+        var sb = new System.Text.StringBuilder();
+        foreach (var group in byCategory)
+        {
+            sb.AppendLine();
+            sb.AppendLine($"## {group.Key}");
+            sb.AppendLine();
+            foreach (var (_, joke) in group.OrderBy(x => x.Joke.JokeTxt))
+            {
+                var jokeText = (joke.JokeTxt ?? string.Empty)
+                    .Replace("\r\n", " | ")
+                    .Replace("\n", " | ")
+                    .Replace("\r", " | ")
+                    .Trim();
+                if (!string.IsNullOrEmpty(joke.Attribution))
+                {
+                    jokeText += $"  ({joke.Attribution})";
+                }
+                sb.AppendLine($"\u2022 {jokeText}");
+            }
+        }
+
+        return sb.ToString().TrimStart();
+    }
 }

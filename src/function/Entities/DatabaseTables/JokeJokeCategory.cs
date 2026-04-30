@@ -6,7 +6,9 @@
 // JokeJokeCategory Junction Table
 // </summary>
 //-----------------------------------------------------------------------
+#pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace DadABase.Data;
+#pragma warning restore IDE0130 // Namespace does not match folder structure
 
 /// <summary>
 /// JokeJokeCategory Junction Table
@@ -43,7 +45,7 @@ public class JokeJokeCategory
     [JsonIgnore]
     [Display(Name = "Create User Name")]
     [StringLength(255)]
-    public string? CreateUserName { get; set; }
+    public string CreateUserName { get; set; }
 
     /// <summary>
     /// New Instance of JokeJokeCategory

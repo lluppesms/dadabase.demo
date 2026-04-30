@@ -24,12 +24,12 @@ public interface IJokeRepository
     IQueryable<Joke> ListAll(string activeInd = "Y", string requestingUserName = "ANON");
 
     /// <summary>
-    /// Returns the most recently added jokes, limited to the specified count.
-    /// For SQL repositories, results are ordered by <see cref="Joke.CreateDateTime"/> descending.
-    /// For JSON repositories, the first <paramref name="count"/> entries are returned.
+    /// Returns the most recently modified jokes, limited to the specified count.
+    /// For SQL repositories, results are ordered by <see cref="Joke.ChangeDateTime"/> descending.
+    /// For JSON repositories, jokes are ordered by <see cref="Joke.ChangeDateTime"/> descending then limited to <paramref name="count"/> entries.
     /// </summary>
     /// <param name="count">The maximum number of jokes to return. The default is 100.</param>
-    /// <returns>An <see cref="IQueryable{T}"/> of the most recent <see cref="Joke"/> records.</returns>
+    /// <returns>An <see cref="IQueryable{T}"/> of the most recently modified <see cref="Joke"/> records.</returns>
     IQueryable<Joke> GetRecentAdditions(int count = 100);
 
     /// <summary>
@@ -85,6 +85,14 @@ public interface IJokeRepository
     /// <param name="requestingUserName">The username of the user requesting the export. The default is "ANON".</param>
     /// <returns>A string containing the tab-delimited content including a header row.</returns>
     string ExportToTabDelimited(string requestingUserName = "ANON");
+
+    /// <summary>
+    /// Exports all jokes to a simple bulleted list organized by category with a header per category.
+    /// The output is plain text suitable for pasting into OneNote or similar tools.
+    /// </summary>
+    /// <param name="requestingUserName">The username of the user requesting the export. The default is "ANON".</param>
+    /// <returns>A string containing the bulleted list content.</returns>
+    string ExportToBulletedList(string requestingUserName = "ANON");
 
     /// <summary>
     /// Exports all jokes to a JSON array format with fields: JokeId, Categories, JokeTxt, ImageTxt, Attribution, ActiveInd, SortOrderNbr, Rating, VoteCount.

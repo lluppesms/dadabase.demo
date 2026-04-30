@@ -38,6 +38,9 @@ public partial class Index : ComponentBase, IDisposable
     private bool imageDescriptionDialogVisible = false;
     private bool isNinetiesTheme = false;
 
+    /// <summary>
+    /// Initializes the component and subscribes to theme change events.
+    /// </summary>
     protected override void OnInitialized()
     {
         ThemeService.OnThemeChanged += HandleThemeChanged;
@@ -67,6 +70,9 @@ public partial class Index : ComponentBase, IDisposable
         await InvokeAsync(StateHasChanged);
     }
 
+    /// <summary>
+    /// Unsubscribes from theme change events when the component is disposed.
+    /// </summary>
     public void Dispose()
     {
         ThemeService.OnThemeChanged -= HandleThemeChanged;

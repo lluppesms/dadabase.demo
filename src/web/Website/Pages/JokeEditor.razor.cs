@@ -20,6 +20,7 @@ public partial class JokeEditor : ComponentBase
     [Inject] HttpContextAccessor Context { get; set; }
     [Inject] IDialogService DialogService { get; set; }
     [Inject] IAIHelper GenAIAgent { get; set; }
+    [Inject] IJokeImageQueue ImageQueue { get; set; }
 
     /// <summary>
     /// Gets or sets the joke identifier passed via query string for direct navigation to a specific joke.
@@ -48,6 +49,9 @@ public partial class JokeEditor : ComponentBase
     private bool isGeneratingScenario = false;
     private bool isGeneratingImage = false;
     private string jokeImageUrl = string.Empty;
+
+    // Delay (ms) to show the save-success message before returning to the list
+    private const int SaveSuccessDisplayDelayMs = 1500;
 
     // MudDataGrid sorting
     private Func<Joke, object> _sortByJokeText = x => x.JokeTxt;
@@ -438,6 +442,83 @@ public partial class JokeEditor : ComponentBase
     }
 
     /// <summary>
+    /// Save the joke immediately without generating a description or image.
+    /// The description and image will be generated in the background by the queue service.
+    /// </summary>
+    private async Task SaveWithoutImageAsync()
+    {
+        editMessage = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(editingJoke.JokeTxt))
+        {
+            editMessage = "Joke text is required.";
+            editAlertClass = "alert-danger";
+            StateHasChanged();
+            return;
+        }
+
+        if (!selectedCategoryIds.Any())
+        {
+            editMessage = "Please select at least one category.";
+            editAlertClass = "alert-warning";
+            StateHasChanged();
+            return;
+        }
+
+        isSaving = true;
+        editMessage = "Saving...";
+        editAlertClass = "alert-info";
+        StateHasChanged();
+
+        try
+        {
+            editingJoke.ActiveInd = "Y";
+            var jokeId = JokeRepository.AddJoke(editingJoke, currentUserName);
+            if (jokeId < 0)
+            {
+                editMessage = "Failed to add joke.";
+                editAlertClass = "alert-danger";
+                return;
+            }
+
+            var success = JokeRepository.UpdateJokeCategories(jokeId, selectedCategoryIds.ToList(), currentUserName);
+            if (!success)
+            {
+                editMessage = "Joke added, but failed to update categories.";
+                editAlertClass = "alert-warning";
+                return;
+            }
+
+            // Enqueue joke for background description + image generation
+            ImageQueue.Enqueue(jokeId);
+
+            editMessage = $"Joke #{jokeId} saved! Scene description and image will be generated in the background.";
+            editAlertClass = "alert-success";
+            StateHasChanged();
+
+            await Task.Delay(SaveSuccessDisplayDelayMs);
+
+            LoadData();
+            editingJoke = null;
+            isAddingNew = false;
+            currentWizardStep = 0;
+            jokeImageUrl = string.Empty;
+            selectedCategoryIds = new HashSet<int>();
+            FilterJokes();
+        }
+        catch (Exception ex)
+        {
+            editMessage = $"Error saving joke: {Helpers.Utilities.GetExceptionMessage(ex)}";
+            editAlertClass = "alert-danger";
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
     /// Clear the wizard image and allow user to regenerate or skip
     /// </summary>
     private void ClearWizardImage()
@@ -724,7 +805,7 @@ public partial class JokeEditor : ComponentBase
 
             // Brief delay to show success message
             StateHasChanged();
-            await Task.Delay(1500);
+            await Task.Delay(SaveSuccessDisplayDelayMs);
 
             // Reload data from database to get updated categories and relationships
             LoadData();
