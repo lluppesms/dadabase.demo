@@ -2,23 +2,6 @@
 
 The github repo is lluppesms/dadabase.demo and the primary branch that I work off of is main.
 
-## ⚠️ Git Branch Policy — AGENTS MUST FOLLOW THIS
-
-**NEVER commit directly to `main` or `master`.** This is a strict rule for all agents and automated tools.
-
-Before making any commits or file changes:
-1. **Check the current branch**: `git branch --show-current`
-2. **If on `main` or `master`, create and switch to a feature branch first**:
-   ```
-   git checkout -b feature/short-description-of-task
-   ```
-3. **All work must be committed to the feature branch**, not to `main`/`master`.
-4. When finished, open a Pull Request targeting `main` — do not merge directly.
-
-Branch naming convention: `feature/short-description`, `fix/short-description`, or `chore/short-description`.
-
-The human owner will review and merge PRs into `main`. Agents do not have permission to merge.
-
 ## File Organization
 - Keep related files together
 - Use meaningful file names
@@ -154,4 +137,3 @@ The human owner will review and merge PRs into `main`. Agents do not have permis
 ---
 
 Apply these conventions when generating new code, infrastructure, or workflow files to ensure consistency with the existing project style.
-
