@@ -112,3 +112,15 @@ body[data-bs-theme='dark'] .joke-seq-number,
     flex: 1;
     min-width: 0;
 }
+
+.joke-modified-date {
+    font-size: 0.75rem;
+    color: var(--text-muted-light, #6c757d);
+    margin-bottom: 0.25rem;
+    font-style: italic;
+}
+
+body[data-bs-theme='dark'] .joke-modified-date,
+.theme-dark .joke-modified-date {
+    color: var(--text-muted-dark, #adb5bd);
+}

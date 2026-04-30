@@ -27,6 +27,16 @@ public class AIHelper : IAIHelper
     private readonly string openaiImageDeploymentName = "dall-e-3";
     private readonly string openaiImageApiKey = string.Empty;
 
+    /// <summary>
+    /// Controls which image generation API is used.
+    /// Supported values:
+    ///   "MAI"        – Microsoft AI image REST API (MAI-Image-2, MAI-Image-2-Efficient)
+    ///   "AzureOpenAI" – Azure OpenAI image deployment (dall-e-3, gpt-image-1, gpt-image-2)
+    ///   "OpenAI"     – Standard OpenAI API (gpt-image-2 GA via api.openai.com)
+    /// When omitted the provider is auto-detected: model names containing "mai" → MAI, all others → AzureOpenAI.
+    /// </summary>
+    private readonly string openaiImageModelProvider = string.Empty;
+
     private AIAgent jokeDescriptionAgent = null;
     private AIAgent jokeCategoryAgent = null;
     private AIAgent jokeAnalyzerAgent = null;
@@ -40,7 +50,20 @@ public class AIHelper : IAIHelper
     private static readonly HttpClient _httpClient = new();
     #endregion
 
-    private bool IsMaiModel => openaiImageDeploymentName.Contains("mai", StringComparison.OrdinalIgnoreCase);
+    /// <summary>
+    /// Returns true when the configured image provider routes to the MAI REST API.
+    /// Explicit "MAI" provider setting takes precedence; otherwise auto-detected from the model name.
+    /// </summary>
+    private bool IsMaiModel =>
+        string.Equals(openaiImageModelProvider, "MAI", StringComparison.OrdinalIgnoreCase)
+        || (string.IsNullOrEmpty(openaiImageModelProvider)
+            && openaiImageDeploymentName.Contains("mai", StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Returns true when the configured image provider is the standard (non-Azure) OpenAI API.
+    /// </summary>
+    private bool IsOpenAIModel =>
+        string.Equals(openaiImageModelProvider, "OpenAI", StringComparison.OrdinalIgnoreCase);
 
     private const string JokeCategoryClassifierPrompt =
         "You are a joke classification assistant. Given a joke, identify which categories from a provided list best describe it. " +
@@ -182,12 +205,19 @@ public class AIHelper : IAIHelper
                 return await GenerateMaiImageAsync(imageDescription, jokeId);
             }
 
-            // gpt-image-1 parameters:
-            // - Size: 1024x1024, 1024x1536, or 1536x1024
-            // - Quality: Low, Medium (default), or High
-            // - Note: gpt-image-1 models only return base64, no URI option
+            // Route to standard OpenAI API (e.g. gpt-image-2 GA via api.openai.com)
+            if (IsOpenAIModel)
+            {
+                return await GenerateOpenAIImageAsync(imageDescription, jokeId);
+            }
+
+            // Azure OpenAI image generation (dall-e-3, gpt-image-1, gpt-image-2 via Azure deployment)
+            // Supported sizes: 1024x1024, 1024x1536, or 1536x1024
+            // Quality: High for dall-e-3, Medium for gpt-image-1/gpt-image-2 (both return base64)
             Console.WriteLine($"Generating Image for Joke {jokeId} using endpoint {openaiImageEndpointUrl} and model {openaiImageDeploymentName} with Prompt: {imageDescription[..Math.Min(15, imageDescription.Length)]}...");
-            var imageQuality = openaiImageDeploymentName == "dall-e-3" ? GeneratedImageQuality.HighQuality : GeneratedImageQuality.MediumQuality;
+            var imageQuality = openaiImageDeploymentName.StartsWith("dall-e", StringComparison.OrdinalIgnoreCase)
+                ? GeneratedImageQuality.HighQuality
+                : GeneratedImageQuality.MediumQuality;
             var imageResult = await imageGenerator.GenerateImageAsync(imageDescription, new()
             {
                 Quality = imageQuality,
@@ -431,6 +461,7 @@ public class AIHelper : IAIHelper
         openaiImageEndpoint = !string.IsNullOrEmpty(openaiImageEndpointUrl) ? new(config["AppSettings:AzureOpenAI:Image:Endpoint"]) : null;
         openaiImageDeploymentName = config["AppSettings:AzureOpenAI:Image:DeploymentName"];
         openaiImageApiKey = config["AppSettings:AzureOpenAI:Image:ApiKey"];
+        openaiImageModelProvider = config["AppSettings:AzureOpenAI:Image:ModelProvider"] ?? string.Empty;
 
         blobStorageAccountName = config["AppSettings:BlobStorageAccountName"];
         vsTenantId = config["VisualStudioTenantId"];
@@ -605,6 +636,9 @@ public class AIHelper : IAIHelper
         // MAI models use HttpClient directly — no SDK ImageClient needed
         if (IsMaiModel) return !string.IsNullOrEmpty(openaiImageEndpointUrl);
 
+        // Standard OpenAI API models (e.g. gpt-image-2 GA) use HttpClient directly as well
+        if (IsOpenAIModel) return !string.IsNullOrEmpty(openaiImageApiKey);
+
         if (imageGenerator != null) return true;
 
         if (string.IsNullOrEmpty(openaiImageEndpointUrl))
@@ -635,6 +669,79 @@ public class AIHelper : IAIHelper
             Console.WriteLine($"Error initializing Image Agent: {msg}");
             return false;
         }
+    }
+
+    /// <summary>
+    /// Generate an image using the standard OpenAI REST API (e.g. gpt-image-2 GA via api.openai.com).
+    /// Endpoint: https://api.openai.com/v1/images/generations
+    /// </summary>
+    private async Task<(string imageDataUrl, bool success, string message)> GenerateOpenAIImageAsync(string imageDescription, int jokeId)
+    {
+        if (string.IsNullOrEmpty(openaiImageApiKey))
+        {
+            return (string.Empty, false, "OpenAI API key not configured!");
+        }
+
+        // Default to standard OpenAI endpoint if none specified
+        var baseUrl = !string.IsNullOrEmpty(openaiImageEndpointUrl)
+            ? openaiImageEndpointUrl.TrimEnd('/')
+            : "https://api.openai.com/v1";
+        var url = $"{baseUrl}/images/generations";
+
+        var payload = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            model = openaiImageDeploymentName,
+            prompt = imageDescription,
+            n = 1,
+            size = "1024x1024",
+            response_format = "b64_json"
+        });
+
+        Console.WriteLine($"Generating image for Joke {jokeId} using OpenAI API {url} model={openaiImageDeploymentName} prompt={imageDescription[..Math.Min(15, imageDescription.Length)]}...");
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {openaiImageApiKey}");
+        request.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+        var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        var responseJson = await response.Content.ReadAsStringAsync();
+
+        string base64Data = null;
+        using var responseDoc = JsonDocument.Parse(responseJson);
+        if (responseDoc.RootElement.TryGetProperty("data", out var dataArray))
+        {
+            foreach (var item in dataArray.EnumerateArray())
+            {
+                if (item.TryGetProperty("b64_json", out var b64Element))
+                {
+                    base64Data = b64Element.GetString();
+                    break;
+                }
+            }
+        }
+
+        if (string.IsNullOrEmpty(base64Data))
+        {
+            return ("Blank!", false, $"No image data returned from OpenAI image generator! Response: {responseJson[..Math.Min(200, responseJson.Length)]}");
+        }
+
+        var imageBytes = Convert.FromBase64String(base64Data);
+
+        if (jokeId > 0)
+        {
+            var imageBlobUrl = await SaveImageToBlobAsync(imageBytes, jokeId);
+            if (!string.IsNullOrEmpty(imageBlobUrl))
+            {
+                Console.WriteLine($"Saved OpenAI image to blob storage ({imageBytes.Length} bytes)");
+                return (imageBlobUrl, true, string.Empty);
+            }
+        }
+
+        var imageDataUrl = $"data:image/png;base64,{base64Data}";
+        Console.WriteLine($"Generated OpenAI image (base64 data URL, {imageBytes.Length} bytes)");
+        return (imageDataUrl, true, string.Empty);
     }
 
     /// <summary>

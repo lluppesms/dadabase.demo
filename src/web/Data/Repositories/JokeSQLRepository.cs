@@ -100,10 +100,10 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
-    /// Returns the most recently added active jokes, ordered by creation date descending and limited to <paramref name="count"/> records.
+    /// Returns the most recently modified active jokes, ordered by last-modified date descending and limited to <paramref name="count"/> records.
     /// </summary>
     /// <param name="count">The maximum number of jokes to return. The default is 100.</param>
-    /// <returns>An <see cref="IQueryable{T}"/> of the most recent <see cref="Joke"/> records.</returns>
+    /// <returns>An <see cref="IQueryable{T}"/> of the most recently modified <see cref="Joke"/> records.</returns>
     public IQueryable<Joke> GetRecentAdditions(int count = 100)
     {
         var jokes = _context.Jokes
@@ -119,7 +119,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
                     j.CreateDateTime, j.CreateUserName, j.ChangeDateTime, j.ChangeUserName
                 FROM Joke j
                 WHERE j.ActiveInd = 'Y'
-                ORDER BY j.CreateDateTime DESC")
+                ORDER BY j.ChangeDateTime DESC")
             .AsEnumerable()
             .AsQueryable();
 
@@ -527,6 +527,27 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
+    /// Exports all active jokes as a simple bulleted list grouped by category with a header per category.
+    /// Each joke whose category list contains multiple categories will appear under each of its categories.
+    /// </summary>
+    /// <param name="requestingUserName">The username of the user requesting the export.</param>
+    /// <returns>A plain-text bulleted list suitable for copying into OneNote or similar tools.</returns>
+    public string ExportToBulletedList(string requestingUserName = "ANON")
+    {
+        var categoryParam = (string?)null;
+        var searchParam = (string?)null;
+        var jokes = _context.Jokes
+            .FromSqlInterpolated($"EXEC [dbo].[usp_Joke_Search] @category = {categoryParam}, @searchTxt = {searchParam}")
+            .AsNoTracking()
+            .AsEnumerable()
+            .OrderBy(j => j.Categories)
+            .ThenBy(j => j.JokeTxt)
+            .ToList();
+
+        return Utilities.BuildBulletedList(jokes);
+    }
+
+    /// <summary>
     /// Imports jokes from a tab-delimited text string. Parses the rows in C#, ensures all
     /// referenced categories exist, then inserts new jokes and their category associations
     /// using the existing repository methods.
@@ -839,7 +860,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
 
             var importedCount = 0;
             using var command = _context.Database.GetDbConnection().CreateCommand();
-            if (command.Connection.State != System.Data.ConnectionState.Open)
+            if (command.Connection?.State != System.Data.ConnectionState.Open)
             {
                 _context.Database.OpenConnection();
             }

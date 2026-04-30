@@ -177,6 +177,43 @@ public partial class Export : ComponentBase
     }
 
     /// <summary>
+    /// Downloads a simple bulleted list export organized by category, suitable for copying into OneNote.
+    /// </summary>
+    private async Task DownloadBulletedListExport()
+    {
+        try
+        {
+            isBusy = true;
+            activeAction = "bullets";
+            exportStatusMessage = "Generating bulleted list export file...";
+            exportAlertClass = "alert-info";
+            StateHasChanged();
+
+            var textContent = JokeRepository.ExportToBulletedList();
+            var byteArray = Encoding.UTF8.GetBytes(textContent);
+            var fileName = $"JokeExport_BulletedList_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt";
+
+            using var stream = new MemoryStream(byteArray);
+            using var streamRef = new DotNetStreamReference(stream: stream);
+            await JsInterop.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+
+            exportStatusMessage = $"Export file '{fileName}' downloaded successfully!";
+            exportAlertClass = "alert-success";
+        }
+        catch (Exception ex)
+        {
+            exportStatusMessage = $"Error generating bulleted list export: {Helpers.Utilities.GetExceptionMessage(ex)}";
+            exportAlertClass = "alert-danger";
+        }
+        finally
+        {
+            isBusy = false;
+            activeAction = string.Empty;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
     /// Reads the selected import file into memory.
     /// </summary>
     private async Task OnImportFileSelected(InputFileChangeEventArgs e)

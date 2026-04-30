@@ -1,12 +1,6 @@
-﻿/*
-  ----------------------------------------------------------------------------------------------------
-  ===> 01/30/2024:  these lines are probably wrong and need attention...:
-
-  // LINE 66:   .UseStartup<TestingStartup>()
-  // LINE 109:  var applicationBasePath = PlatformServices.Default.Application.ApplicationBasePath;
-  ----------------------------------------------------------------------------------------------------
-*/
+﻿#pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace DadABase.Tests;
+#pragma warning restore IDE0130 // Namespace does not match folder structure
 
 [ExcludeFromCodeCoverage]
 public abstract class BaseWebTesting
@@ -27,15 +21,12 @@ public abstract class BaseWebTesting
         _client = GetClient();
     }
 
-    protected class ConsoleWriter : StringWriter
+    protected class ConsoleWriter(ITestOutputHelper output) : StringWriter
     {
 #pragma warning disable IDE0044 // Add readonly modifier
-        private ITestOutputHelper output;
+        private ITestOutputHelper output = output;
+
 #pragma warning restore IDE0044 // Add readonly modifier
-        public ConsoleWriter(ITestOutputHelper output)
-        {
-            this.output = output;
-        }
 
         public override void WriteLine(string m)
         {
@@ -48,13 +39,19 @@ public abstract class BaseWebTesting
         var startupAssembly = Assembly.GetExecutingAssembly();
         //  OLD: var startupAssembly = typeof(Startup).GetTypeInfo().Assembly;
         var contentRoot = GetProjectPath(string.Empty, startupAssembly);
-        var builder = new WebHostBuilder()
-            .UseContentRoot(contentRoot)
-            .ConfigureServices(InitializeServices)
-            // ====>   do I need this for authentication.... ?????       .UseStartup<TestingStartup>()
-            .UseEnvironment("Testing"); // ensure ConfigureTesting is called in Startup
-        var server = new TestServer(builder);
-        var client = server.CreateClient();
+        var host = new HostBuilder()
+            .ConfigureWebHost(webBuilder =>
+            {
+                webBuilder
+                    .UseContentRoot(contentRoot)
+                    .ConfigureServices(InitializeServices)
+                    // ====>   do I need this for authentication.... ?????       .UseStartup<TestingStartup>()
+                    .UseEnvironment("Testing") // ensure ConfigureTesting is called in Startup
+                    .UseTestServer();
+            })
+            .Build();
+        host.Start();
+        var client = host.GetTestClient();
         return client;
     }
 

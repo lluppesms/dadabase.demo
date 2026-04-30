@@ -118,7 +118,7 @@ public class JokeJsonRepository : IJokeRepository
                     if (string.IsNullOrEmpty(joke.Categories)) return false;
                     var jokeCategories = joke.Categories.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                     return jokeCategoryList!.Any(category => jokeCategories.Contains(category, StringComparer.OrdinalIgnoreCase))
-                        && joke.JokeTxt.Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase);
+                        && (joke.JokeTxt ?? string.Empty).Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase);
                 })
                 .ToList();
             return jokesByTermAndCategory.AsQueryable();
@@ -142,7 +142,7 @@ public class JokeJsonRepository : IJokeRepository
         if (string.IsNullOrEmpty(jokeCategoryTxt) && !string.IsNullOrEmpty(searchTxt))
         {
             var jokesByTerm = _jokes
-                .Where(joke => joke.JokeTxt.Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase))
+                .Where(joke => (joke.JokeTxt ?? string.Empty).Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase))
                 .ToList();
             return jokesByTerm.AsQueryable();
         }
@@ -173,13 +173,16 @@ public class JokeJsonRepository : IJokeRepository
     }
 
     /// <summary>
-    /// Returns the first <paramref name="count"/> jokes from the JSON repository.
+    /// Returns the most recently modified jokes from the JSON repository, ordered by last-modified date descending and limited to <paramref name="count"/> records.
     /// </summary>
     /// <param name="count">The maximum number of jokes to return. The default is 100.</param>
     /// <returns>An <see cref="IQueryable{T}"/> of <see cref="Joke"/> records.</returns>
     public IQueryable<Joke> GetRecentAdditions(int count = 100)
     {
-        return _jokes.Take(count).AsQueryable();
+        return _jokes
+            .OrderByDescending(j => j.ChangeDateTime)
+            .Take(count)
+            .AsQueryable();
     }
 
     /// <summary>
@@ -387,6 +390,17 @@ public class JokeJsonRepository : IJokeRepository
             .ToList();
 
         return System.Text.Json.JsonSerializer.Serialize(exportList, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+    }
+
+    /// <summary>
+    /// Exports all jokes from the JSON repository as a plain-text bulleted list grouped by category.
+    /// </summary>
+    /// <param name="requestingUserName">The username of the caller requesting the export.</param>
+    /// <returns>A plain-text bulleted list suitable for copying into OneNote or similar tools.</returns>
+    public string ExportToBulletedList(string requestingUserName = "ANON")
+    {
+        var jokes = _jokes.OrderBy(j => j.Categories).ThenBy(j => j.JokeTxt).ToList();
+        return Helpers.Utilities.BuildBulletedList(jokes);
     }
 
     /// <summary>

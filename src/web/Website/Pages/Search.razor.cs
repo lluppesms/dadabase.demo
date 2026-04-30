@@ -24,6 +24,7 @@ public partial class Search : ComponentBase
     private readonly string AllJokesConstant = "ALL";
     private readonly string RecentAdditionsConstant = "RECENT";
     private const int RecentAdditionsCount = 100;
+    private bool isRecentMode = false;
 
 	/// <summary>
 	/// Initialization
@@ -68,6 +69,7 @@ public partial class Search : ComponentBase
 
         if (selectedCategories == RecentAdditionsConstant)
         {
+            isRecentMode = true;
             var query = JokeRepository.GetRecentAdditions(RecentAdditionsCount);
             if (!string.IsNullOrEmpty(SearchTerm))
             {
@@ -77,6 +79,7 @@ public partial class Search : ComponentBase
         }
         else
         {
+            isRecentMode = false;
             myJokes = JokeRepository.SearchJokes(SearchTerm, selectedCategories).ToList();
         }
 
