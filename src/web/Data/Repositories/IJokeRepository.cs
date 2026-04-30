@@ -166,8 +166,8 @@ public interface IJokeRepository
     /// <returns><see langword="true" /> if the deletion was successful; otherwise, <see langword="false" />.</returns>
     bool DeleteJoke(int jokeId, string requestingUserName = "ANON");
 
-        /// <summary>
-        /// Disposal
-        /// </summary>
-        void Dispose();
-    }
+    /// <summary>
+    /// Disposal
+    /// </summary>
+    void Dispose();
+}

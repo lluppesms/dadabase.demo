@@ -37,7 +37,7 @@ public class Export_Repository_Tests : BaseTest
         Assert.NotNull(sqlContent);
         Assert.NotEmpty(sqlContent);
         Assert.Contains("INSERT INTO @tmpJokes", sqlContent);
-        
+
         output.WriteLine($"Generated SQL length: {sqlContent.Length} characters");
     }
 
@@ -51,7 +51,7 @@ public class Export_Repository_Tests : BaseTest
 
         // Assert
         Assert.NotNull(sqlContent);
-        
+
         // Check for key SQL elements
         Assert.Contains("Declare @RemovePreviousJokes", sqlContent);
         Assert.Contains("INSERT INTO @tmpJokes", sqlContent);
@@ -62,7 +62,7 @@ public class Export_Repository_Tests : BaseTest
         Assert.Contains("INSERT INTO JokeCategory", sqlContent);
         Assert.Contains("INSERT INTO Joke", sqlContent);
         Assert.Contains("INSERT INTO JokeJokeCategory", sqlContent);
-        
+
         output.WriteLine($"SQL content length: {sqlContent.Length} characters");
         output.WriteLine("First 500 characters:");
         output.WriteLine(sqlContent.Substring(0, Math.Min(500, sqlContent.Length)));
@@ -78,12 +78,12 @@ public class Export_Repository_Tests : BaseTest
 
         // Assert
         Assert.NotNull(sqlContent);
-        
+
         // Check that single quotes in jokes are properly escaped (doubled)
         // SQL uses '' to escape a single quote within a string literal
         // The test data should have jokes with apostrophes that need escaping
         Assert.Contains("''", sqlContent); // Should find escaped quotes
-        
+
         output.WriteLine("Export SQL generated successfully with proper quote escaping");
     }
 
@@ -97,16 +97,16 @@ public class Export_Repository_Tests : BaseTest
 
         // Assert
         Assert.NotNull(sqlContent);
-        
+
         // The export should handle jokes with multiple categories
         // by creating multiple rows in the temp table
         Assert.Contains("INSERT INTO @tmpJokes (JokeCategoryTxt, JokeTxt, Attribution) VALUES", sqlContent);
-        
+
         // Should have multiple category entries
         var lines = sqlContent.Split('\n');
         var insertLines = lines.Where(l => l.Trim().StartsWith("(")).ToList();
         Assert.True(insertLines.Count > 0, "Should have at least one joke entry");
-        
+
         output.WriteLine($"Found {insertLines.Count} joke-category combinations");
     }
 
