@@ -6,7 +6,9 @@
 // Joke Table
 // </summary>
 //-----------------------------------------------------------------------
+#pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace DadABase.Data;
+#pragma warning restore IDE0130 // Namespace does not match folder structure
 
 [ExcludeFromCodeCoverage]
 /// <summary>
@@ -49,7 +51,7 @@ public class Joke
     /// </summary>
     [Display(Name = "Categories", Description = "Multiple categories for this joke (comma-separated).", Prompt = "Enter Categories")]
     [NotMapped]
-    public string? Categories { get; set; }
+    public string Categories { get; set; }
 
     /// <summary>
     /// Attribution
