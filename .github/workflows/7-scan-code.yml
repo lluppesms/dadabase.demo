@@ -15,6 +15,10 @@ on:
         description: Run GitHub Advanced Security Scan
         default: true
         type: boolean
+      runSBOM:
+        description: Generate Software Bill of Materials (SBOM)
+        default: true
+        type: boolean
   # push:
   #   branches: [ "main" ]
   # pull_request:
@@ -47,3 +51,4 @@ jobs:
     with:
       runMSDevSecOpsScan: ${{ inputs.runMSDevSecOpsScan || true }}
       runGHASScan: ${{ inputs.runGHASScan || true }}
+      runSBOM: ${{ inputs.runSBOM || true }}

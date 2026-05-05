@@ -26,6 +26,10 @@ parameters:
     displayName: Run GHAS Scan
     type: boolean
     default: false
+  - name: runSBOM
+    displayName: Generate Software Bill of Materials (SBOM)
+    type: boolean
+    default: true
 
 # ----------------------------------------------------------------------------------------------------
 variables:
@@ -38,3 +42,4 @@ stages:
   parameters:
     runGHASScan: ${{ parameters.runGHASScan }}
     runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
+    runSBOM: ${{ parameters.runSBOM }}

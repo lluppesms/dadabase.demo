@@ -1,0 +1,127 @@
+# ----------------------------------------------------------------------------------------------------
+# SBOM Generation Job Template
+# ----------------------------------------------------------------------------------------------------
+# Generates a Software Bill of Materials (SBOM) for the repository using Microsoft's SBOM Tool.
+# The SBOM is produced in SPDX 2.2 format and published as a pipeline artifact.
+#
+# Microsoft SBOM Tool:
+#   https://github.com/microsoft/sbom-tool
+#
+# For more information on SBOM in Azure DevOps / GitHub Advanced Security for Azure DevOps, see:
+#   https://learn.microsoft.com/en-us/azure/devops/repos/security/github-advanced-security-dependency-scanning
+# ----------------------------------------------------------------------------------------------------
+# Pre-requisites:
+#   - The Microsoft SBOM Tool is downloaded and run as part of this job (no pre-installation needed).
+# ----------------------------------------------------------------------------------------------------
+parameters:
+- name: environmentName
+  default: 'DEV'
+- name: continueOnSBOMError
+  default: 'true'
+- name: packageName
+  default: 'DadABase'
+- name: packageVersion
+  default: '1.0.0'
+- name: packageSupplier
+  default: 'DadABase'
+
+# ----------------------------------------------------------------------------------------------------
+jobs:
+- job: SBOMGenerationJob
+  displayName: Generate SBOM
+  variables:
+    - template: ../vars/var-common.yml
+  steps:
+  - task: CmdLine@2
+    displayName: 'Display SBOM Variables'
+    inputs:
+      script: |
+        echo "parameters.continueOnSBOMError=${{ parameters.continueOnSBOMError }}"
+        echo "parameters.packageName=${{ parameters.packageName }}"
+        echo "parameters.packageVersion=${{ parameters.packageVersion }}"
+        echo "parameters.packageSupplier=${{ parameters.packageSupplier }}"
+        echo "Build.SourcesDirectory=$(Build.SourcesDirectory)"
+        echo "Build.ArtifactStagingDirectory=$(Build.ArtifactStagingDirectory)"
+    continueOnError: true
+
+  # ----------------------------------------------------------------------------------------------------
+  # Download the Microsoft SBOM Tool and generate an SPDX 2.2 SBOM for the repository.
+  # The tool scans component detectors (NuGet, npm, etc.) without requiring a build.
+  # NOTE: This job uses PowerShell tasks and requires a Windows agent (windows-latest).
+  # See: https://github.com/microsoft/sbom-tool#sbom-tool-cli-arguments
+  # ----------------------------------------------------------------------------------------------------
+  - task: PowerShell@2
+    displayName: Download Microsoft SBOM Tool
+    continueOnError: ${{ eq(parameters.continueOnSBOMError, 'true') }}
+    inputs:
+      targetType: 'inline'
+      script: |
+        $toolDir = "$(Agent.TempDirectory)/sbom-tool"
+        New-Item -ItemType Directory -Force -Path $toolDir | Out-Null
+        $toolPath = "$toolDir/sbom-tool.exe"
+
+        Write-Host "Downloading Microsoft SBOM Tool..."
+        $releaseApiUrl = "https://api.github.com/repos/microsoft/sbom-tool/releases/latest"
+        $headers = @{ "User-Agent" = "AzureDevOps-SBOM-Pipeline" }
+        $release = Invoke-RestMethod -Uri $releaseApiUrl -Headers $headers
+
+        # Select the Windows x64 binary; update if using a Linux or macOS agent
+        $asset = $release.assets | Where-Object { $_.name -eq "sbom-tool-win-x64.exe" }
+        if (-not $asset) {
+          Write-Error "Could not find sbom-tool-win-x64.exe in the latest release"
+          exit 1
+        }
+
+        Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $toolPath -UseBasicParsing
+        Write-Host "SBOM Tool downloaded to: $toolPath"
+        Write-Host "##vso[task.setvariable variable=SBOM_TOOL_PATH]$toolPath"
+
+  - task: PowerShell@2
+    displayName: Generate SBOM
+    continueOnError: ${{ eq(parameters.continueOnSBOMError, 'true') }}
+    inputs:
+      targetType: 'inline'
+      script: |
+        $toolPath = "$(SBOM_TOOL_PATH)"
+        $outputDir = "$(Build.ArtifactStagingDirectory)/sbom"
+        New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
+
+        Write-Host "Generating SBOM for ${{ parameters.packageName }} v${{ parameters.packageVersion }}..."
+        & $toolPath generate `
+          -b "$(Build.SourcesDirectory)" `
+          -bc "$(Build.SourcesDirectory)/src" `
+          -pn "${{ parameters.packageName }}" `
+          -pv "${{ parameters.packageVersion }}" `
+          -ps "${{ parameters.packageSupplier }}" `
+          -nsb "https://github.com/lluppesms/dadabase.demo" `
+          -o "$outputDir" `
+          -V Verbose
+
+        if ($LASTEXITCODE -ne 0) {
+          Write-Host "##vso[task.logissue type=warning]SBOM generation completed with exit code $LASTEXITCODE"
+        } else {
+          Write-Host "✅ SBOM generated successfully!"
+        }
+
+        $sbomFile = Get-ChildItem -Path $outputDir -Recurse -Filter "manifest.spdx.json" | Select-Object -First 1
+        if ($sbomFile) {
+          Write-Host "SBOM file: $($sbomFile.FullName)"
+          try {
+            $sbomContent = Get-Content $sbomFile.FullName -Raw | ConvertFrom-Json
+            $packageCount = $sbomContent.packages.Count
+            Write-Host "Package count: $packageCount"
+          } catch {
+            Write-Host "##vso[task.logissue type=warning]Could not parse SBOM JSON to count packages: $_"
+          }
+        } else {
+          Write-Host "##vso[task.logissue type=warning]SBOM manifest file not found in output directory"
+        }
+
+  - task: PublishBuildArtifacts@1
+    displayName: Publish SBOM Artifact
+    condition: always()
+    continueOnError: ${{ eq(parameters.continueOnSBOMError, 'true') }}
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDirectory)/sbom'
+      artifactName: 'sbom'
+      publishLocation: 'Container'
