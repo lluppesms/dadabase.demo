@@ -212,31 +212,30 @@ Once an SBOM is generated, it can be scanned for known vulnerabilities (CVEs) us
 
 ### GitHub Actions
 
-The vulnerability report workflow lives in a dedicated reusable workflow template:
+The SBOM generation and vulnerability report are combined in a single reusable workflow template:
 
 ```
-.github/workflows/template-sbom-report.yml
+.github/workflows/template-create-sbom.yml
 ```
 
-It is called automatically from `template-scan-code.yml` after the SBOM generation job completes, controlled by the `runSBOMReport` input.
+It is called from `template-scan-code.yml` when the `runSBOM` input is enabled. Vulnerability scanning runs automatically as part of the same job — no separate input is needed.
 
 #### How It Works
 
-1. The SBOM artifact (`sbom.spdx.json`) is downloaded from the workflow run.
-2. `anchore/scan-action` (which wraps Grype) scans the SBOM against vulnerability databases.
-3. A **table summary** is printed to the workflow log.
-4. The results are exported as a **SARIF file** and uploaded to the **GitHub Security tab** (requires GitHub Advanced Security).
-5. Grype is also run in JSON mode to generate a **styled HTML report**.
-6. Both the SARIF and HTML report are uploaded as workflow artifacts (`sbom-vulnerability-report`).
+1. The SBOM is generated and saved locally as `sbom.spdx.json`.
+2. The SBOM artifact is uploaded for retention.
+3. `anchore/scan-action` (which wraps Grype) scans the SBOM against vulnerability databases.
+4. A **table summary** is printed to the workflow log.
+5. The results are exported as a **SARIF file** and uploaded to the **GitHub Security tab** (requires GitHub Advanced Security).
+6. Grype is also run in JSON mode to generate a **styled HTML report**.
+7. Both the SARIF and HTML report are uploaded as workflow artifacts (`sbom-vulnerability-report`).
 
 #### Running the Vulnerability Report
 
 1. Navigate to **Actions → 7. Scheduled Scan Code**
 2. Click **Run workflow**
-3. Check both **Generate Software Bill of Materials (SBOM)** and **Scan SBOM for vulnerabilities and generate report**
+3. Check **Generate Software Bill of Materials (SBOM)**
 4. Click **Run workflow**
-
-> **Note:** `runSBOMReport` requires `runSBOM` to be enabled first — the report job depends on the generated SBOM artifact.
 
 #### Viewing the Results
 
