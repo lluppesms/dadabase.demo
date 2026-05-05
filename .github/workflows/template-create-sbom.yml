@@ -285,7 +285,7 @@ jobs:
         </body>
         </html>"""
 
-        with open('sbom-vulnerability-report.html', 'w') as f:
+        with open('sbom-report.html', 'w') as f:
             f.write(html)
         print(f"✅ HTML report generated: {len(matches)} vulnerabilities, {len(all_packages)} packages")
         PYTHON_SCRIPT
@@ -295,8 +295,8 @@ jobs:
       continue-on-error: true
       uses: actions/upload-artifact@v7
       with:
-        name: sbom-vulnerability-report
+        name: sbom-report
         path: |
           ${{ steps.scan.outputs.sarif }}
-          sbom-vulnerability-report.html
+          sbom-report.html
         retention-days: 90
