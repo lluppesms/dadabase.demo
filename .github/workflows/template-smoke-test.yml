@@ -39,7 +39,7 @@ jobs:
       PLAYWRIGHT_BASE_URL: 'https://${{ vars.APP_NAME }}-${{ inputs.envCode }}.azurewebsites.net'
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     
     - name: Display Variables
       run: |-
