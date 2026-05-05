@@ -125,3 +125,188 @@ jobs:
       pathToPublish: '$(Build.ArtifactStagingDirectory)/sbom'
       artifactName: 'sbom'
       publishLocation: 'Container'
+
+  # ----------------------------------------------------------------------------------------------------
+  # Download Grype, scan the generated SPDX SBOM for known vulnerabilities, and produce reports.
+  # Grype cross-references each package against the OSV/NVD vulnerability databases.
+  # See: https://github.com/anchore/grype
+  # ----------------------------------------------------------------------------------------------------
+  - task: PowerShell@2
+    displayName: Download Grype Vulnerability Scanner
+    continueOnError: ${{ eq(parameters.continueOnSBOMError, 'true') }}
+    inputs:
+      targetType: 'inline'
+      script: |
+        $toolDir = "$(Agent.TempDirectory)/grype"
+        New-Item -ItemType Directory -Force -Path $toolDir | Out-Null
+        $toolPath = "$toolDir/grype.exe"
+
+        Write-Host "Downloading Grype vulnerability scanner..."
+        $releaseApiUrl = "https://api.github.com/repos/anchore/grype/releases/latest"
+        $headers = @{ "User-Agent" = "AzureDevOps-SBOM-Pipeline" }
+        $release = Invoke-RestMethod -Uri $releaseApiUrl -Headers $headers
+
+        $grypeAsset = $release.assets | Where-Object { $_.name -like "grype_*_windows_amd64.zip" } | Select-Object -First 1
+        if (-not $grypeAsset) {
+          Write-Error "Could not find grype Windows amd64 zip in the latest release"
+          exit 1
+        }
+
+        $zipPath = "$toolDir/grype.zip"
+        Invoke-WebRequest -Uri $grypeAsset.browser_download_url -OutFile $zipPath -UseBasicParsing
+        Expand-Archive -Path $zipPath -DestinationPath $toolDir -Force
+        Write-Host "Grype downloaded to: $toolPath"
+        Write-Host "##vso[task.setvariable variable=GRYPE_PATH]$toolPath"
+
+  - task: PowerShell@2
+    displayName: Scan SBOM for Vulnerabilities
+    continueOnError: ${{ eq(parameters.continueOnSBOMError, 'true') }}
+    inputs:
+      targetType: 'inline'
+      script: |
+        $grypePath = "$(GRYPE_PATH)"
+        $reportDir = "$(Build.ArtifactStagingDirectory)/sbom-report"
+        New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
+
+        $sbomFile = Get-ChildItem -Path "$(Build.ArtifactStagingDirectory)/sbom" -Recurse -Filter "manifest.spdx.json" | Select-Object -First 1
+        if (-not $sbomFile) {
+          Write-Host "##vso[task.logissue type=warning]SBOM manifest file not found - skipping vulnerability scan"
+          exit 0
+        }
+
+        Write-Host "Scanning SBOM: $($sbomFile.FullName)"
+
+        # Display table summary to pipeline log
+        Write-Host ""
+        Write-Host "=== Vulnerability Summary ==="
+        & $grypePath "sbom:$($sbomFile.FullName)" --output table
+        Write-Host "============================="
+
+        # Generate SARIF report
+        Write-Host "Generating SARIF report..."
+        & $grypePath "sbom:$($sbomFile.FullName)" --output sarif | Out-File -FilePath "$reportDir/grype-results.sarif" -Encoding utf8
+        Write-Host "SARIF report: $reportDir/grype-results.sarif"
+
+        # Generate JSON for HTML conversion
+        Write-Host "Generating JSON report..."
+        & $grypePath "sbom:$($sbomFile.FullName)" --output json | Out-File -FilePath "$reportDir/grype-results.json" -Encoding utf8
+        Write-Host "JSON report: $reportDir/grype-results.json"
+
+        Write-Host "##vso[task.setvariable variable=SBOM_REPORT_DIR]$reportDir"
+        Write-Host "##vso[task.setvariable variable=GRYPE_JSON_PATH]$reportDir/grype-results.json"
+        Write-Host "##vso[task.setvariable variable=GRYPE_SARIF_PATH]$reportDir/grype-results.sarif"
+
+  - task: PowerShell@2
+    displayName: Generate HTML Vulnerability Report
+    continueOnError: ${{ eq(parameters.continueOnSBOMError, 'true') }}
+    inputs:
+      targetType: 'inline'
+      script: |
+        $jsonPath = "$(GRYPE_JSON_PATH)"
+        $reportDir = "$(SBOM_REPORT_DIR)"
+        $htmlPath = "$reportDir/sbom-vulnerability-report.html"
+
+        if (-not (Test-Path $jsonPath)) {
+          Write-Host "##vso[task.logissue type=warning]Grype JSON report not found - skipping HTML generation"
+          exit 0
+        }
+
+        $data = Get-Content $jsonPath -Raw | ConvertFrom-Json
+        $matches = @($data.matches)
+        $sourceInput = $data.source.target.userInput
+        $generatedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm UTC")
+        $maxDescLength = 200
+
+        $sevOrder = @('Critical', 'High', 'Medium', 'Low', 'Negligible', 'Unknown')
+        $sevColors = @{
+          Critical   = '#9b2226'
+          High       = '#ae2012'
+          Medium     = '#ca6702'
+          Low        = '#0a9396'
+          Negligible = '#94d2bd'
+          Unknown    = '#868e96'
+        }
+
+        $counts = @{}
+        foreach ($s in $sevOrder) { $counts[$s] = 0 }
+        foreach ($m in $matches) {
+          $sev = $m.vulnerability.severity
+          if (-not $sev -or -not $counts.ContainsKey($sev)) { $sev = 'Unknown' }
+          $counts[$sev]++
+        }
+
+        $sortedMatches = $matches | Sort-Object {
+          $sev = $_.vulnerability.severity
+          $idx = $sevOrder.IndexOf($sev)
+          if ($idx -lt 0) { $sevOrder.Count } else { $idx }
+        }
+
+        $summaryHeaders = ($sevOrder | ForEach-Object { "<th>$_</th>" }) -join ''
+        $summaryCells = ($sevOrder | ForEach-Object {
+          $color = $sevColors[$_]
+          "<td style=`"color:$color;font-weight:bold;text-align:center`">$($counts[$_])</td>"
+        }) -join ''
+
+        $rows = foreach ($m in $sortedMatches) {
+          $vuln    = $m.vulnerability
+          $artifact = $m.artifact
+          $sev     = if ($vuln.severity -and $sevColors.ContainsKey($vuln.severity)) { $vuln.severity } else { 'Unknown' }
+          $color   = $sevColors[$sev]
+          $fixVersions = if ($vuln.fix.versions) { ($vuln.fix.versions -join ', ') } else { '—' }
+          $vulnId  = $vuln.id
+          $url     = if ($vuln.urls) { $vuln.urls[0] } else { '' }
+          $vulnLink = if ($url) { "<a href=`"$url`" target=`"_blank`" rel=`"noopener`">$vulnId</a>" } else { $vulnId }
+          $desc    = if ($vuln.description) { $vuln.description.Substring(0, [Math]::Min($maxDescLength, $vuln.description.Length)) } else { '' }
+          if ($vuln.description -and $vuln.description.Length -gt $maxDescLength) { $desc += '...' }
+          "<tr><td>$vulnLink</td><td>$($artifact.name)</td><td>$($artifact.version)</td><td>$fixVersions</td><td><span class=`"badge`" style=`"background:$color`">$sev</span></td><td class=`"desc`">$desc</td></tr>"
+        }
+        $rowsHtml = if ($rows) { $rows -join "`n" } else { '<tr><td colspan="6" class="empty">&#10003; No vulnerabilities found</td></tr>' }
+
+        $html = @"
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>SBOM Vulnerability Report</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 24px; background: #f8f9fa; color: #212529; }
+            h1 { margin-bottom: 4px; }
+            .meta { color: #6c757d; font-size: 0.9em; margin-bottom: 24px; }
+            h2 { color: #495057; border-bottom: 2px solid #dee2e6; padding-bottom: 8px; margin-top: 32px; }
+            table { border-collapse: collapse; width: 100%; background: white; box-shadow: 0 1px 3px rgba(0,0,0,.12); border-radius: 6px; overflow: hidden; margin-bottom: 24px; }
+            th { background: #343a40; color: white; padding: 10px 16px; text-align: left; font-weight: 600; }
+            td { padding: 9px 16px; border-bottom: 1px solid #e9ecef; vertical-align: top; }
+            tr:last-child td { border-bottom: none; }
+            tbody tr:hover td { background: #f1f3f5; }
+            .badge { color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.8em; font-weight: 700; white-space: nowrap; }
+            .desc { font-size: 0.85em; color: #495057; max-width: 360px; }
+            .empty { text-align: center; padding: 24px; color: #6c757d; }
+            a { color: #0d6efd; text-decoration: none; }
+            a:hover { text-decoration: underline; }
+          </style>
+        </head>
+        <body>
+          <h1>SBOM Vulnerability Report</h1>
+          <p class="meta">Source: $sourceInput &nbsp;|&nbsp; Generated: $generatedAt &nbsp;|&nbsp; Total findings: $($matches.Count)</p>
+          <h2>Summary by Severity</h2>
+          <table><thead><tr>$summaryHeaders</tr></thead><tbody><tr>$summaryCells</tr></tbody></table>
+          <h2>Vulnerability Details ($($matches.Count) total)</h2>
+          <table>
+            <thead><tr><th>CVE / ID</th><th>Package</th><th>Version</th><th>Fixed In</th><th>Severity</th><th>Description</th></tr></thead>
+            <tbody>$rowsHtml</tbody>
+          </table>
+        </body>
+        </html>
+"@
+        Set-Content -Path $htmlPath -Value $html -Encoding utf8
+        Write-Host "✅ HTML report generated: $htmlPath ($($matches.Count) findings)"
+
+  - task: PublishBuildArtifacts@1
+    displayName: Publish SBOM Vulnerability Report
+    condition: always()
+    continueOnError: ${{ eq(parameters.continueOnSBOMError, 'true') }}
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDirectory)/sbom-report'
+      artifactName: 'sbom-vulnerability-report'
+      publishLocation: 'Container'

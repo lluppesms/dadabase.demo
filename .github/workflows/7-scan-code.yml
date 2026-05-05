@@ -19,6 +19,10 @@ on:
         description: Generate Software Bill of Materials (SBOM)
         default: true
         type: boolean
+      runSBOMReport:
+        description: Scan SBOM for vulnerabilities and generate report (requires runSBOM)
+        default: true
+        type: boolean
   # push:
   #   branches: [ "main" ]
   # pull_request:
@@ -52,3 +56,4 @@ jobs:
       runMSDevSecOpsScan: ${{ inputs.runMSDevSecOpsScan || true }}
       runGHASScan: ${{ inputs.runGHASScan || true }}
       runSBOM: ${{ inputs.runSBOM || true }}
+      runSBOMReport: ${{ inputs.runSBOMReport || true }}

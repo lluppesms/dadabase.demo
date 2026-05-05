@@ -22,6 +22,10 @@ on:
         required: false
         default: false
         type: boolean
+      runSBOMReport:
+        required: false
+        default: false
+        type: boolean
       continueOnScanError:
         required: false
         default: true
@@ -163,3 +167,13 @@ jobs:
     uses: ./.github/workflows/template-create-sbom.yml
     with:
       continueOnSBOMError: ${{ inputs.continueOnScanError }}
+
+  # ------------------------------------------------------------------------------------------------------------------------
+  sbom-report:
+    name: SBOM Vulnerability Report
+    if: inputs.runSBOMReport
+    needs: [sbom-generator]
+    uses: ./.github/workflows/template-sbom-report.yml
+    with:
+      continueOnError: ${{ inputs.continueOnScanError }}
+      artifactName: 'sbom.spdx.json'
