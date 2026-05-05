@@ -16,7 +16,7 @@ on:
         default: true
         type: boolean
       runSBOM:
-        description: Generate SBOM
+        description: Run SBOM Report Generator
         default: true
         type: boolean
   # push:
