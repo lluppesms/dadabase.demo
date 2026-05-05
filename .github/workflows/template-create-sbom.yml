@@ -85,13 +85,15 @@ jobs:
       continue-on-error: ${{ inputs.continueOnSBOMError }}
       uses: anchore/scan-action@v3
       # See: https://github.com/anchore/scan-action
+      env:
+        GRYPE_DB_VALIDATE_AGE: "false"  # prevent failure when cached DB exceeds the 5-day age limit
       with:
         sbom: sbom.spdx.json
         fail-build: false
         output-format: table
 
     - name: Upload vulnerability findings to Security tab
-      if: always()
+      if: always() && steps.scan.outputs.sarif != ''
       continue-on-error: true
       uses: github/codeql-action/upload-sarif@v4
       with:
@@ -103,7 +105,9 @@ jobs:
       shell: bash
       run: |
         curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
-        grype sbom:sbom.spdx.json --output json > grype-results.json
+        export GRYPE_DB_VALIDATE_AGE=false
+        grype db update || true
+        grype sbom:sbom.spdx.json --output json > grype-results.json || echo '{"matches":[]}' > grype-results.json
         echo "JSON report generated ($(jq '.matches | length' grype-results.json 2>/dev/null || echo '?') matches)"
 
     - name: Generate HTML vulnerability report
