@@ -83,7 +83,7 @@ jobs:
     - name: Scan SBOM for vulnerabilities
       id: scan
       continue-on-error: ${{ inputs.continueOnSBOMError }}
-      uses: anchore/scan-action@v3
+      uses: anchore/scan-action@v7
       # See: https://github.com/anchore/scan-action
       env:
         GRYPE_DB_VALIDATE_AGE: "false"  # prevent failure when cached DB exceeds the 5-day age limit
@@ -293,7 +293,7 @@ jobs:
     - name: Upload vulnerability reports as artifacts
       if: always()
       continue-on-error: true
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: sbom-vulnerability-report
         path: |
