@@ -45,7 +45,7 @@ jobs:
       id-token: write
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download DACPAC Artifact
         uses: actions/download-artifact@v4
