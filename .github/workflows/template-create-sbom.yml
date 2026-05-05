@@ -1,0 +1,72 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Reusable Workflow: Generate a Software Bill of Materials (SBOM)
+# ------------------------------------------------------------------------------------------------------------------------
+# This workflow generates an SBOM for the repository using anchore/sbom-action.
+# The SBOM is produced in SPDX JSON format and uploaded as a workflow artifact.
+#
+# For more information on SBOM in GitHub, see:
+#   https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/exporting-a-software-bill-of-materials-for-your-repository
+# ------------------------------------------------------------------------------------------------------------------------
+# NOTE: The repository must have the Dependency Graph enabled for full SBOM coverage.
+#   Repository Settings -> Security -> Code security -> Dependency graph -> Enable
+# ------------------------------------------------------------------------------------------------------------------------
+name: z_template_create_sbom
+run-name: Generate SBOM
+
+on:
+  workflow_call:
+    inputs:
+      continueOnSBOMError:
+        description: Continue workflow if SBOM generation fails
+        required: false
+        default: true
+        type: boolean
+      sbomFormat:
+        description: SBOM output format (spdx-json, cyclonedx-json, or syft-json)
+        required: false
+        default: 'spdx-json'
+        type: string
+      artifactName:
+        description: Name for the uploaded SBOM artifact
+        required: false
+        default: 'sbom'
+        type: string
+
+# ------------------------------------------------------------------------------------------------------------------------
+jobs:
+  generate-sbom:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to write SBOM artifact and submit to dependency graph
+      packages: read    # needed to read package information
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Generate SBOM
+      id: sbom
+      continue-on-error: ${{ inputs.continueOnSBOMError }}
+      uses: anchore/sbom-action@e11c554f704a0b820cbf8c51673f6945e0731532
+      # pinned to v0.18.0 (SHA: e11c554f704a0b820cbf8c51673f6945e0731532)
+      # See: https://github.com/anchore/sbom-action/releases/tag/v0.18.0
+      with:
+        format: ${{ inputs.sbomFormat }}
+        artifact-name: ${{ inputs.artifactName }}.spdx.json
+        upload-artifact: true
+        upload-artifact-retention: 90
+        output-file: sbom.spdx.json
+
+    - name: Display SBOM summary
+      if: success()
+      continue-on-error: true
+      shell: bash
+      run: |
+        if [ -f "sbom.spdx.json" ]; then
+          echo "✅ SBOM generated successfully!"
+          echo "Format: ${{ inputs.sbomFormat }}"
+          echo "Package count: $(jq '.packages | length' sbom.spdx.json 2>/dev/null || echo 'unknown')"
+        else
+          echo "⚠️  SBOM file not found at expected path."
+        fi

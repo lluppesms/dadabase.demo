@@ -18,6 +18,10 @@ on:
         required: false
         default: false
         type: boolean
+      runSBOM:
+        required: false
+        default: false
+        type: boolean
       continueOnScanError:
         required: false
         default: true
@@ -151,3 +155,11 @@ jobs:
       uses: github/codeql-action/analyze@v4
       with:
         category: "/language:${{matrix.language}}"
+
+  # ------------------------------------------------------------------------------------------------------------------------
+  sbom-generator:
+    name: Generate SBOM
+    if: inputs.runSBOM
+    uses: ./.github/workflows/template-create-sbom.yml
+    with:
+      continueOnSBOMError: ${{ inputs.continueOnScanError }}
