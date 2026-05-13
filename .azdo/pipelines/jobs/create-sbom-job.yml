@@ -76,6 +76,42 @@ jobs:
         Write-Host "SBOM Tool downloaded to: $toolPath"
         Write-Host "##vso[task.setvariable variable=SBOM_TOOL_PATH]$toolPath"
 
+  - task: UseDotNet@2
+    displayName: Setup .NET SDK
+    continueOnError: ${{ eq(parameters.continueOnSBOMError, 'true') }}
+    inputs:
+      packageType: 'sdk'
+      version: '10.0.x'
+
+  - task: PowerShell@2
+    displayName: Restore .NET Dependencies
+    continueOnError: ${{ eq(parameters.continueOnSBOMError, 'true') }}
+    inputs:
+      targetType: 'inline'
+      script: |
+        $srcRoot = "$(Build.SourcesDirectory)/src"
+        if (-not (Test-Path $srcRoot)) {
+          Write-Host "No src directory found under $srcRoot - skipping .NET restore"
+          exit 0
+        }
+
+        $projects = @(Get-ChildItem -Path $srcRoot -Recurse -Filter '*.csproj' -ErrorAction SilentlyContinue)
+        if ($projects.Count -eq 0) {
+          Write-Host "No .csproj files found under $srcRoot - skipping .NET restore"
+          exit 0
+        }
+
+        foreach ($project in $projects) {
+          Write-Host "Restoring $($project.FullName)"
+          dotnet restore $project.FullName --verbosity quiet
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "##vso[task.logissue type=warning]dotnet restore failed for $($project.FullName) with exit code $LASTEXITCODE"
+            if ('${{ parameters.continueOnSBOMError }}' -ne 'true') {
+              exit $LASTEXITCODE
+            }
+          }
+        }
+
   - task: PowerShell@2
     displayName: Generate SBOM
     continueOnError: ${{ eq(parameters.continueOnSBOMError, 'true') }}
@@ -94,7 +130,7 @@ jobs:
           -pv "${{ parameters.packageVersion }}" `
           -ps "${{ parameters.packageSupplier }}" `
           -nsb "https://github.com/lluppesms/dadabase.demo" `
-          -o "$outputDir" `
+          -m "$outputDir" `
           -V Verbose
 
         if ($LASTEXITCODE -ne 0) {
@@ -204,7 +240,7 @@ jobs:
       script: |
         $jsonPath = "$(GRYPE_JSON_PATH)"
         $reportDir = "$(SBOM_REPORT_DIR)"
-        $htmlPath = "$reportDir/sbom-vulnerability-report.html"
+        $htmlPath = "$reportDir/sbom-report.html"
 
         if (-not (Test-Path $jsonPath)) {
           Write-Host "##vso[task.logissue type=warning]Grype JSON report not found - skipping HTML generation"
@@ -213,9 +249,150 @@ jobs:
 
         $data = Get-Content $jsonPath -Raw | ConvertFrom-Json
         $matches = @($data.matches)
-        $sourceInput = $data.source.target.userInput
         $generatedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm UTC")
         $maxDescLength = 200
+        $repoRoot = "$(Build.SourcesDirectory)"
+        $sbomRoot = "$(Build.ArtifactStagingDirectory)/sbom"
+
+        function Convert-ToHtml {
+          param([object]$Value)
+
+          if ($null -eq $Value) {
+            return ''
+          }
+
+          return [System.Net.WebUtility]::HtmlEncode([string]$Value)
+        }
+
+        function Get-DisplayValue {
+          param(
+            [object]$Value,
+            [string]$Default = '-'
+          )
+
+          if ($null -eq $Value) {
+            return $Default
+          }
+
+          $text = [string]$Value
+          if ([string]::IsNullOrWhiteSpace($text)) {
+            return $Default
+          }
+
+          return $text
+        }
+
+        function Get-RelativeRepoPath {
+          param(
+            [string]$FullPath,
+            [string]$RepositoryRoot
+          )
+
+          $relativePath = $FullPath
+          if ($relativePath.StartsWith($RepositoryRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $relativePath = $relativePath.Substring($RepositoryRoot.Length).TrimStart('\', '/')
+          }
+
+          return ($relativePath -replace '\\', '/')
+        }
+
+        $sourceInput = 'SBOM scan'
+        if ($null -ne $data.source) {
+          if ($null -ne $data.source.target) {
+            if ($data.source.target.PSObject.Properties.Name -contains 'userInput') {
+              $sourceInput = [string]$data.source.target.userInput
+            } elseif ($data.source.target -is [string]) {
+              $sourceInput = [string]$data.source.target
+            }
+          } elseif ($data.source -is [string]) {
+            $sourceInput = [string]$data.source
+          }
+        }
+
+        $allPackages = @()
+        $sbomFile = Get-ChildItem -Path $sbomRoot -Recurse -Filter 'manifest.spdx.json' -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($sbomFile) {
+          try {
+            $sbomData = Get-Content $sbomFile.FullName -Raw | ConvertFrom-Json
+            foreach ($pkg in @($sbomData.packages)) {
+              $allPackages += [pscustomobject]@{
+                Name = Get-DisplayValue $pkg.name ''
+                Version = Get-DisplayValue $pkg.versionInfo '-'
+                License = Get-DisplayValue $pkg.licenseConcluded '-'
+                Supplier = Get-DisplayValue $pkg.supplier '-'
+              }
+            }
+
+            $allPackages = @($allPackages | Sort-Object Name, Version)
+          } catch {
+            Write-Host "##vso[task.logissue type=warning]Could not read SBOM manifest for package inventory: $_"
+          }
+        } else {
+          Write-Host "##vso[task.logissue type=warning]SBOM manifest file not found for package inventory"
+        }
+
+        $dotnetPackages = @{}
+        $srcRoot = Join-Path $repoRoot 'src'
+        if (Test-Path $srcRoot) {
+          $assetsFiles = @(Get-ChildItem -Path $srcRoot -Recurse -Filter 'project.assets.json' -ErrorAction SilentlyContinue | Where-Object { $_.FullName -like '*\obj\project.assets.json' })
+          foreach ($assetsPath in $assetsFiles) {
+            try {
+              $assetsData = Get-Content $assetsPath.FullName -Raw | ConvertFrom-Json
+            } catch {
+              Write-Host "##vso[task.logissue type=warning]Could not read $($assetsPath.FullName): $_"
+              continue
+            }
+
+            if ($null -eq $assetsData.libraries) {
+              continue
+            }
+
+            $projectPath = Split-Path -Path (Split-Path -Path $assetsPath.FullName -Parent) -Parent
+            $projectPathRelative = Get-RelativeRepoPath -FullPath $projectPath -RepositoryRoot $repoRoot
+
+            foreach ($library in $assetsData.libraries.PSObject.Properties) {
+              $libraryInfo = $library.Value
+              if ($null -eq $libraryInfo -or $libraryInfo.type -ne 'package') {
+                continue
+              }
+
+              $packageName = $library.Name
+              $packageVersion = '-'
+              if ($library.Name.Contains('/')) {
+                $parts = $library.Name -split '/', 2
+                $packageName = $parts[0]
+                $packageVersion = $parts[1]
+              }
+
+              $key = '{0}|{1}' -f $packageName, $packageVersion
+              if (-not $dotnetPackages.ContainsKey($key)) {
+                $dotnetPackages[$key] = [pscustomobject]@{
+                  Name = $packageName
+                  Version = $packageVersion
+                  Projects = @()
+                }
+              }
+
+              if ($dotnetPackages[$key].Projects -notcontains $projectPathRelative) {
+                $dotnetPackages[$key].Projects += $projectPathRelative
+              }
+            }
+          }
+        }
+
+        $dotnetPackageList = @($dotnetPackages.Values | Sort-Object Name, Version)
+
+        $vulnPkgNames = @{}
+        foreach ($match in $matches) {
+          $artifactName = ''
+          if ($null -ne $match.artifact) {
+            $artifactName = [string]$match.artifact.name
+          }
+
+          if (-not [string]::IsNullOrWhiteSpace($artifactName)) {
+            $vulnPkgNames[$artifactName.ToLowerInvariant()] = $true
+          }
+        }
 
         $sevOrder = @('Critical', 'High', 'Medium', 'Low', 'Negligible', 'Unknown')
         $sevColors = @{
@@ -241,66 +418,126 @@ jobs:
           if ($idx -lt 0) { $sevOrder.Count } else { $idx }
         }
 
-        $summaryHeaders = ($sevOrder | ForEach-Object { "<th>$_</th>" }) -join ''
+        $summaryHeaders = ($sevOrder | ForEach-Object { '<th>{0}</th>' -f (Convert-ToHtml $_) }) -join ''
         $summaryCells = ($sevOrder | ForEach-Object {
           $color = $sevColors[$_]
-          "<td style=`"color:$color;font-weight:bold;text-align:center`">$($counts[$_])</td>"
+          '<td style="color:{0};font-weight:bold;text-align:center">{1}</td>' -f $color, $counts[$_]
         }) -join ''
 
-        $rows = foreach ($m in $sortedMatches) {
-          $vuln    = $m.vulnerability
+        $vulnRows = foreach ($m in $sortedMatches) {
+          $vuln = $m.vulnerability
           $artifact = $m.artifact
-          $sev     = if ($vuln.severity -and $sevColors.ContainsKey($vuln.severity)) { $vuln.severity } else { 'Unknown' }
-          $color   = $sevColors[$sev]
-          $fixVersions = if ($vuln.fix.versions) { ($vuln.fix.versions -join ', ') } else { '—' }
-          $vulnId  = $vuln.id
-          $url     = if ($vuln.urls) { $vuln.urls[0] } else { '' }
-          $vulnLink = if ($url) { "<a href=`"$url`" target=`"_blank`" rel=`"noopener`">$vulnId</a>" } else { $vulnId }
-          $desc    = if ($vuln.description) { $vuln.description.Substring(0, [Math]::Min($maxDescLength, $vuln.description.Length)) } else { '' }
-          if ($vuln.description -and $vuln.description.Length -gt $maxDescLength) { $desc += '...' }
-          "<tr><td>$vulnLink</td><td>$($artifact.name)</td><td>$($artifact.version)</td><td>$fixVersions</td><td><span class=`"badge`" style=`"background:$color`">$sev</span></td><td class=`"desc`">$desc</td></tr>"
-        }
-        $rowsHtml = if ($rows) { $rows -join "`n" } else { '<tr><td colspan="6" class="empty">&#10003; No vulnerabilities found</td></tr>' }
+          $severity = if ($vuln.severity -and $sevColors.ContainsKey($vuln.severity)) { $vuln.severity } else { 'Unknown' }
+          $color = $sevColors[$severity]
+          $fixVersions = if ($null -ne $vuln.fix -and $vuln.fix.versions) { ($vuln.fix.versions -join ', ') } else { '-' }
+          $vulnId = Get-DisplayValue $vuln.id ''
+          $url = if ($vuln.urls) { [string]$vuln.urls[0] } else { '' }
+          $artifactName = Get-DisplayValue $artifact.name ''
+          $artifactVersion = Get-DisplayValue $artifact.version ''
+          $description = if ($vuln.description) { [string]$vuln.description } else { '' }
+          if ($description.Length -gt $maxDescLength) { $description = $description.Substring(0, $maxDescLength) + '...' }
 
-        $html = @"
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <title>SBOM Vulnerability Report</title>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 24px; background: #f8f9fa; color: #212529; }
-            h1 { margin-bottom: 4px; }
-            .meta { color: #6c757d; font-size: 0.9em; margin-bottom: 24px; }
-            h2 { color: #495057; border-bottom: 2px solid #dee2e6; padding-bottom: 8px; margin-top: 32px; }
-            table { border-collapse: collapse; width: 100%; background: white; box-shadow: 0 1px 3px rgba(0,0,0,.12); border-radius: 6px; overflow: hidden; margin-bottom: 24px; }
-            th { background: #343a40; color: white; padding: 10px 16px; text-align: left; font-weight: 600; }
-            td { padding: 9px 16px; border-bottom: 1px solid #e9ecef; vertical-align: top; }
-            tr:last-child td { border-bottom: none; }
-            tbody tr:hover td { background: #f1f3f5; }
-            .badge { color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.8em; font-weight: 700; white-space: nowrap; }
-            .desc { font-size: 0.85em; color: #495057; max-width: 360px; }
-            .empty { text-align: center; padding: 24px; color: #6c757d; }
-            a { color: #0d6efd; text-decoration: none; }
-            a:hover { text-decoration: underline; }
-          </style>
-        </head>
-        <body>
-          <h1>SBOM Vulnerability Report</h1>
-          <p class="meta">Source: $sourceInput &nbsp;|&nbsp; Generated: $generatedAt &nbsp;|&nbsp; Total findings: $($matches.Count)</p>
-          <h2>Summary by Severity</h2>
-          <table><thead><tr>$summaryHeaders</tr></thead><tbody><tr>$summaryCells</tr></tbody></table>
-          <h2>Vulnerability Details ($($matches.Count) total)</h2>
-          <table>
-            <thead><tr><th>CVE / ID</th><th>Package</th><th>Version</th><th>Fixed In</th><th>Severity</th><th>Description</th></tr></thead>
-            <tbody>$rowsHtml</tbody>
-          </table>
-        </body>
-        </html>
-"@
+          $vulnLink = if (-not [string]::IsNullOrWhiteSpace($url)) {
+            '<a href="{0}" target="_blank" rel="noopener">{1}</a>' -f (Convert-ToHtml $url), (Convert-ToHtml $vulnId)
+          } else {
+            Convert-ToHtml $vulnId
+          }
+
+          '<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td><span class="badge" style="background:{4}">{5}</span></td><td class="desc">{6}</td></tr>' -f `
+            $vulnLink, `
+            (Convert-ToHtml $artifactName), `
+            (Convert-ToHtml $artifactVersion), `
+            (Convert-ToHtml $fixVersions), `
+            $color, `
+            (Convert-ToHtml $severity), `
+            (Convert-ToHtml $description)
+        }
+        $vulnRowsHtml = if ($vulnRows) { $vulnRows -join "`n" } else { '<tr><td colspan="6" class="empty">&#10003; No vulnerabilities found</td></tr>' }
+
+        $pkgRows = foreach ($package in $allPackages) {
+          $packageName = Get-DisplayValue $package.Name ''
+          $vulnerable = $vulnPkgNames.ContainsKey($packageName.ToLowerInvariant())
+          $rowClass = if ($vulnerable) { ' class="pkg-vuln"' } else { '' }
+          $flag = if ($vulnerable) { ' [vulnerable]' } else { '' }
+
+          '<tr{0}><td>{1}{2}</td><td>{3}</td><td>{4}</td><td class="desc">{5}</td></tr>' -f `
+            $rowClass, `
+            (Convert-ToHtml $packageName), `
+            (Convert-ToHtml $flag), `
+            (Convert-ToHtml (Get-DisplayValue $package.Version '-')), `
+            (Convert-ToHtml (Get-DisplayValue $package.License '-')), `
+            (Convert-ToHtml (Get-DisplayValue $package.Supplier '-'))
+        }
+        $pkgRowsHtml = if ($pkgRows) { $pkgRows -join "`n" } else { '<tr><td colspan="4" class="empty">No packages found in SBOM</td></tr>' }
+
+        $dotnetRows = foreach ($package in $dotnetPackageList) {
+          $packageName = Get-DisplayValue $package.Name ''
+          $vulnerable = $vulnPkgNames.ContainsKey($packageName.ToLowerInvariant())
+          $rowClass = if ($vulnerable) { ' class="pkg-vuln"' } else { '' }
+          $projectList = @($package.Projects | Sort-Object | ForEach-Object { Convert-ToHtml $_ }) -join '<br>'
+          if ([string]::IsNullOrWhiteSpace($projectList)) { $projectList = '-' }
+
+          '<tr{0}><td>{1}</td><td>{2}</td><td class="desc">{3}</td></tr>' -f `
+            $rowClass, `
+            (Convert-ToHtml $packageName), `
+            (Convert-ToHtml (Get-DisplayValue $package.Version '-')), `
+            $projectList
+        }
+        $dotnetRowsHtml = if ($dotnetRows) { $dotnetRows -join "`n" } else { '<tr><td colspan="3" class="empty">No resolved .NET packages found. Check that restore completed successfully.</td></tr>' }
+
+        $html = @(
+          '<!DOCTYPE html>'
+          '<html lang="en">'
+          '<head>'
+          '  <meta charset="UTF-8">'
+          '  <meta name="viewport" content="width=device-width, initial-scale=1">'
+          '  <title>SBOM Report</title>'
+          '  <style>'
+          '    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 24px; background: #f8f9fa; color: #212529; }'
+          '    h1 { margin-bottom: 4px; }'
+          '    .meta { color: #6c757d; font-size: 0.9em; margin-bottom: 24px; }'
+          '    h2 { color: #495057; border-bottom: 2px solid #dee2e6; padding-bottom: 8px; margin-top: 32px; }'
+          '    table { border-collapse: collapse; width: 100%; background: white; box-shadow: 0 1px 3px rgba(0,0,0,.12); border-radius: 6px; overflow: hidden; margin-bottom: 24px; }'
+          '    th { background: #343a40; color: white; padding: 10px 16px; text-align: left; font-weight: 600; }'
+          '    td { padding: 9px 16px; border-bottom: 1px solid #e9ecef; vertical-align: top; }'
+          '    tr:last-child td { border-bottom: none; }'
+          '    tbody tr:hover td { background: #f1f3f5; }'
+          '    tr.pkg-vuln td { background: #fff3cd; }'
+          '    tr.pkg-vuln:hover td { background: #ffe69c; }'
+          '    .badge { color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.8em; font-weight: 700; white-space: nowrap; }'
+          '    .desc { font-size: 0.85em; color: #495057; max-width: 360px; }'
+          '    .empty { text-align: center; padding: 24px; color: #6c757d; }'
+          '    a { color: #0d6efd; text-decoration: none; }'
+          '    a:hover { text-decoration: underline; }'
+          '  </style>'
+          '</head>'
+          '<body>'
+          '  <h1>SBOM Report</h1>'
+          ('  <p class="meta">Source: {0} &nbsp;|&nbsp; Generated: {1} &nbsp;|&nbsp; SBOM packages: {2} &nbsp;|&nbsp; Resolved .NET packages: {3} &nbsp;|&nbsp; Vulnerabilities: {4}</p>' -f (Convert-ToHtml $sourceInput), (Convert-ToHtml $generatedAt), $allPackages.Count, $dotnetPackageList.Count, $matches.Count)
+          '  <h2>Vulnerability Summary by Severity</h2>'
+          ('  <table><thead><tr>{0}</tr></thead><tbody><tr>{1}</tr></tbody></table>' -f $summaryHeaders, $summaryCells)
+          ('  <h2>Vulnerability Details ({0} total)</h2>' -f $matches.Count)
+          '  <table>'
+          '    <thead><tr><th>CVE / ID</th><th>Package</th><th>Version</th><th>Fixed In</th><th>Severity</th><th>Description</th></tr></thead>'
+          ('    <tbody>{0}</tbody>' -f $vulnRowsHtml)
+          '  </table>'
+          ('  <h2>Package Inventory ({0} total)</h2>' -f $allPackages.Count)
+          '  <p class="meta">Packages highlighted in yellow have known vulnerabilities listed above.</p>'
+          '  <table>'
+          '    <thead><tr><th>Package</th><th>Version</th><th>License</th><th>Supplier</th></tr></thead>'
+          ('    <tbody>{0}</tbody>' -f $pkgRowsHtml)
+          '  </table>'
+          ('  <h2>.NET Resolved Package Inventory ({0} total)</h2>' -f $dotnetPackageList.Count)
+          '  <p class="meta">This section is built from restored NuGet asset manifests so you can see the packages your .NET projects actually resolve.</p>'
+          '  <table>'
+          '    <thead><tr><th>Package</th><th>Version</th><th>Referenced In Folders</th></tr></thead>'
+          ('    <tbody>{0}</tbody>' -f $dotnetRowsHtml)
+          '  </table>'
+          '</body>'
+          '</html>'
+        ) -join "`r`n"
         Set-Content -Path $htmlPath -Value $html -Encoding utf8
-        Write-Host "✅ HTML report generated: $htmlPath ($($matches.Count) findings)"
+        Write-Host ("HTML report generated: {0} vulnerabilities, {1} SBOM packages, {2} resolved .NET packages" -f $matches.Count, $allPackages.Count, $dotnetPackageList.Count)
 
   - task: PublishBuildArtifacts@1
     displayName: Publish SBOM Vulnerability Report
@@ -308,5 +545,5 @@ jobs:
     continueOnError: ${{ eq(parameters.continueOnSBOMError, 'true') }}
     inputs:
       pathToPublish: '$(Build.ArtifactStagingDirectory)/sbom-report'
-      artifactName: 'sbom-vulnerability-report'
+      artifactName: 'sbom-report'
       publishLocation: 'Container'

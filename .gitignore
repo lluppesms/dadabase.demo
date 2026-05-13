@@ -381,3 +381,4 @@ src/analyzer/appsettings.development.json
 
 # Playwright
 tests/example.spec.ts
+.copilot-tracking/research/subagents/
