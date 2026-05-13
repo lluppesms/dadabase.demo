@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------------
-// This BICEP file will create a Azure Website
+// This BICEP file will create an Azure Website using AVM
 // --------------------------------------------------------------------------------
 param webSiteName string = ''
 param location string = resourceGroup().location
@@ -26,53 +26,56 @@ var azdTag = environmentCode == 'azd' ? { 'azd-service-name': 'web' } : {}
 var tags = union(commonTags, templateTag)
 var webSiteTags = union(commonTags, templateTag, azdTag)
 
-// Base app settings that are always applied
-var baseAppSettings = {
-  APPINSIGHTS_INSTRUMENTATIONKEY: appInsightsResource.properties.InstrumentationKey
-  APPLICATIONINSIGHTS_CONNECTION_STRING: appInsightsResource.properties.ConnectionString
-  ApplicationInsightsAgent_EXTENSION_VERSION: '~2'
-}
-
-// Merge base settings with custom settings
-var mergedAppSettings = union(baseAppSettings, customAppSettings)
-
-// --------------------------------------------------------------------------------
-var linuxFxVersion = webAppKind == 'linux' ? 'DOTNETCORE|10.0' : '' // 	The runtime stack of web app
+var linuxFxVersion = webAppKind == 'linux' ? 'DOTNETCORE|10.0' : ''
 var appInsightsName = toLower('${webSiteName}-insights')
+var webAppKindValue = webAppKind == 'linux' ? 'app,linux' : 'app'
 
-// --------------------------------------------------------------------------------
-resource appInsightsResource 'Microsoft.Insights/components@2020-02-02' = {
-  name: appInsightsName
-  location: appInsightsLocation
-  tags: tags
-  kind: 'web'
-  properties: {
-    Application_Type: 'web'
-    Request_Source: 'rest'
-    publicNetworkAccessForIngestion: 'Enabled'
-    publicNetworkAccessForQuery: 'Enabled'
-    WorkspaceResourceId: workspaceId
-  }
-}
-
+// Reference existing App Service Plan
 resource appServiceResource 'Microsoft.Web/serverfarms@2024-11-01' existing = {
   name: appServicePlanName
   scope: resourceGroup(appServicePlanResourceGroupName)
 }
 
-resource webSiteResource 'Microsoft.Web/sites@2024-11-01' = {
-  name: webSiteName
-  location: location
-  kind: 'app'
-  identity: {
-    type: 'SystemAssigned, UserAssigned'
-    userAssignedIdentities: { '${managedIdentityId}': {} }
+// --------------------------------------------------------------------------------
+// Application Insights
+module appInsightsModule 'br/public:avm/res/insights/component:0.7.1' = {
+  name: 'appInsights-${uniqueString(appInsightsName, resourceGroup().id)}'
+  params: {
+    name: appInsightsName
+    location: appInsightsLocation
+    tags: tags
+    workspaceResourceId: workspaceId
+    applicationType: 'web'
+    publicNetworkAccessForIngestion: 'Enabled'
+    publicNetworkAccessForQuery: 'Enabled'
+    enableTelemetry: false
   }
-  tags: webSiteTags
-  properties: {
-    serverFarmId: appServiceResource.id
+}
+
+// Merge base settings with custom settings
+var baseAppSettings = {
+  APPINSIGHTS_INSTRUMENTATIONKEY: appInsightsModule.outputs.instrumentationKey
+  APPLICATIONINSIGHTS_CONNECTION_STRING: appInsightsModule.outputs.connectionString
+  ApplicationInsightsAgent_EXTENSION_VERSION: '~2'
+}
+var mergedAppSettings = union(baseAppSettings, customAppSettings)
+
+// --------------------------------------------------------------------------------
+// Web App
+module webSiteModule 'br/public:avm/res/web/site:0.22.0' = {
+  name: 'webSite-${uniqueString(webSiteName, resourceGroup().id)}'
+  params: {
+    name: webSiteName
+    location: location
+    tags: webSiteTags
+    kind: webAppKindValue
+    serverFarmResourceId: appServiceResource.id
     httpsOnly: true
     clientAffinityEnabled: false
+    managedIdentities: {
+      systemAssigned: true
+      userAssignedResourceIds: [managedIdentityId]
+    }
     siteConfig: {
       linuxFxVersion: linuxFxVersion
       minTlsVersion: '1.2'
@@ -80,132 +83,53 @@ resource webSiteResource 'Microsoft.Web/sites@2024-11-01' = {
       alwaysOn: true
       remoteDebuggingEnabled: false
       minimumElasticInstanceCount: 1
-      appSettings: [
-        { 
-          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: appInsightsResource.properties.InstrumentationKey 
-        }
-        {
-          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: 'InstrumentationKey=${appInsightsResource.properties.InstrumentationKey}'
-        }
-      ]
     }
-  }
-}
-
-// App Settings Configuration - merges base settings with custom app settings
-resource webSiteAppSettingsConfig 'Microsoft.Web/sites/config@2024-11-01' = {
-  parent: webSiteResource
-  name: 'appsettings'
-  properties: mergedAppSettings
-}
-
-resource webSiteAppSettings 'Microsoft.Web/sites/config@2024-11-01' = {
-  parent: webSiteResource
-  name: 'logs'
-  dependsOn: [webSiteAppSettingsConfig]
-  properties: {
-    applicationLogs: {
-      fileSystem: {
-        level: 'Warning'
-      }
-    }
-    httpLogs: {
-      fileSystem: {
-        retentionInMb: 40
-        enabled: true
-      }
-    }
-    failedRequestsTracing: {
-      enabled: true
-    }
-    detailedErrorMessages: {
-      enabled: true
-    }
-  }
-}
-
-// can't seem to get this to work right... tried multiple ways...  keep getting this error:
-//    No route registered for '/api/siteextensions/Microsoft.ApplicationInsights.AzureWebSites'.
-// resource webSiteAppInsightsExtension 'Microsoft.Web/sites/siteextensions@2020-06-01' = {
-//   parent: webSiteResource
-//   name: 'Microsoft.ApplicationInsights.AzureWebSites'
-//   dependsOn: [ appInsightsResource] or [ appInsightsResource, webSiteAppSettings ]
-// }
-
-// resource webSiteMetricsLogging 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-//   name: '${webSiteResource.name}-metrics'
-//   scope: webSiteResource
-//   properties: {
-//     workspaceId: workspaceId
-//     metrics: [
-//       {
-//         category: 'AllMetrics'
-//         enabled: true
-//         // retentionPolicy: {
-//         //   days: 30
-//         //   enabled: true 
-//         // }
-//       }
-//     ]
-//   }
-// }
-
-// https://learn.microsoft.com/en-us/azure/app-service/troubleshoot-diagnostic-logs
-resource webSiteAuditLogging 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: '${webSiteResource.name}-auditlogs'
-  scope: webSiteResource
-  properties: {
-    workspaceId: workspaceId
-    logs: [
+    configs: [
       {
-        category: 'AppServiceIPSecAuditLogs'
-        enabled: true
-        // retentionPolicy: {
-        //   days: 30
-        //   enabled: true 
-        // }
+        name: 'appsettings'
+        properties: mergedAppSettings
       }
       {
-        category: 'AppServiceAuditLogs'
-        enabled: true
-        // retentionPolicy: {
-        //   days: 30
-        //   enabled: true 
-        // }
+        name: 'logs'
+        properties: {
+          applicationLogs: {
+            fileSystem: {
+              level: 'Warning'
+            }
+          }
+          httpLogs: {
+            fileSystem: {
+              retentionInMb: 40
+              enabled: true
+            }
+          }
+          failedRequestsTracing: {
+            enabled: true
+          }
+          detailedErrorMessages: {
+            enabled: true
+          }
+        }
       }
     ]
+    diagnosticSettings: workspaceId != '' ? [
+      {
+        workspaceResourceId: workspaceId
+        logCategoriesAndGroups: [
+          { category: 'AppServiceIPSecAuditLogs' }
+          { category: 'AppServiceAuditLogs' }
+        ]
+      }
+    ] : []
+    enableTelemetry: false
   }
 }
 
-// resource appServiceMetricLogging 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-//   name: '${appServiceResource.name}-metrics'
-//   scope: appServiceResource
-//   properties: {
-//     workspaceId: workspaceId
-//     metrics: [
-//       {
-//         category: 'AllMetrics'
-//         enabled: true
-//       }
-//     ]
-//     //    this should be right but it's not supported... :(
-//     // logs: [
-//     //   {
-//     //     category: 'AppRequests'
-//     //     enabled: true
-//     //   }
-//     // ]    
-//   }
-// }
-// output principalId string = webSiteResource.identity.principalId
+// --------------------------------------------------------------------------------
 output name string = webSiteName
-output hostName string = webSiteResource.properties.defaultHostName
-output systemPrincipalId string = webSiteResource.identity.principalId
+output hostName string = webSiteModule.outputs.defaultHostname
+output systemPrincipalId string = webSiteModule.outputs.?systemAssignedMIPrincipalId ?? ''
 output userManagedPrincipalId string = managedIdentityPrincipalId
 output appInsightsName string = appInsightsName
-output appInsightsKey string = appInsightsResource.properties.InstrumentationKey
-output appInsightsConnectionString string = appInsightsResource.properties.ConnectionString
-// Note: This will give you a warning saying it's not right, but it will contain the right value!
-// output ipAddress string = webSiteResource.properties.inboundIpAddress 
+output appInsightsKey string = appInsightsModule.outputs.instrumentationKey
+output appInsightsConnectionString string = appInsightsModule.outputs.connectionString

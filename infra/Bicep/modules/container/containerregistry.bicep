@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------------
-// Azure Container Registry Module
+// Azure Container Registry Module using AVM
 // --------------------------------------------------------------------------------
 param containerRegistryName string
 param location string = resourceGroup().location
@@ -25,71 +25,53 @@ param pipelineServicePrincipalObjectId string = ''
 var templateTag = { TemplateFile: '~containerregistry.bicep' }
 var tags = union(commonTags, templateTag)
 
+var roleAssignmentsList = concat(
+  !empty(managedIdentityPrincipalId) ? [
+    {
+      principalId: managedIdentityPrincipalId
+      principalType: 'ServicePrincipal'
+      roleDefinitionIdOrName: 'AcrPull'
+    }
+  ] : [],
+  !empty(pipelineServicePrincipalObjectId) ? [
+    {
+      principalId: pipelineServicePrincipalObjectId
+      principalType: 'ServicePrincipal'
+      roleDefinitionIdOrName: 'AcrPush'
+    }
+  ] : []
+)
+
 // --------------------------------------------------------------------------------
-resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
-  name: containerRegistryName
-  location: location
-  tags: tags
-  sku: {
-    name: sku
-  }
-  properties: {
-    adminUserEnabled: adminUserEnabled
+module containerRegistry 'br/public:avm/res/container-registry/registry:0.12.1' = {
+  name: 'containerRegistry-${uniqueString(containerRegistryName, resourceGroup().id)}'
+  params: {
+    name: containerRegistryName
+    location: location
+    tags: tags
+    acrSku: sku
+    acrAdminUserEnabled: adminUserEnabled
     publicNetworkAccess: 'Enabled'
     networkRuleBypassOptions: 'AzureServices'
-    zoneRedundancy: 'Disabled'
-  }
-}
-
-// Enable diagnostic logging
-resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (!empty(workspaceId)) {
-  name: '${containerRegistry.name}-diagnostics'
-  scope: containerRegistry
-  properties: {
-    workspaceId: workspaceId
-    logs: [
+    roleAssignments: roleAssignmentsList
+    diagnosticSettings: workspaceId != '' ? [
       {
-        category: 'ContainerRegistryRepositoryEvents'
-        enabled: true
+        workspaceResourceId: workspaceId
+        logCategoriesAndGroups: [
+          { category: 'ContainerRegistryRepositoryEvents' }
+          { category: 'ContainerRegistryLoginEvents' }
+        ]
+        metricCategories: [
+          { category: 'AllMetrics' }
+        ]
       }
-      {
-        category: 'ContainerRegistryLoginEvents'
-        enabled: true
-      }
-    ]
-    metrics: [
-      {
-        category: 'AllMetrics'
-        enabled: true
-      }
-    ]
-  }
-}
-
-// Assign AcrPull role to managed identity
-resource acrPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(managedIdentityPrincipalId)) {
-  name: guid(containerRegistry.id, managedIdentityPrincipalId, 'AcrPull')
-  scope: containerRegistry
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d') // AcrPull
-    principalId: managedIdentityPrincipalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-// Assign AcrPush role to pipeline service principal (optional)
-resource acrPushRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(pipelineServicePrincipalObjectId)) {
-  name: guid(containerRegistry.id, pipelineServicePrincipalObjectId, 'AcrPush')
-  scope: containerRegistry
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '8311e382-0749-4cb8-b61a-304f252e45ec') // AcrPush
-    principalId: pipelineServicePrincipalObjectId
-    principalType: 'ServicePrincipal'
+    ] : []
+    enableTelemetry: false
   }
 }
 
 // --------------------------------------------------------------------------------
-output id string = containerRegistry.id
-output name string = containerRegistry.name
-output loginServer string = containerRegistry.properties.loginServer
+output id string = containerRegistry.outputs.resourceId
+output name string = containerRegistry.outputs.name
+output loginServer string = containerRegistry.outputs.loginServer
 output resourceGroupName string = resourceGroup().name

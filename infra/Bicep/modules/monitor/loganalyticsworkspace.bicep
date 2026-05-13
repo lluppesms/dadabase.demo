@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------------
-// Creates a Log Analytics Workspace
+// Creates a Log Analytics Workspace using AVM
 // --------------------------------------------------------------------------------
 param logAnalyticsWorkspaceName string = 'myLogAnalyticsWorkspaceName'
 param location string = resourceGroup().location
@@ -10,29 +10,19 @@ var templateTag = { TemplateFile: '~loganalytics.bicep' }
 var tags = union(commonTags, templateTag)
 
 // --------------------------------------------------------------------------------
-resource logWorkspaceResource 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
-  name: logAnalyticsWorkspaceName
-  location: location
-  tags: tags
-  properties: {
-    sku: {
-        name: 'PerGB2018' // Standard
-    }
-    retentionInDays: 30
-    features: {
-      searchVersion: 1
-    }
-    //you can limit the maximum daily ingestion on the Workspace by providing a value for dailyQuotaGb. 
-    // Note: Bicep expects an integer, however in order to set the minimum possible value of 0.023 GB
-    // you need to pass it as a string which will work just fine.
-    // Note: this settings works in Azure DevOps pipelines, but fails in a GitHub action because it throws a warning/error:
-    //   dailyQuotaGb: '0.023'
-    workspaceCapping: {
-      dailyQuotaGb: 1
-    }
+module logAnalyticsWorkspace 'br/public:avm/res/operational-insights/workspace:0.15.0' = {
+  name: 'logAnalyticsWorkspace-${uniqueString(logAnalyticsWorkspaceName, resourceGroup().id)}'
+  params: {
+    name: logAnalyticsWorkspaceName
+    location: location
+    tags: tags
+    skuName: 'PerGB2018'
+    dataRetention: 30
+    dailyQuotaGb: '1'
+    enableTelemetry: false
   }
 }
 
 // --------------------------------------------------------------------------------
-output id string = logWorkspaceResource.id
-output name string = logWorkspaceResource.name
+output id string = logAnalyticsWorkspace.outputs.resourceId
+output name string = logAnalyticsWorkspace.outputs.name
