@@ -1,19 +1,36 @@
-# DadABase SQL Database Project
+---
+title: DadABase SQL Database Project
+description: SQL database project structure, deployment, and schema notes for DadABase
+author: DadABase maintainers
+ms.date: 2026-05-14
+ms.topic: reference
+keywords:
+  - dadabase
+  - sqlproj
+  - dacpac
+estimated_reading_time: 7
+---
+
+## DadABase SQL Database Project
 
 This is a SQL Server Database Project for the DadABase application. It contains the schema definition for storing dad jokes, following the structure and deployment patterns from the reference repository.
 
 ## Project Structure
 
-```
+```text
 sql.database/
-├── dbo/
+├── Dad/
 │   ├── Tables/
 │   │   ├── Joke.sql              # Main jokes table
 │   │   ├── JokeCategory.sql      # Joke categories
+│   │   ├── JokeJokeCategory.sql  # Joke/category relationships
 │   │   └── JokeRating.sql        # User ratings for jokes
 │   ├── Views/
 │   │   └── vw_Jokes.sql          # Simplified view of active jokes
+│   ├── Pre.Deployment.sql        # Drops legacy dbo objects for offline migration
 │   └── Post.Deployment.sql       # Post-deployment script
+├── Schemas/
+│   └── Dad.sql                   # Dad schema definition
 ├── Patch/                         # Patch scripts for updates
 └── sql.database.sqlproj          # SQL Server Database Project file
 ```
@@ -23,14 +40,19 @@ sql.database/
 ### Tables
 
 **Joke**
-- Primary table storing joke text, category, rating, and metadata
-- Fields: JokeId, JokeTxt, JokeCategoryId, JokeCategoryTxt, Attribution, ImageTxt, SortOrderNbr, Rating, VoteCount, ActiveInd, CreateDateTime, CreateUserName, ChangeDateTime, ChangeUserName
+- Primary table storing joke text, rating, and metadata
+- Fields: JokeId, JokeTxt, Attribution, ImageTxt, SortOrderNbr, Rating, VoteCount, ActiveInd, CreateDateTime, CreateUserName, ChangeDateTime, ChangeUserName
 - CHECK constraint: ActiveInd IN ('Y', 'N')
 
 **JokeCategory**
 - Stores joke category definitions
 - Fields: JokeCategoryId, JokeCategoryTxt, SortOrderNbr, ActiveInd, CreateDateTime, CreateUserName, ChangeDateTime, ChangeUserName
 - CHECK constraint: ActiveInd IN ('Y', 'N')
+
+**JokeJokeCategory**
+- Stores many-to-many relationships between jokes and categories
+- Fields: JokeId, JokeCategoryId, CreateDateTime, CreateUserName
+- Foreign keys: Dad.Joke and Dad.JokeCategory
 
 **JokeRating**
 - Stores individual user ratings for jokes
@@ -61,7 +83,7 @@ msbuild sql.database.sqlproj /p:Configuration=Release
 
 ```bash
 # Navigate to project directory
-cd src/sql.database/sql.database
+cd src/sql.database
 
 # Build the project
 SqlPackage.exe /Action:Build /SourceFile:sql.database.sqlproj
@@ -74,11 +96,13 @@ SqlPackage.exe /Action:Build /SourceFile:sql.database.sqlproj
 ```bash
 SqlPackage.exe /Action:Publish \
   /SourceFile:bin/Release/sql.database.dacpac \
-  /TargetServerName:yourserver.database.windows.net \
-  /TargetDatabaseName:DadABase \
-  /TargetUser:yourusername \
-  /TargetPassword:yourpassword
+  /TargetConnectionString:"Server=tcp:yourserver.database.windows.net,1433;Initial Catalog=DadABase;Authentication=Active Directory Default;Encrypt=True;TrustServerCertificate=False;Connection Timeout=120;" \
+  /p:ScriptDatabaseOptions=False
 ```
+
+For a fresh environment, publish the DACPAC to an empty database. The pre-deploy
+script is idempotent and does nothing when the legacy `dbo` DadABase objects are
+not present. Load starter data only if the environment should begin with jokes.
 
 ### Option 2: Using Visual Studio SSDT
 

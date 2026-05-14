@@ -16,9 +16,8 @@
 //    ALTER ROLE db_owner ADD MEMBER  [<appServiceIdentityName>]
 // Run these scripts in the database to grant the APPLICATION user access to data and stored procs:
 //    CREATE USER [your-app-id] FROM EXTERNAL PROVIDER;
-//    ALTER ROLE db_datareader ADD MEMBER [your-app-id];
-//    ALTER ROLE db_datawriter ADD MEMBER [your-app-id];
-//    GRANT EXECUTE ON SCHEMA::[dbo] TO [your-app-id];
+//    GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::[Dad] TO [your-app-id];
+//    GRANT EXECUTE ON SCHEMA::[Dad] TO [your-app-id];
 //-----------------------------------------------------------------------
 // The Connection string should be set to the following: (if using serverless SQL, timeout should be 120 to allow for sleep/wakeup)
 //    data source=tcp:<databaseServerName>.database.windows.net,1433;initial catalog=<databaseName>;

@@ -1,4 +1,17 @@
-# Permissions Example Queries
+---
+title: SQL Permissions Example Queries
+description: Azure SQL permission inspection and grant examples for DadABase
+author: DadABase maintainers
+ms.date: 2026-05-14
+ms.topic: reference
+keywords:
+    - azure sql
+    - permissions
+    - dadabase
+estimated_reading_time: 4
+---
+
+## Permissions Example Queries
 
 ## Azure SQL Database Copy
 
@@ -54,11 +67,26 @@ SELECT DISTINCT pr.principal_id, pr.name AS [UserName], pr.type_desc AS [User_or
     LEFT JOIN sys.objects AS o on (o.object_id = pe.major_id)
 ```
 
-## Grant User Roles
+## Grant Deployment Principal Rights
 
- ``` SQL
+The DACPAC deployment principal needs enough permission to create schemas,
+tables, procedures, and views. In controlled deployment environments, `db_owner`
+is commonly used for that deployment identity.
+
+```SQL
 CREATE USER yourServicePrincipal FROM EXTERNAL PROVIDER
 ALTER ROLE db_owner ADD MEMBER yourServicePrincipal
+```
+
+## Grant Application Schema Access
+
+The runtime application identity should use least-privilege schema permissions
+instead of broad database data roles.
+
+```SQL
+CREATE USER [yourAppManagedIdentityName] FROM EXTERNAL PROVIDER;
+GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::[Dad] TO [yourAppManagedIdentityName];
+GRANT EXECUTE ON SCHEMA::[Dad] TO [yourAppManagedIdentityName];
 ```
 
 ## Grant Server Roles

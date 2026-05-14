@@ -31,7 +31,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     public Joke GetRandomJoke(string requestingUserName = "ANON")
     {
         var joke = _context.Jokes
-            .FromSqlRaw("EXEC [dbo].[usp_Get_Random_Joke]")
+            .FromSqlRaw("EXEC [Dad].[usp_Get_Random_Joke]")
             .AsEnumerable()
             .FirstOrDefault();
 
@@ -64,7 +64,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
         var categoryParam = string.IsNullOrEmpty(jokeCategoryTxt) ? null : jokeCategoryTxt;
         var searchParam = string.IsNullOrEmpty(searchTxt) ? null : searchTxt;
         var jokes = _context.Jokes
-            .FromSqlInterpolated($"EXEC [dbo].[usp_Joke_Search] @category = {categoryParam}, @searchTxt = {searchParam}")
+            .FromSqlInterpolated($"EXEC [Dad].[usp_Joke_Search] @category = {categoryParam}, @searchTxt = {searchParam}")
             .AsEnumerable()
             .AsQueryable();
 
@@ -84,14 +84,14 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
             .FromSqlInterpolated($@"
                 SELECT j.JokeId, 
                     STUFF((SELECT ', ' + c.JokeCategoryTxt
-                           FROM JokeJokeCategory jjc
-                           INNER JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId
+                           FROM [Dad].[JokeJokeCategory] jjc
+                           INNER JOIN [Dad].[JokeCategory] c ON jjc.JokeCategoryId = c.JokeCategoryId
                            WHERE jjc.JokeId = j.JokeId
                            ORDER BY c.JokeCategoryTxt
                            FOR XML PATH('')), 1, 2, '') AS Categories,
                     j.JokeTxt, j.ImageTxt, j.Rating, j.ActiveInd, j.Attribution, j.VoteCount, j.SortOrderNbr,
                     j.CreateDateTime, j.CreateUserName, j.ChangeDateTime, j.ChangeUserName
-                FROM Joke j
+                FROM [Dad].[Joke] j
                 WHERE j.ActiveInd = {activeInd}")
             .AsEnumerable()
             .AsQueryable();
@@ -110,14 +110,14 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
             .FromSqlInterpolated($@"
                 SELECT TOP ({count}) j.JokeId,
                     STUFF((SELECT ', ' + c.JokeCategoryTxt
-                           FROM JokeJokeCategory jjc
-                           INNER JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId
+                           FROM [Dad].[JokeJokeCategory] jjc
+                           INNER JOIN [Dad].[JokeCategory] c ON jjc.JokeCategoryId = c.JokeCategoryId
                            WHERE jjc.JokeId = j.JokeId
                            ORDER BY c.JokeCategoryTxt
                            FOR XML PATH('')), 1, 2, '') AS Categories,
                     j.JokeTxt, j.ImageTxt, j.Rating, j.ActiveInd, j.Attribution, j.VoteCount, j.SortOrderNbr,
                     j.CreateDateTime, j.CreateUserName, j.ChangeDateTime, j.ChangeUserName
-                FROM Joke j
+                FROM [Dad].[Joke] j
                 WHERE j.ActiveInd = 'Y'
                 ORDER BY j.ChangeDateTime DESC")
             .AsEnumerable()
@@ -137,7 +137,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     {
         try
         {
-            _context.Database.ExecuteSqlInterpolated($"EXEC [dbo].[usp_Joke_Update_ImageTxt] @jokeId = {jokeId}, @imageTxt = {imageTxt}");
+            _context.Database.ExecuteSqlInterpolated($"EXEC [Dad].[usp_Joke_Update_ImageTxt] @jokeId = {jokeId}, @imageTxt = {imageTxt}");
             return true;
         }
         catch (Exception ex)
@@ -174,14 +174,14 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
             .FromSqlInterpolated($@"
                 SELECT j.JokeId, 
                     STUFF((SELECT ', ' + c.JokeCategoryTxt
-                           FROM JokeJokeCategory jjc
-                           INNER JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId
+                           FROM [Dad].[JokeJokeCategory] jjc
+                           INNER JOIN [Dad].[JokeCategory] c ON jjc.JokeCategoryId = c.JokeCategoryId
                            WHERE jjc.JokeId = j.JokeId
                            ORDER BY c.JokeCategoryTxt
                            FOR XML PATH('')), 1, 2, '') AS Categories,
                     j.JokeTxt, j.ImageTxt, j.Rating, j.ActiveInd, j.Attribution, j.VoteCount, j.SortOrderNbr,
                     j.CreateDateTime, j.CreateUserName, j.ChangeDateTime, j.ChangeUserName
-                FROM Joke j
+                FROM [Dad].[Joke] j
                 WHERE j.JokeId = {id}")
             .AsEnumerable()
             .FirstOrDefault();
@@ -295,14 +295,14 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
             .FromSqlInterpolated($@"
                 SELECT j.JokeId, 
                     STUFF((SELECT ', ' + c.JokeCategoryTxt
-                           FROM JokeJokeCategory jjc
-                           INNER JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId
+                           FROM [Dad].[JokeJokeCategory] jjc
+                           INNER JOIN [Dad].[JokeCategory] c ON jjc.JokeCategoryId = c.JokeCategoryId
                            WHERE jjc.JokeId = j.JokeId
                            ORDER BY c.JokeCategoryTxt
                            FOR XML PATH('')), 1, 2, '') AS Categories,
                     j.JokeTxt, j.ImageTxt, j.Rating, j.ActiveInd, j.Attribution, j.VoteCount, j.SortOrderNbr,
                     j.CreateDateTime, j.CreateUserName, j.ChangeDateTime, j.ChangeUserName
-                FROM Joke j
+                FROM [Dad].[Joke] j
                 WHERE j.ActiveInd = 'Y'
                 ORDER BY Categories, j.JokeTxt")
             .AsNoTracking()
@@ -386,42 +386,42 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
         sb.AppendLine("BEGIN");
         sb.AppendLine("  PRINT ''");
         sb.AppendLine("  PRINT 'Removing previous set of jokes...'");
-        sb.AppendLine("  DELETE FROM JokeRating");
-        sb.AppendLine("  DELETE FROM JokeJokeCategory");
-        sb.AppendLine("  DELETE FROM JokeCategory");
-        sb.AppendLine("  DELETE FROM Joke");
-        sb.AppendLine("  DBCC CHECKIDENT('JokeRating', RESEED, 0)");
-        sb.AppendLine("  DBCC CHECKIDENT('JokeCategory', RESEED, 0)");
-        sb.AppendLine("  DBCC CHECKIDENT('Joke', RESEED, 0)");
+        sb.AppendLine("  DELETE FROM [Dad].[JokeRating]");
+        sb.AppendLine("  DELETE FROM [Dad].[JokeJokeCategory]");
+        sb.AppendLine("  DELETE FROM [Dad].[JokeCategory]");
+        sb.AppendLine("  DELETE FROM [Dad].[Joke]");
+        sb.AppendLine("  DBCC CHECKIDENT('[Dad].[JokeRating]', RESEED, 0)");
+        sb.AppendLine("  DBCC CHECKIDENT('[Dad].[JokeCategory]', RESEED, 0)");
+        sb.AppendLine("  DBCC CHECKIDENT('[Dad].[Joke]', RESEED, 0)");
         sb.AppendLine("END");
         sb.AppendLine();
         sb.AppendLine("DECLARE @CategoryCount int");
         sb.AppendLine("SELECT @CategoryCount = Count(DISTINCT JokeCategoryTxt) From @tmpJokeCategories");
         sb.AppendLine("PRINT ''");
         sb.AppendLine("PRINT 'Inserting ' + CAST(@CategoryCount as varchar) + ' fresh categories...'");
-        sb.AppendLine("INSERT INTO JokeCategory (JokeCategoryTxt) ");
-        sb.AppendLine("  SELECT DISTINCT JokeCategoryTxt From @tmpJokeCategories Where JokeCategoryTxt NOT IN (Select JokeCategoryTxt From JokeCategory)");
+        sb.AppendLine("INSERT INTO [Dad].[JokeCategory] (JokeCategoryTxt) ");
+        sb.AppendLine("  SELECT DISTINCT JokeCategoryTxt From @tmpJokeCategories Where JokeCategoryTxt NOT IN (Select JokeCategoryTxt FROM [Dad].[JokeCategory])");
         sb.AppendLine();
         sb.AppendLine("DECLARE @JokeCount int");
         sb.AppendLine("SELECT @JokeCount = Count(*) From @tmpJokes");
         sb.AppendLine("PRINT ''");
         sb.AppendLine("PRINT 'Inserting ' + CAST(@JokeCount as varchar) + ' fresh jokes...'");
-        sb.AppendLine("INSERT INTO Joke (JokeTxt, Attribution, ImageTxt, Rating, VoteCount) ");
+        sb.AppendLine("INSERT INTO [Dad].[Joke] (JokeTxt, Attribution, ImageTxt, Rating, VoteCount) ");
         sb.AppendLine("  SELECT j.JokeTxt, j.Attribution, j.ImageTxt, 0, 0");
         sb.AppendLine("  FROM @tmpJokes j");
-        sb.AppendLine("  WHERE j.JokeTxt NOT IN (Select JokeTxt From Joke)");
+        sb.AppendLine("  WHERE j.JokeTxt NOT IN (Select JokeTxt FROM [Dad].[Joke])");
         sb.AppendLine("  ORDER BY j.Categories, j.JokeTxt");
         sb.AppendLine();
         sb.AppendLine("PRINT ''");
         sb.AppendLine("PRINT 'Populating JokeJokeCategory junction table...'");
-        sb.AppendLine("INSERT INTO JokeJokeCategory (JokeId, JokeCategoryId)");
+        sb.AppendLine("INSERT INTO [Dad].[JokeJokeCategory] (JokeId, JokeCategoryId)");
         sb.AppendLine("  SELECT DISTINCT jk.JokeId, c.JokeCategoryId");
-        sb.AppendLine("  FROM Joke jk");
+        sb.AppendLine("  FROM [Dad].[Joke] jk");
         sb.AppendLine("  INNER JOIN @tmpJokes tj ON jk.JokeTxt = tj.JokeTxt");
         sb.AppendLine("  INNER JOIN @tmpJokeCategories tjc ON tj.JokeId = tjc.JokeId");
-        sb.AppendLine("  INNER JOIN JokeCategory c ON tjc.JokeCategoryTxt = c.JokeCategoryTxt");
+        sb.AppendLine("  INNER JOIN [Dad].[JokeCategory] c ON tjc.JokeCategoryTxt = c.JokeCategoryTxt");
         sb.AppendLine("  WHERE NOT EXISTS (");
-        sb.AppendLine("    SELECT 1 FROM JokeJokeCategory jjc ");
+        sb.AppendLine("    SELECT 1 FROM [Dad].[JokeJokeCategory] jjc ");
         sb.AppendLine("    WHERE jjc.JokeId = jk.JokeId AND jjc.JokeCategoryId = c.JokeCategoryId");
         sb.AppendLine("  )");
         sb.AppendLine();
@@ -429,13 +429,13 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
         sb.AppendLine("PRINT 'Displaying All Jokes...'");
         sb.AppendLine("SELECT j.JokeId, ");
         sb.AppendLine("  STUFF((SELECT ', ' + c.JokeCategoryTxt");
-        sb.AppendLine("         FROM JokeJokeCategory jjc");
-        sb.AppendLine("         INNER JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId");
+        sb.AppendLine("         FROM [Dad].[JokeJokeCategory] jjc");
+        sb.AppendLine("         INNER JOIN [Dad].[JokeCategory] c ON jjc.JokeCategoryId = c.JokeCategoryId");
         sb.AppendLine("         WHERE jjc.JokeId = j.JokeId");
         sb.AppendLine("         ORDER BY c.JokeCategoryTxt");
         sb.AppendLine("         FOR XML PATH('')), 1, 2, '') AS Categories,");
         sb.AppendLine("  j.JokeTxt, j.Attribution, j.ImageTxt, j.Rating, j.CreateDateTime ");
-        sb.AppendLine("FROM Joke j ");
+        sb.AppendLine("FROM [Dad].[Joke] j ");
         sb.AppendLine("ORDER BY j.JokeId, Categories, j.JokeTxt");
 
         return sb.ToString();
@@ -480,7 +480,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
         var categoryParam = (string?)null;
         var searchParam = (string?)null;
         var jokes = _context.Jokes
-            .FromSqlInterpolated($"EXEC [dbo].[usp_Joke_Search] @category = {categoryParam}, @searchTxt = {searchParam}")
+            .FromSqlInterpolated($"EXEC [Dad].[usp_Joke_Search] @category = {categoryParam}, @searchTxt = {searchParam}")
             .AsNoTracking()
             .AsEnumerable()
             .ToList();
@@ -504,7 +504,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
         var categoryParam = (string?)null;
         var searchParam = (string?)null;
         var jokes = _context.Jokes
-            .FromSqlInterpolated($"EXEC [dbo].[usp_Joke_Search] @category = {categoryParam}, @searchTxt = {searchParam}")
+            .FromSqlInterpolated($"EXEC [Dad].[usp_Joke_Search] @category = {categoryParam}, @searchTxt = {searchParam}")
             .AsNoTracking()
             .AsEnumerable()
             .ToList();
@@ -537,7 +537,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
         var categoryParam = (string?)null;
         var searchParam = (string?)null;
         var jokes = _context.Jokes
-            .FromSqlInterpolated($"EXEC [dbo].[usp_Joke_Search] @category = {categoryParam}, @searchTxt = {searchParam}")
+            .FromSqlInterpolated($"EXEC [Dad].[usp_Joke_Search] @category = {categoryParam}, @searchTxt = {searchParam}")
             .AsNoTracking()
             .AsEnumerable()
             .OrderBy(j => j.Categories)
@@ -864,7 +864,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
             {
                 _context.Database.OpenConnection();
             }
-            command.CommandText = "EXEC [dbo].[usp_Joke_Import] @tsvData, @RemovePreviousJokes";
+            command.CommandText = "EXEC [Dad].[usp_Joke_Import] @tsvData, @RemovePreviousJokes";
             command.CommandType = System.Data.CommandType.Text;
 
             var paramTsv = command.CreateParameter();
@@ -997,7 +997,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
             // This avoids the Categories column issue (Categories is a computed property, not a real column)
             var result = _context.Jokes
                 .FromSqlInterpolated($@"
-                    INSERT INTO Joke (JokeTxt, Attribution, ImageTxt, ActiveInd, SortOrderNbr, Rating, VoteCount,
+                    INSERT INTO [Dad].[Joke] (JokeTxt, Attribution, ImageTxt, ActiveInd, SortOrderNbr, Rating, VoteCount,
                                       CreateDateTime, CreateUserName, ChangeDateTime, ChangeUserName)
                     OUTPUT INSERTED.JokeId, INSERTED.JokeTxt, INSERTED.Attribution, INSERTED.ImageTxt, 
                            INSERTED.ActiveInd, INSERTED.SortOrderNbr, INSERTED.Rating, INSERTED.VoteCount,

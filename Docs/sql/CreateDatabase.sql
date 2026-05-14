@@ -1,11 +1,17 @@
 /*
-DROP TABLE JokeRating
-DROP TABLE Joke
-DROP TABLE JokeCategory
-DROP TABLE JokeJokeCategory
+DROP TABLE [Dad].[JokeRating]
+DROP TABLE [Dad].[JokeJokeCategory]
+DROP TABLE [Dad].[Joke]
+DROP TABLE [Dad].[JokeCategory]
 */
 
-CREATE TABLE [dbo].[Joke](
+IF SCHEMA_ID(N'Dad') IS NULL
+BEGIN
+	EXEC(N'CREATE SCHEMA [Dad];');
+END
+GO
+
+CREATE TABLE [Dad].[Joke](
 	[JokeId] [int] IDENTITY(1,1) NOT NULL,
 	[JokeTxt] [nvarchar](max) NOT NULL,
 	[Attribution] [nvarchar](500) NULL,
@@ -22,7 +28,7 @@ CREATE TABLE [dbo].[Joke](
 )
 GO
 
-CREATE TABLE [dbo].[JokeCategory](
+CREATE TABLE [Dad].[JokeCategory](
 	[JokeCategoryId] [int] IDENTITY(1,1) NOT NULL,
 	[JokeCategoryTxt] [nvarchar](500) NULL,
 	[SortOrderNbr] [int] NOT NULL,
@@ -31,11 +37,11 @@ CREATE TABLE [dbo].[JokeCategory](
 	[CreateUserName] [nvarchar](255) NOT NULL,
 	[ChangeDateTime] [datetime] NOT NULL,
 	[ChangeUserName] [nvarchar](255) NOT NULL,
- CONSTRAINT [PK_JokeCategory] PRIMARY KEY CLUSTERED ([JokeCategoryId] ASC) 
+ CONSTRAINT [PK_JokeCategory] PRIMARY KEY CLUSTERED ([JokeCategoryId] ASC)
 )
 GO
 
-CREATE TABLE [dbo].[JokeJokeCategory](
+CREATE TABLE [Dad].[JokeJokeCategory](
 	[JokeId] [int] NOT NULL,
 	[JokeCategoryId] [int] NOT NULL,
 	[CreateDateTime] [datetime] NOT NULL,
@@ -44,7 +50,7 @@ CREATE TABLE [dbo].[JokeJokeCategory](
 )
 GO
 
-CREATE TABLE [dbo].[JokeRating](
+CREATE TABLE [Dad].[JokeRating](
 	[JokeRatingId] [int] IDENTITY(1,1) NOT NULL,
 	[JokeId] [int] NOT NULL,
 	[UserRating] [int] NOT NULL,
@@ -54,71 +60,71 @@ CREATE TABLE [dbo].[JokeRating](
 )
 GO
 
-ALTER TABLE [dbo].[Joke] ADD CONSTRAINT [DF_Joke_SortOrderNbr] DEFAULT ((50)) FOR [SortOrderNbr]
+ALTER TABLE [Dad].[Joke] ADD CONSTRAINT [DF_Joke_SortOrderNbr] DEFAULT ((50)) FOR [SortOrderNbr]
 GO
-ALTER TABLE [dbo].[Joke] ADD CONSTRAINT [DF_Joke_ActiveInd] DEFAULT (N'Y') FOR [ActiveInd]
+ALTER TABLE [Dad].[Joke] ADD CONSTRAINT [DF_Joke_ActiveInd] DEFAULT (N'Y') FOR [ActiveInd]
 GO
-ALTER TABLE [dbo].[Joke] ADD CONSTRAINT [DF_Joke_CreateDateTime] DEFAULT (getdate()) FOR [CreateDateTime]
+ALTER TABLE [Dad].[Joke] ADD CONSTRAINT [DF_Joke_CreateDateTime] DEFAULT (getdate()) FOR [CreateDateTime]
 GO
-ALTER TABLE [dbo].[Joke] ADD CONSTRAINT [DF_Joke_CreateUserName] DEFAULT (N'UNKNOWN') FOR [CreateUserName]
+ALTER TABLE [Dad].[Joke] ADD CONSTRAINT [DF_Joke_CreateUserName] DEFAULT (N'UNKNOWN') FOR [CreateUserName]
 GO
-ALTER TABLE [dbo].[Joke] ADD CONSTRAINT [DF_Joke_ChangeDateTime] DEFAULT (getdate()) FOR [ChangeDateTime]
+ALTER TABLE [Dad].[Joke] ADD CONSTRAINT [DF_Joke_ChangeDateTime] DEFAULT (getdate()) FOR [ChangeDateTime]
 GO
-ALTER TABLE [dbo].[Joke] ADD CONSTRAINT [DF_Joke_ChangeUserName] DEFAULT (N'UNKNOWN') FOR [ChangeUserName]
+ALTER TABLE [Dad].[Joke] ADD CONSTRAINT [DF_Joke_ChangeUserName] DEFAULT (N'UNKNOWN') FOR [ChangeUserName]
 GO
-ALTER TABLE [dbo].[JokeCategory] ADD CONSTRAINT [DF_JokeCategory_SortOrderNbr] DEFAULT ((50)) FOR [SortOrderNbr]
+ALTER TABLE [Dad].[JokeCategory] ADD CONSTRAINT [DF_JokeCategory_SortOrderNbr] DEFAULT ((50)) FOR [SortOrderNbr]
 GO
-ALTER TABLE [dbo].[JokeCategory] ADD CONSTRAINT [DF_JokeCategory_ActiveInd] DEFAULT (N'Y') FOR [ActiveInd]
+ALTER TABLE [Dad].[JokeCategory] ADD CONSTRAINT [DF_JokeCategory_ActiveInd] DEFAULT (N'Y') FOR [ActiveInd]
 GO
-ALTER TABLE [dbo].[JokeCategory] ADD CONSTRAINT [DF_JokeCategory_CreateDateTime] DEFAULT (getdate()) FOR [CreateDateTime]
+ALTER TABLE [Dad].[JokeCategory] ADD CONSTRAINT [DF_JokeCategory_CreateDateTime] DEFAULT (getdate()) FOR [CreateDateTime]
 GO
-ALTER TABLE [dbo].[JokeCategory] ADD CONSTRAINT [DF_JokeCategory_CreateUserName] DEFAULT (N'UNKNOWN') FOR [CreateUserName]
+ALTER TABLE [Dad].[JokeCategory] ADD CONSTRAINT [DF_JokeCategory_CreateUserName] DEFAULT (N'UNKNOWN') FOR [CreateUserName]
 GO
-ALTER TABLE [dbo].[JokeCategory] ADD CONSTRAINT [DF_JokeCategory_ChangeDateTime] DEFAULT (getdate()) FOR [ChangeDateTime]
+ALTER TABLE [Dad].[JokeCategory] ADD CONSTRAINT [DF_JokeCategory_ChangeDateTime] DEFAULT (getdate()) FOR [ChangeDateTime]
 GO
-ALTER TABLE [dbo].[JokeCategory] ADD CONSTRAINT [DF_JokeCategory_ChangeUserName] DEFAULT (N'UNKNOWN') FOR [ChangeUserName]
+ALTER TABLE [Dad].[JokeCategory] ADD CONSTRAINT [DF_JokeCategory_ChangeUserName] DEFAULT (N'UNKNOWN') FOR [ChangeUserName]
 GO
-ALTER TABLE [dbo].[JokeJokeCategory] ADD CONSTRAINT [DF_JokeJokeCategory_CreateDateTime] DEFAULT (getdate()) FOR [CreateDateTime]
+ALTER TABLE [Dad].[JokeJokeCategory] ADD CONSTRAINT [DF_JokeJokeCategory_CreateDateTime] DEFAULT (getdate()) FOR [CreateDateTime]
 GO
-ALTER TABLE [dbo].[JokeJokeCategory] ADD CONSTRAINT [DF_JokeJokeCategory_CreateUserName] DEFAULT (N'UNKNOWN') FOR [CreateUserName]
+ALTER TABLE [Dad].[JokeJokeCategory] ADD CONSTRAINT [DF_JokeJokeCategory_CreateUserName] DEFAULT (N'UNKNOWN') FOR [CreateUserName]
 GO
-ALTER TABLE [dbo].[JokeRating] ADD  CONSTRAINT [DF_JokeRating_CreateDateTime]  DEFAULT (getdate()) FOR [CreateDateTime]
+ALTER TABLE [Dad].[JokeRating] ADD  CONSTRAINT [DF_JokeRating_CreateDateTime]  DEFAULT (getdate()) FOR [CreateDateTime]
 GO
-ALTER TABLE [dbo].[JokeRating] ADD  CONSTRAINT [DF_JokeRating_CreateUserName]  DEFAULT (N'UNKNOWN') FOR [CreateUserName]
+ALTER TABLE [Dad].[JokeRating] ADD  CONSTRAINT [DF_JokeRating_CreateUserName]  DEFAULT (N'UNKNOWN') FOR [CreateUserName]
 GO
-ALTER TABLE [dbo].[JokeJokeCategory]  WITH CHECK ADD  CONSTRAINT [FK_JokeJokeCategory_Joke] FOREIGN KEY([JokeId])
-REFERENCES [dbo].[Joke] ([JokeId])
+ALTER TABLE [Dad].[JokeJokeCategory]  WITH CHECK ADD  CONSTRAINT [FK_JokeJokeCategory_Joke] FOREIGN KEY([JokeId])
+REFERENCES [Dad].[Joke] ([JokeId])
 ON DELETE CASCADE
 GO
-ALTER TABLE [dbo].[JokeJokeCategory] CHECK CONSTRAINT [FK_JokeJokeCategory_Joke]
+ALTER TABLE [Dad].[JokeJokeCategory] CHECK CONSTRAINT [FK_JokeJokeCategory_Joke]
 GO
-ALTER TABLE [dbo].[JokeJokeCategory]  WITH CHECK ADD  CONSTRAINT [FK_JokeJokeCategory_JokeCategory] FOREIGN KEY([JokeCategoryId])
-REFERENCES [dbo].[JokeCategory] ([JokeCategoryId])
+ALTER TABLE [Dad].[JokeJokeCategory]  WITH CHECK ADD  CONSTRAINT [FK_JokeJokeCategory_JokeCategory] FOREIGN KEY([JokeCategoryId])
+REFERENCES [Dad].[JokeCategory] ([JokeCategoryId])
 ON DELETE CASCADE
 GO
-ALTER TABLE [dbo].[JokeJokeCategory] CHECK CONSTRAINT [FK_JokeJokeCategory_JokeCategory]
+ALTER TABLE [Dad].[JokeJokeCategory] CHECK CONSTRAINT [FK_JokeJokeCategory_JokeCategory]
 GO
-ALTER TABLE [dbo].[JokeRating]  WITH CHECK ADD  CONSTRAINT [FK_JokeRating_Joke] FOREIGN KEY([JokeId])
-REFERENCES [dbo].[Joke] ([JokeId])
+ALTER TABLE [Dad].[JokeRating]  WITH CHECK ADD  CONSTRAINT [FK_JokeRating_Joke] FOREIGN KEY([JokeId])
+REFERENCES [Dad].[Joke] ([JokeId])
 ON UPDATE CASCADE
 ON DELETE CASCADE
 GO
-ALTER TABLE [dbo].[JokeRating] CHECK CONSTRAINT [FK_JokeRating_Joke]
+ALTER TABLE [Dad].[JokeRating] CHECK CONSTRAINT [FK_JokeRating_Joke]
 GO
-ALTER TABLE [dbo].[Joke] WITH CHECK ADD  CONSTRAINT [CK_Joke_ActiveInd] CHECK  (([ActiveInd]='N' OR [ActiveInd]='Y'))
+ALTER TABLE [Dad].[Joke] WITH CHECK ADD  CONSTRAINT [CK_Joke_ActiveInd] CHECK  (([ActiveInd]='N' OR [ActiveInd]='Y'))
 GO
-ALTER TABLE [dbo].[Joke] CHECK CONSTRAINT [CK_Joke_ActiveInd]
+ALTER TABLE [Dad].[Joke] CHECK CONSTRAINT [CK_Joke_ActiveInd]
 GO
-ALTER TABLE [dbo].[JokeCategory] WITH CHECK ADD  CONSTRAINT [CK_JokeCategory_ActiveInd] CHECK  (([ActiveInd]='N' OR [ActiveInd]='Y'))
+ALTER TABLE [Dad].[JokeCategory] WITH CHECK ADD  CONSTRAINT [CK_JokeCategory_ActiveInd] CHECK  (([ActiveInd]='N' OR [ActiveInd]='Y'))
 GO
-ALTER TABLE [dbo].[JokeCategory] CHECK CONSTRAINT [CK_JokeCategory_ActiveInd]
+ALTER TABLE [Dad].[JokeCategory] CHECK CONSTRAINT [CK_JokeCategory_ActiveInd]
 GO
-ALTER TABLE [dbo].[JokeRating] WITH CHECK ADD  CONSTRAINT [CK_JokeRating_UserRating] CHECK  (([UserRating]>=(1) AND [UserRating]<=(5)))
+ALTER TABLE [Dad].[JokeRating] WITH CHECK ADD  CONSTRAINT [CK_JokeRating_UserRating] CHECK  (([UserRating]>=(1) AND [UserRating]<=(5)))
 GO
-ALTER TABLE [dbo].[JokeRating] CHECK CONSTRAINT [CK_JokeRating_UserRating]
+ALTER TABLE [Dad].[JokeRating] CHECK CONSTRAINT [CK_JokeRating_UserRating]
 GO
 
-CREATE PROCEDURE [dbo].[usp_Get_Random_Joke]
+CREATE PROCEDURE [Dad].[usp_Get_Random_Joke]
 AS
 /*
 Example Usage:
@@ -129,15 +135,15 @@ BEGIN
     DECLARE @MaxId int = 0
     DECLARE @RandomId int = 0
 
-	SELECT @MaxId = Max(JokeId) From Joke
+	SELECT @MaxId = Max(JokeId) FROM [Dad].[Joke]
 	SET @MinId = 1
 	SELECT @RandomId = FLOOR(RAND() * (@MaxId - @MinId + 1)) + @MinId
 
-	SELECT TOP 1 j.JokeId, 
+	SELECT TOP 1 j.JokeId,
 	  -- Multiple categories field (comma-separated)
 	  STUFF((SELECT ', ' + c.JokeCategoryTxt
-	         FROM JokeJokeCategory jjc
-	         INNER JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId
+	         FROM [Dad].[JokeJokeCategory] jjc
+	         INNER JOIN [Dad].[JokeCategory] c ON jjc.JokeCategoryId = c.JokeCategoryId
 	         WHERE jjc.JokeId = j.JokeId
 	         ORDER BY c.JokeCategoryTxt
 	         FOR XML PATH('')), 1, 2, '') AS Categories,
@@ -145,12 +151,12 @@ BEGIN
 	  j.Rating, j.ActiveInd, j.Attribution, j.VoteCount, j.SortOrderNbr,
 	  j.CreateDateTime, j.CreateUserName, j.ChangeDateTime, j.ChangeUserName
 	  -- , @MinId as MinId, @MaxId as MaxId, @RandomId as RandomId
-	FROM Joke j
+	FROM [Dad].[Joke] j
 	WHERE JokeId >= @RandomId
 END
 GO
 
-CREATE PROCEDURE [dbo].[usp_Joke_Search] (
+CREATE PROCEDURE [Dad].[usp_Joke_Search] (
   @category as varchar(255) = NULL,
   @searchTxt as varchar(255) = NULL
 ) AS
@@ -163,22 +169,22 @@ Example Usage:
 BEGIN
   SET @category = '%' + ISNULL(@category, '') + '%'
   SET @searchTxt = '%' + ISNULL(@searchTxt, '') + '%'
-	SELECT DISTINCT j.JokeId, 
+	SELECT DISTINCT j.JokeId,
 	  -- Multiple categories field (comma-separated)
 	  STUFF((SELECT ', ' + c.JokeCategoryTxt
-	         FROM JokeJokeCategory jjc
-	         INNER JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId
+	         FROM [Dad].[JokeJokeCategory] jjc
+	         INNER JOIN [Dad].[JokeCategory] c ON jjc.JokeCategoryId = c.JokeCategoryId
 	         WHERE jjc.JokeId = j.JokeId
 	         ORDER BY c.JokeCategoryTxt
 	         FOR XML PATH('')), 1, 2, '') AS Categories,
 	  j.JokeTxt, j.ImageTxt, j.Rating, j.ActiveInd, j.Attribution, j.VoteCount, j.SortOrderNbr,
 	  j.CreateDateTime, j.CreateUserName, j.ChangeDateTime, j.ChangeUserName
-	FROM Joke j 
-	LEFT JOIN JokeJokeCategory jjc ON j.JokeId = jjc.JokeId
-	LEFT JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId
+	FROM [Dad].[Joke] j
+	LEFT JOIN [Dad].[JokeJokeCategory] jjc ON j.JokeId = jjc.JokeId
+	LEFT JOIN [Dad].[JokeCategory] c ON jjc.JokeCategoryId = c.JokeCategoryId
 	WHERE c.JokeCategoryTxt LIKE @category
 	  AND j.JokeTxt LIKE @searchTxt
-	ORDER BY j.JokeTxt 
+	ORDER BY j.JokeTxt
 END
 GO
 
@@ -186,19 +192,19 @@ GO
 -- View: vw_Jokes
 -- Description: Simplified view of jokes with key information including multiple categories
 -- =============================================
-CREATE VIEW [dbo].[vw_Jokes] AS
-SELECT 
-    j.JokeId, 
+CREATE VIEW [Dad].[vw_Jokes] AS
+SELECT
+    j.JokeId,
     -- Multiple categories field (comma-separated)
     STUFF((SELECT ', ' + c.JokeCategoryTxt
-           FROM JokeJokeCategory jjc
-           INNER JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId
+           FROM [Dad].[JokeJokeCategory] jjc
+           INNER JOIN [Dad].[JokeCategory] c ON jjc.JokeCategoryId = c.JokeCategoryId
            WHERE jjc.JokeId = j.JokeId
            ORDER BY c.JokeCategoryTxt
            FOR XML PATH('')), 1, 2, '') AS Categories,
-    j.JokeTxt, 
-    j.ImageTxt, 
+    j.JokeTxt,
+    j.ImageTxt,
     j.Rating
-FROM [dbo].[Joke] j 
+FROM [Dad].[Joke] j
 WHERE j.ActiveInd = 'Y'
 GO

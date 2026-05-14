@@ -14532,54 +14532,54 @@ IF @RemovePreviousJokes = 'Y'
 BEGIN
   PRINT ''
   PRINT 'Removing previous set of jokes...'
-  DELETE FROM JokeRating
-  DELETE FROM JokeJokeCategory
-  DELETE FROM JokeCategory
-  DELETE FROM Joke
-  DBCC CHECKIDENT('JokeRating', RESEED, 0)
-  DBCC CHECKIDENT('JokeCategory', RESEED, 0)
-  DBCC CHECKIDENT('Joke', RESEED, 0)
+  DELETE FROM [Dad].[JokeRating]
+  DELETE FROM [Dad].[JokeJokeCategory]
+  DELETE FROM [Dad].[JokeCategory]
+  DELETE FROM [Dad].[Joke]
+  DBCC CHECKIDENT('[Dad].[JokeRating]', RESEED, 0)
+  DBCC CHECKIDENT('[Dad].[JokeCategory]', RESEED, 0)
+  DBCC CHECKIDENT('[Dad].[Joke]', RESEED, 0)
 END
 
 DECLARE @CategoryCount int
 SELECT @CategoryCount = Count(DISTINCT JokeCategoryTxt) From @tmpJokeCategories
 PRINT ''
 PRINT 'Inserting ' + CAST(@CategoryCount as varchar) + ' fresh categories...'
-INSERT INTO JokeCategory (JokeCategoryTxt) 
-  SELECT DISTINCT JokeCategoryTxt From @tmpJokeCategories Where JokeCategoryTxt NOT IN (Select JokeCategoryTxt From JokeCategory)
+INSERT INTO [Dad].[JokeCategory] (JokeCategoryTxt)
+  SELECT DISTINCT JokeCategoryTxt From @tmpJokeCategories Where JokeCategoryTxt NOT IN (Select JokeCategoryTxt FROM [Dad].[JokeCategory])
 
 DECLARE @JokeCount int
 SELECT @JokeCount = Count(*) From @tmpJokes
 PRINT ''
 PRINT 'Inserting ' + CAST(@JokeCount as varchar) + ' fresh jokes...'
-INSERT INTO Joke (JokeTxt, Attribution, ImageTxt, Rating, VoteCount) 
+INSERT INTO [Dad].[Joke] (JokeTxt, Attribution, ImageTxt, Rating, VoteCount)
   SELECT j.JokeTxt, j.Attribution, j.ImageTxt, 0, 0
   FROM @tmpJokes j
-  WHERE j.JokeTxt NOT IN (Select JokeTxt From Joke)
+  WHERE j.JokeTxt NOT IN (Select JokeTxt FROM [Dad].[Joke])
   ORDER BY j.Categories, j.JokeTxt
 
 PRINT ''
 PRINT 'Populating JokeJokeCategory junction table...'
-INSERT INTO JokeJokeCategory (JokeId, JokeCategoryId)
+INSERT INTO [Dad].[JokeJokeCategory] (JokeId, JokeCategoryId)
   SELECT DISTINCT jk.JokeId, c.JokeCategoryId
-  FROM Joke jk
+  FROM [Dad].[Joke] jk
   INNER JOIN @tmpJokes tj ON jk.JokeTxt = tj.JokeTxt
   INNER JOIN @tmpJokeCategories tjc ON tj.JokeId = tjc.JokeId
-  INNER JOIN JokeCategory c ON tjc.JokeCategoryTxt = c.JokeCategoryTxt
+  INNER JOIN [Dad].[JokeCategory] c ON tjc.JokeCategoryTxt = c.JokeCategoryTxt
   WHERE NOT EXISTS (
-    SELECT 1 FROM JokeJokeCategory jjc 
+    SELECT 1 FROM [Dad].[JokeJokeCategory] jjc
     WHERE jjc.JokeId = jk.JokeId AND jjc.JokeCategoryId = c.JokeCategoryId
   )
 
 PRINT ''
 PRINT 'Displaying All Jokes...'
-SELECT j.JokeId, 
+SELECT j.JokeId,
   STUFF((SELECT ', ' + c.JokeCategoryTxt
-         FROM JokeJokeCategory jjc
-         INNER JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId
+         FROM [Dad].[JokeJokeCategory] jjc
+         INNER JOIN [Dad].[JokeCategory] c ON jjc.JokeCategoryId = c.JokeCategoryId
          WHERE jjc.JokeId = j.JokeId
          ORDER BY c.JokeCategoryTxt
          FOR XML PATH('')), 1, 2, '') AS Categories,
-  j.JokeTxt, j.Attribution, j.ImageTxt, j.Rating, j.CreateDateTime 
-FROM Joke j 
+  j.JokeTxt, j.Attribution, j.ImageTxt, j.Rating, j.CreateDateTime
+FROM [Dad].[Joke] j
 ORDER BY j.JokeId, Categories, j.JokeTxt

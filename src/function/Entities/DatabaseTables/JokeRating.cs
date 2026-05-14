@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------
+//-----------------------------------------------------------------------
 // <copyright file="JokeRating.cs" company="Luppes Consulting, Inc.">
 // Copyright 2026, Luppes Consulting, Inc. All rights reserved.
 // </copyright>
@@ -12,10 +12,10 @@ namespace DadABase.Data;
 /// <summary>
 /// JokeRating Table
 /// </summary>
-[Table("JokeRating")]
+[Table("JokeRating", Schema = "Dad")]
 public class JokeRating
 {
-    //CREATE TABLE [dbo].[JokeRating](
+    //CREATE TABLE [Dad].[JokeRating](
     //	[JokeRatingId] [int] IDENTITY(1,1) NOT NULL,
     //	[JokeId] [int] NOT NULL,
     //	[UserRating] [int] NOT NULL,
