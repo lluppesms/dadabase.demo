@@ -52,6 +52,7 @@ body[data-bs-theme='dark'] .image-note,
     font-size: 1.05em;
     font-style: italic;
     color: var(--text-secondary-light);
+    margin-top: 0.75rem;
     margin-bottom: 1.5rem;
     opacity: 0.85;
 }

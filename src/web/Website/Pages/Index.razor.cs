@@ -59,7 +59,7 @@ public partial class Index : ComponentBase, IDisposable
             await JsInterop.InvokeVoidAsync("syncHeaderTitle");
             var theme = await JsInterop.InvokeAsync<string>("localStorage.getItem", "theme-mode");
             isNinetiesTheme = theme == "nineties";
-            jokeCount = JokeRepository.ListAll().Count();
+            jokeCount = JokeRepository.CountAll();
             await ExecuteRandom();
             StateHasChanged();
         }
