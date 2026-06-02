@@ -25,6 +25,7 @@ public partial class Index : ComponentBase, IDisposable
     private Joke myJoke = new();
     private readonly bool addDelay = false;
     private bool jokeLoading = false;
+    private int jokeCount = 0;
 
     // Store the last 10 jokes
     private List<Joke> jokeHistory = new();
@@ -58,6 +59,7 @@ public partial class Index : ComponentBase, IDisposable
             await JsInterop.InvokeVoidAsync("syncHeaderTitle");
             var theme = await JsInterop.InvokeAsync<string>("localStorage.getItem", "theme-mode");
             isNinetiesTheme = theme == "nineties";
+            jokeCount = JokeRepository.ListAll().Count();
             await ExecuteRandom();
             StateHasChanged();
         }
