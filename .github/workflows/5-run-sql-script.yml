@@ -35,11 +35,6 @@ on:
           - 'Patch-20260102.sql'
           - 'Patch-20260103.sql'
           - 'DBCOPY'
-      # databaseName:
-      #   description: 'Database Name'
-      #   required: true
-      #   default: 'DadABase'
-      #   type: string
       databaseCopyName:
         description: 'Database Copy Name (for DBCOPY action)'
         required: false
@@ -65,7 +60,6 @@ jobs:
       envCode: ${{ inputs.deployEnvironment }}
       sqlFolderName: 'src/sql.database/Patch'
       sqlFileName: ${{ inputs.scriptName }}
-      #runInDatabase: ${{ inputs.databaseName }}
       loginAccountType: ${{ inputs.loginAccountType }}
       resourceGroupName: ${{ inputs.resourceGroupName }}
       databaseCopyName: ${{ inputs.databaseCopyName }}
