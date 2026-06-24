@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------------
-// This BICEP file will create an .NET 10 Isolated Azure Flex Function
+// This BICEP file will create an .NET 10 Isolated Azure Flex Function using AVM
 // See: https://github.com/Azure-Samples/azure-functions-flex-consumption-samples/blob/main/IaC/bicep/main.bicep
 // Note that each flex function has to have it's own service plan, so that's in here also.
 // ----------------------------------------------------------------------------------------------------
@@ -80,21 +80,20 @@ var baseAppSettings = {
 
 // --------------------------------------------------------------------------------
 // App Service Plan for Flex Consumption functions
-resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
-  name: functionAppServicePlanName
-  location: location
-  tags: functionTags
-  kind: 'functionapp'
-  sku: {
-    name: appServicePlanSkuName
-    tier: appServicePlanTier
-  }
-  properties: {
+module appServicePlan 'br/public:avm/res/web/serverfarm:0.7.0' = {
+  name: 'funcServicePlan-${uniqueString(functionAppServicePlanName, resourceGroup().id)}'
+  params: {
+    name: functionAppServicePlanName
+    location: location
+    tags: functionTags
+    skuName: appServicePlanSkuName
+    kind: 'functionapp'
     reserved: true
+    enableTelemetry: false
   }
 }
 
-module functionAppResource 'br/public:avm/res/web/site:0.16.0' = {
+module functionAppResource 'br/public:avm/res/web/site:0.22.0' = {
   name: '${functionAppName}${deploymentSuffix}'
   dependsOn: [
     deploymentContainer
@@ -107,7 +106,7 @@ module functionAppResource 'br/public:avm/res/web/site:0.16.0' = {
     managedIdentities: {
       systemAssigned: true
     }
-    serverFarmResourceId: appServicePlan.id
+    serverFarmResourceId: appServicePlan.outputs.resourceId
     functionAppConfig: {
       deployment: {
         storage: {
@@ -134,6 +133,7 @@ module functionAppResource 'br/public:avm/res/web/site:0.16.0' = {
       name: 'appsettings'
       properties: union(baseAppSettings, customAppSettings)
     }]
+    enableTelemetry: false
   }
 }
 
