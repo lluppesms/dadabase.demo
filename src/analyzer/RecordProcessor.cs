@@ -70,7 +70,7 @@ public class RecordProcessor(
     private int _totalCompletionTokens;
 
     // Reusable prompt sections for DRY principles
-    
+
     /// <summary>
     /// Image description instructions used across multiple prompts.
     /// </summary>
@@ -104,15 +104,15 @@ public class RecordProcessor(
     // /// </summary>
     // public const string DefaultCategory = "Random";
 
-// --> I need to add these additional rules to categorization
+    // --> I need to add these additional rules to categorization
 
-// // Did'ya Hear -- starts did you hear about...  or some form similar to that
-// // Don't Say It! -- starts with I don't always... or I don't make jokes about...
-// // Good Questions! -- for those jokes that are in the form of a question and ask a question that is silly or redundant
-// // Definitions:  things that look like a dictionary entry
-// // add the other categories to the prompt authorized categories list...
+    // // Did'ya Hear -- starts did you hear about...  or some form similar to that
+    // // Don't Say It! -- starts with I don't always... or I don't make jokes about...
+    // // Good Questions! -- for those jokes that are in the form of a question and ask a question that is silly or redundant
+    // // Definitions:  things that look like a dictionary entry
+    // // add the other categories to the prompt authorized categories list...
 
-// -->  Also need to make category rules prompt DRY - have this merge them into the other prompts so they are only in one spot
+    // -->  Also need to make category rules prompt DRY - have this merge them into the other prompts so they are only in one spot
 
     /// <summary>
     /// Category evaluation rules used across multiple prompts.
@@ -276,7 +276,7 @@ public class RecordProcessor(
             // Both modes: process jokes missing images OR missing categories
             jokesQuery = context.Jokes
                 .Where(j => j.ActiveInd == "Y")
-                .Where(j => (j.ImageTxt == null || j.ImageTxt == "") || 
+                .Where(j => (j.ImageTxt == null || j.ImageTxt == "") ||
                             !context.JokeJokeCategories.Any(jjc => jjc.JokeId == j.JokeId))
                 .OrderBy(j => j.JokeId);
         }

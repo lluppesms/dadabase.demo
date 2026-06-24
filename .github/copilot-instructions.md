@@ -2,6 +2,25 @@
 
 The github repo is lluppesms/dadabase.demo and the primary branch that I work off of is main.
 
+## ⚠️ Git Branch Policy — AGENTS MUST FOLLOW THIS
+
+Do not commit or push changes unless directly instructed by the user.  If instructed to commit, then follow these guidelines.
+
+**NEVER commit directly to `main` or `master`.** This is a strict rule for all agents and automated tools.
+
+Before making any commits or file changes:
+1. **Check the current branch**: `git branch --show-current`
+2. **If on `main` or `master`, create and switch to a feature branch first**:
+   ```
+   git checkout -b feature/short-description-of-task
+   ```
+3. **All work must be committed to the feature branch**, not to `main`/`master`.
+4. When finished, open a Pull Request targeting `main` — do not merge directly.
+
+Branch naming convention: `feature/short-description`, `fix/short-description`, or `chore/short-description`.
+
+The human owner will review and merge PRs into `main`. Agents do not have permission to merge.
+
 ## File Organization
 - Keep related files together
 - Use meaningful file names
@@ -15,124 +34,29 @@ The github repo is lluppesms/dadabase.demo and the primary branch that I work of
 - Any code for Azure DevOps pipelines should be located in the .azuredevops/pipelines folder.
 - Keep documentation and images in a Docs folder.
 
-## Blazor
-- Always add component-specific CSS in a corresponding .razor.css file
-- When creating a new component, automatically create a matching .razor.css file
-- Ignore warnings in Blazor components (they are often false positives)
-- Use scoped CSS through the .razor.css pattern instead of global styles
-- Make sure light and dark theme are respected throughout by never using hard coded rgb or hex but that they are always defined in the main css
+## Blazor & CSS
 
-## CSS Best Practices
-- Use Bootstrap's built-in spacing utilities (m-*, p-*) for consistent spacing
-- Always wrap card content in a .card-body element for consistent padding
-- Define common padding/margin values as CSS variables in app.css
-- Use semantic class names that describe the component's purpose
-- Avoid direct element styling, prefer class-based selectors
-- Keep component-specific styles in .razor.css files
-- Avoid fixed pixel values for responsive elements
-- Use CSS Grid or Flexbox for layout instead of absolute positioning
-- Style from the component's root element down to maintain CSS specificity
-- When adjusting padding/margin, check both light and dark themes
-- Use CSS variables for repeated values (spacing, border-radius, etc.)
-- Test responsive behavior across different viewport sizes
-- Use rem/em units for font sizes and spacing for better accessibility
-- Document any magic numbers or non-obvious style choices in comments
-
-## Code Style
-- Prefer async/await over direct Task handling
-- Use nullable reference types
-- Use var over explicit type declarations 
-- Always implement IDisposable when dealing with event handlers or subscriptions
-- Prefer using async/await for asynchronous operations
-- Use latest C# features (e.g., records, pattern matching)
-- Use consistent naming conventions (PascalCase for public members, camelCase for private members)
-- Use meaningful names for variables, methods, and classes
-- Use dependency injection for services and components
-- Use interfaces for service contracts and put them in a unique file
-- Use file scoped namespaces in C# and are PascalCased
-- Always add namespace declarations to Blazor components matching their folder structure
-- Organize using directives:
-  - Put System namespaces first
-  - Put Microsoft namespaces second
-  - Put application namespaces last
-  - Remove unused using directives
-  - Sort using directives alphabetically within each group
-
-## Component Structure
-- Keep components small and focused
-- Extract reusable logic into services
-- Use cascading parameters sparingly
-- Prefer component parameters over cascading values
-
-## Error Handling
-- Use try-catch blocks in event handlers
-- Implement proper error boundaries
-- Display user-friendly error messages
-- Log errors appropriately
-
-## Performance
-- Implement proper component lifecycle methods
-- Use @key directive when rendering lists
-- Avoid unnecessary renders
-- Use virtualization for large lists
-
-## Testing
-- Write unit tests for complex component logic only if i ask for tests
-- Test error scenarios
-- Mock external dependencies
-- Use MSTest for component testing
-- Create tests in the dadabase.tests project
-
-## Documentation
-- Document public APIs
-- Include usage examples in comments
-- Document any non-obvious behavior
-- Keep documentation up to date
-
-## Security
-- Always validate user input
-
-## Accessibility
-- Use semantic HTML
-- Include ARIA attributes where necessary
-- Ensure keyboard navigation works
+When making changes to Blazor components or CSS, refer to [.github/instructions/blazor-css-instructions.md](.github/instructions/blazor-css-instructions.md) for detailed guidelines on component structure, scoped CSS, theming, and CSS best practices.
 
 ## C# Code Style
-- Use modern C# features (e.g., nullable reference types, async/await, expression-bodied members) where appropriate.
-- Organize code into clear namespaces reflecting folder structure (e.g., `DadABase.Web`, `DadABase.Tests`).
-- Use PascalCase for class, method, and property names; use camelCase for local variables and parameters.
-- Place using directives at the top of files, outside namespaces. Whenever a using directive is used more than once, place it into a globalUsings.cs file in the root of the project.
-- Prefer explicit access modifiers (public, private, etc.) for all members.
-- Group related files into folders (e.g., `API`, `Components`, `Data`, `Helpers`, `Models`, `Pages`, `Repositories`, `Shared`).
-- For ASP.NET Core/Blazor, use dependency injection for services and configuration.
-- Keep test code in dedicated test projects/folders, using clear naming (e.g., `Category_API_Tests.cs`).
 
-## Bicep Infrastructure Code
-- Use parameterized modules for reusable infrastructure (e.g., `containerApp.bicep`, `containerRegistry.bicep`).
-- Organize Bicep files into logical folders (e.g., Bicep).
-- Use descriptive parameter and variable names in snake_case.
-- Include comments to explain resource purpose and configuration.
-- Use outputs for key resource values.
-- Follow Azure best practices for resource naming and tagging.
+When writing or modifying C# code, refer to [.github/instructions/csharp-code-style-instructions.md](.github/instructions/csharp-code-style-instructions.md) for naming conventions, `using` directive organization, namespace structure, and folder layout.
 
-## GitHub Actions YAML Workflows
-- Use clear, descriptive workflow names and job names.
-- Reference solution and project files with relative paths.
-- Use environment variables and secrets for sensitive data.
-- Keep steps modular and reusable; use templates for things that may be done in multiple places; use actions from the marketplace where possible.
-- Add comments to explain non-obvious steps or configuration.
+## Bicep Infrastructure
 
-## Azure DevOps Pipelines YAML Workflows
-- Use clear, descriptive workflow names and job names.
-- Reference solution and project files with relative paths.
-- Use environment variables and secrets for sensitive data.
-- Keep steps modular and reusable; use templates for things that may be done in multiple places; use actions from the marketplace where possible.
-- Add comments to explain non-obvious steps or configuration.
+When writing or modifying Bicep IaC files, refer to [.github/instructions/bicep-instructions.md](.github/instructions/bicep-instructions.md) for module structure, naming, comments, and Azure best practices.
 
-## Documentation and Comments
-- Use XML documentation comments for public APIs in C#.
-- Add YAML or Bicep comments to explain configuration choices.
-- Keep README and documentation up to date with project structure and usage.
+## GitHub Actions & Azure DevOps Pipelines
+
+When creating or modifying CI/CD pipeline files, refer to [.github/instructions/pipeline-instructions.md](.github/instructions/pipeline-instructions.md) for workflow structure, secrets handling, action pinning, and reuse patterns.
+
+## Testing
+
+When writing tests, refer to [.github/instructions/testing-instructions.md](.github/instructions/testing-instructions.md) for test framework, project location, and scope guidelines.
+
+## General Best Practices
+
+For error handling, performance, security, accessibility, and documentation standards, refer to [.github/instructions/general-best-practices-instructions.md](.github/instructions/general-best-practices-instructions.md).
 
 ---
 

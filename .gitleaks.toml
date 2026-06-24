@@ -1,0 +1,25 @@
+# Gitleaks configuration for dadabase.demo
+# Full rule reference: https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml
+
+title = "dadabase.demo gitleaks config"
+
+[extend]
+# Extend the default ruleset — catches AWS keys, GitHub tokens, connection strings, etc.
+useDefault = true
+
+[allowlist]
+description = "Global allowlist for known-safe patterns"
+paths = [
+  '''(^|/)\.env\.example$''',       # Example env template files
+  '''(^|/)\.env\.sample$''',
+  '''(^|/)package-lock\.json$''',   # Auto-generated lockfiles
+  '''(^|/)playwright\.config''',    # Playwright configs use env var references, not real secrets
+  '''^Docs/''',                     # Documentation folder
+]
+
+# Example: add a rule-specific allowlist to suppress a false positive
+# [[rules]]
+# id = "generic-api-key"
+# [rules.allowlist]
+#   regexes = ['''REPLACE_WITH_YOUR_API_KEY''']
+#   description = "Placeholder in docs, not a real key"

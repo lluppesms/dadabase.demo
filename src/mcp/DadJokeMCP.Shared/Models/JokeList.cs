@@ -3,7 +3,7 @@ namespace DadJokeMCP.Shared;
 [JsonSerializable(typeof(JokeList))]
 [JsonSerializable(typeof(List<DadJoke>))]
 [JsonSerializable(typeof(List<string>))]
-public sealed partial class DadJokeContext : JsonSerializerContext {}
+public sealed partial class DadJokeContext : JsonSerializerContext { }
 
 public class JokeList
 {

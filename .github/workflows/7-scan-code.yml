@@ -15,6 +15,10 @@ on:
         description: Run GitHub Advanced Security Scan
         default: true
         type: boolean
+      runSBOM:
+        description: Run SBOM Report Generator
+        default: true
+        type: boolean
   # push:
   #   branches: [ "main" ]
   # pull_request:
@@ -45,5 +49,6 @@ jobs:
     uses: ./.github/workflows/template-scan-code.yml
     secrets: inherit
     with:
-      runMSDevSecOpsScan: ${{ inputs.runMSDevSecOpsScan || true }}
-      runGHASScan: ${{ inputs.runGHASScan || true }}
+      runMSDevSecOpsScan: ${{ inputs.runMSDevSecOpsScan }}
+      runGHASScan: ${{ inputs.runGHASScan }}
+      runSBOM: ${{ inputs.runSBOM }}

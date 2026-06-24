@@ -26,10 +26,10 @@ public partial class Search : ComponentBase
     private const int RecentAdditionsCount = 100;
     private bool isRecentMode = false;
 
-	/// <summary>
-	/// Initialization
-	/// </summary>
-	protected override async Task OnAfterRenderAsync(bool firstRender)
+    /// <summary>
+    /// Initialization
+    /// </summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         await base.OnAfterRenderAsync(firstRender);
 

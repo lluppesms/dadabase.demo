@@ -37,8 +37,10 @@ public class MessageBubble
     /// <summary>
     /// Time this message was posted
     /// </summary>
-    public string DisplayTime {
-        get {
+    public string DisplayTime
+    {
+        get
+        {
             return $"{Time:h:mm:ss}";
         }
     }

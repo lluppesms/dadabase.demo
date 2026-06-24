@@ -18,6 +18,10 @@ on:
         required: false
         default: false
         type: boolean
+      runSBOM:
+        required: false
+        default: false
+        type: boolean
       continueOnScanError:
         required: false
         default: true
@@ -42,10 +46,10 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Setup
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       if: inputs.runMSDevSecOpsScan
       with:
         dotnet-version: |
@@ -72,7 +76,7 @@ jobs:
  
     - name: Upload MS DevSecOps alerts to Workflow Artifacts
       if: inputs.runMSDevSecOpsScan
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: alerts
         path: ${{ steps.msdo.outputs.sarifFile }}
@@ -114,7 +118,7 @@ jobs:
         # your codebase is analyzed, see https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
@@ -151,3 +155,11 @@ jobs:
       uses: github/codeql-action/analyze@v4
       with:
         category: "/language:${{matrix.language}}"
+
+  # ------------------------------------------------------------------------------------------------------------------------
+  sbom-generator:
+    name: Generate SBOM
+    if: inputs.runSBOM
+    uses: ./.github/workflows/template-create-sbom.yml
+    with:
+      continueOnSBOMError: ${{ inputs.continueOnScanError }}

@@ -236,7 +236,7 @@ public class JokeRepository : BaseRepository, IJokeRepository
     {
         try
         {
-            var allJokes= JokeData.Jokes
+            var allJokes = JokeData.Jokes
                 .Select(joke => new JokeBasicPlus(joke))
                 .ToList();
             return allJokes.AsQueryable();

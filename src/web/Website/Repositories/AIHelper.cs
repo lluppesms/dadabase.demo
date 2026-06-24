@@ -249,7 +249,7 @@ public class AIHelper : IAIHelper
             }
             else
             {
-                if (image!= null && image.ImageUri != null)
+                if (image != null && image.ImageUri != null)
                 {
                     imageDataUrl = image.ImageUri.ToString();
                     // TODO: get this image data from the URL and then save it to our blob and return it...?
@@ -283,7 +283,7 @@ public class AIHelper : IAIHelper
             }
             else
             {
-              sorryMessage = "Sorry - I'm having serious trouble imagining anything right now...!";
+                sorryMessage = "Sorry - I'm having serious trouble imagining anything right now...!";
             }
             return (imageDescription, false, sorryMessage);
         }
@@ -312,7 +312,7 @@ public class AIHelper : IAIHelper
         {
             return null;
         }
-        var blobOptions = new BlobClientOptions {Retry={MaxRetries=1}};
+        var blobOptions = new BlobClientOptions { Retry = { MaxRetries = 1 } };
         var blobServiceClient = new BlobServiceClient(new Uri($"https://{blobStorageAccountName}.blob.core.windows.net"), azureCredential, blobOptions);
         return blobServiceClient.GetBlobContainerClient(blobContainerName);
     }

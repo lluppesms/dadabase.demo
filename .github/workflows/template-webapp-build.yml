@@ -63,7 +63,7 @@ jobs:
     # ------------------------------------------------------------------------------------------------------------------------
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Display Variables
       env:
@@ -91,7 +91,7 @@ jobs:
       continue-on-error: true
 
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
 
@@ -153,7 +153,7 @@ jobs:
 
     - name: Upload coverage report artifact
       if: inputs.testApplication == true
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: coverage-report
         path: coverage-report
@@ -188,7 +188,7 @@ jobs:
       run: dotnet publish "${{ inputs.rootDirectory }}/${{ inputs.projectName }}.csproj" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
 
     - name: Save Publish Artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ env.artifactName }}
         path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}

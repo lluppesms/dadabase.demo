@@ -47,7 +47,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
@@ -72,7 +72,7 @@ jobs:
           Get-ChildItem -Path "${{ inputs.appFolderName }}/bin/${{ env.CONFIGURATION }}" -Recurse
 
       - name: Upload DACPAC Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.artifactName }}
           path: ${{ inputs.appFolderName }}/bin/${{ env.CONFIGURATION }}/${{ inputs.appProjectName }}.dacpac

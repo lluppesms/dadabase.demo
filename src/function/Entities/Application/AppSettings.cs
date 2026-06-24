@@ -63,7 +63,7 @@ public class AppSettings
     /// OpenAI API Key
     /// </summary>
     public string OpenAIApiKey { get; set; }
-    
+
     /// <summary>
     /// Name of Azure OpenAI Resource
     /// </summary>

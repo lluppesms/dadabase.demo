@@ -1,0 +1,89 @@
+#!/usr/bin/env sh
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT" || exit 1
+
+echo "🚀 Running pre-commit checks..."
+
+# ============================================================
+# Step 1: Secret scanning with gitleaks
+# ============================================================
+if command -v gitleaks > /dev/null 2>&1; then
+  echo "🔍 Scanning staged files for secrets..."
+  gitleaks protect --staged --redact -v
+  GITLEAKS_EXIT=$?
+  if [ $GITLEAKS_EXIT -ne 0 ]; then
+    echo ""
+    echo "❌ BLOCKED: Potential secrets detected in staged files."
+    echo "   Review the output above and remove any secrets before committing."
+    echo "   If this is a false positive, add an allowlist entry to .gitleaks.toml"
+    exit 1
+  fi
+  echo "✅ No secrets detected."
+else
+  echo "⚠️  WARNING: gitleaks is not installed — secret scanning skipped."
+  echo "   Install: https://github.com/gitleaks/gitleaks#installing"
+  echo "   (Windows: winget install gitleaks  |  Mac: brew install gitleaks)"
+fi
+
+# ============================================================
+# Step 2: .NET code formatting with dotnet format
+# ============================================================
+STAGED_CS=$(git diff --cached --name-only --diff-filter=ACM | grep "\.cs$" || true)
+
+if [ -z "$STAGED_CS" ]; then
+  echo "✅ No .cs files staged — skipping .NET format check."
+  exit 0
+fi
+
+echo "🎨 Formatting staged .NET source files..."
+
+# Runs dotnet format against a solution for any staged files within its directory.
+# Re-stages files that were reformatted so the commit includes the clean versions.
+format_solution() {
+  SLN="$1"
+  SLN_DIR=$(dirname "$SLN")
+
+  SLN_FILES=$(echo "$STAGED_CS" | grep "^$SLN_DIR/")
+  if [ -z "$SLN_FILES" ]; then
+    return 0
+  fi
+
+  echo "  📁 $SLN"
+
+  INCLUDE_ARGS=""
+  for FILE in $SLN_FILES; do
+    INCLUDE_ARGS="$INCLUDE_ARGS --include $FILE"
+  done
+
+  dotnet format "$SLN" $INCLUDE_ARGS --no-restore
+  FORMAT_RESULT=$?
+
+  if [ $FORMAT_RESULT -ne 0 ]; then
+    echo "  ❌ dotnet format failed for $SLN (exit code: $FORMAT_RESULT)"
+    return 1
+  fi
+
+  # Re-stage any files that dotnet format modified
+  for FILE in $SLN_FILES; do
+    [ -f "$FILE" ] && git add "$FILE"
+  done
+
+  echo "  ✅ Formatted and re-staged files in $SLN_DIR"
+  return 0
+}
+
+FORMAT_ERROR=0
+format_solution "src/web/dadabase.net10.web.sln"      || FORMAT_ERROR=1
+format_solution "src/function/dadabase.net10.function.sln" || FORMAT_ERROR=1
+format_solution "src/mcp/DadJokeMCP.sln"              || FORMAT_ERROR=1
+format_solution "src/console/DadJoke.console.sln"     || FORMAT_ERROR=1
+format_solution "src/analyzer/DadJokeAnalyzer.sln"    || FORMAT_ERROR=1
+
+if [ $FORMAT_ERROR -ne 0 ]; then
+  echo "❌ dotnet format encountered errors. Fix the issues above and try again."
+  exit 1
+fi
+
+echo "✅ All staged .NET files are properly formatted."
+exit 0

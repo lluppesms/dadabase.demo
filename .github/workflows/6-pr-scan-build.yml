@@ -36,6 +36,7 @@ jobs:
     with:
       runMSDevSecOpsScan: true
       runGHASScan: false
+      runSBOM: false
 
 # ------------------------------------------------------------------------------------------------------------------------
   build-app:

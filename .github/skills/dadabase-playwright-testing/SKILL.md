@@ -1,7 +1,6 @@
 ---
 name: dadabase-playwright-testing
-description: 'Explore and test the anonymous Dadabase website experience in this repository with Playwright. Use whenever the user wants to open the Dadabase site, start the local web app when no URL is provided, browse categories, search jokes, capture selectors or screenshots, smoke-test the public UI, or generate Playwright coverage for anonymous joke discovery. This would include homepage smoke tests, quick Playwright checks, open the local app if no URL is provided, and search.'
-page, category filtering, and joke search.'
+description: 'Explore and test the anonymous Dadabase website experience in this repository with Playwright. Use whenever the user wants to open the Dadabase site, run a quick homepage smoke test, start the local web app when no URL is provided, browse categories, search jokes, capture selectors or screenshots, smoke-test the public UI, or generate Playwright coverage for anonymous joke discovery. This includes homepage smoke tests, quick Playwright checks, category filtering, and joke search.'
 compatibility: 'Requires this dadabase.demo.gh repository, a local .NET SDK for local startup, and either Playwright-capable browser automation or the ability to generate Playwright tests.'
 ---
 

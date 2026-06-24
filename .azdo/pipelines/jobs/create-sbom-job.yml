@@ -1,0 +1,549 @@
+# ----------------------------------------------------------------------------------------------------
+# SBOM Generation Job Template
+# ----------------------------------------------------------------------------------------------------
+# Generates a Software Bill of Materials (SBOM) for the repository using Microsoft's SBOM Tool.
+# The SBOM is produced in SPDX 2.2 format and published as a pipeline artifact.
+#
+# Microsoft SBOM Tool:
+#   https://github.com/microsoft/sbom-tool
+#
+# For more information on SBOM in Azure DevOps / GitHub Advanced Security for Azure DevOps, see:
+#   https://learn.microsoft.com/en-us/azure/devops/repos/security/github-advanced-security-dependency-scanning
+# ----------------------------------------------------------------------------------------------------
+# Pre-requisites:
+#   - The Microsoft SBOM Tool is downloaded and run as part of this job (no pre-installation needed).
+# ----------------------------------------------------------------------------------------------------
+parameters:
+- name: environmentName
+  default: 'DEV'
+- name: continueOnSBOMError
+  default: 'true'
+- name: packageName
+  default: 'DadABase'
+- name: packageVersion
+  default: '1.0.0'
+- name: packageSupplier
+  default: 'DadABase'
+
+# ----------------------------------------------------------------------------------------------------
+jobs:
+- job: SBOMGenerationJob
+  displayName: Generate SBOM
+  variables:
+    - template: ../vars/var-common.yml
+  steps:
+  - task: CmdLine@2
+    displayName: 'Display SBOM Variables'
+    inputs:
+      script: |
+        echo "parameters.continueOnSBOMError=${{ parameters.continueOnSBOMError }}"
+        echo "parameters.packageName=${{ parameters.packageName }}"
+        echo "parameters.packageVersion=${{ parameters.packageVersion }}"
+        echo "parameters.packageSupplier=${{ parameters.packageSupplier }}"
+        echo "Build.SourcesDirectory=$(Build.SourcesDirectory)"
+        echo "Build.ArtifactStagingDirectory=$(Build.ArtifactStagingDirectory)"
+    continueOnError: true
+
+  # ----------------------------------------------------------------------------------------------------
+  # Download the Microsoft SBOM Tool and generate an SPDX 2.2 SBOM for the repository.
+  # The tool scans component detectors (NuGet, npm, etc.) without requiring a build.
+  # NOTE: This job uses PowerShell tasks and requires a Windows agent (windows-latest).
+  # See: https://github.com/microsoft/sbom-tool#sbom-tool-cli-arguments
+  # ----------------------------------------------------------------------------------------------------
+  - task: PowerShell@2
+    displayName: Download Microsoft SBOM Tool
+    continueOnError: ${{ eq(parameters.continueOnSBOMError, 'true') }}
+    inputs:
+      targetType: 'inline'
+      script: |
+        $toolDir = "$(Agent.TempDirectory)/sbom-tool"
+        New-Item -ItemType Directory -Force -Path $toolDir | Out-Null
+        $toolPath = "$toolDir/sbom-tool.exe"
+
+        Write-Host "Downloading Microsoft SBOM Tool..."
+        $releaseApiUrl = "https://api.github.com/repos/microsoft/sbom-tool/releases/latest"
+        $headers = @{ "User-Agent" = "AzureDevOps-SBOM-Pipeline" }
+        $release = Invoke-RestMethod -Uri $releaseApiUrl -Headers $headers
+
+        # Select the Windows x64 binary; update if using a Linux or macOS agent
+        $asset = $release.assets | Where-Object { $_.name -eq "sbom-tool-win-x64.exe" }
+        if (-not $asset) {
+          Write-Error "Could not find sbom-tool-win-x64.exe in the latest release"
+          exit 1
+        }
+
+        Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $toolPath -UseBasicParsing
+        Write-Host "SBOM Tool downloaded to: $toolPath"
+        Write-Host "##vso[task.setvariable variable=SBOM_TOOL_PATH]$toolPath"
+
+  - task: UseDotNet@2
+    displayName: Setup .NET SDK
+    continueOnError: ${{ eq(parameters.continueOnSBOMError, 'true') }}
+    inputs:
+      packageType: 'sdk'
+      version: '10.0.x'
+
+  - task: PowerShell@2
+    displayName: Restore .NET Dependencies
+    continueOnError: ${{ eq(parameters.continueOnSBOMError, 'true') }}
+    inputs:
+      targetType: 'inline'
+      script: |
+        $srcRoot = "$(Build.SourcesDirectory)/src"
+        if (-not (Test-Path $srcRoot)) {
+          Write-Host "No src directory found under $srcRoot - skipping .NET restore"
+          exit 0
+        }
+
+        $projects = @(Get-ChildItem -Path $srcRoot -Recurse -Filter '*.csproj' -ErrorAction SilentlyContinue)
+        if ($projects.Count -eq 0) {
+          Write-Host "No .csproj files found under $srcRoot - skipping .NET restore"
+          exit 0
+        }
+
+        foreach ($project in $projects) {
+          Write-Host "Restoring $($project.FullName)"
+          dotnet restore $project.FullName --verbosity quiet
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "##vso[task.logissue type=warning]dotnet restore failed for $($project.FullName) with exit code $LASTEXITCODE"
+            if ('${{ parameters.continueOnSBOMError }}' -ne 'true') {
+              exit $LASTEXITCODE
+            }
+          }
+        }
+
+  - task: PowerShell@2
+    displayName: Generate SBOM
+    continueOnError: ${{ eq(parameters.continueOnSBOMError, 'true') }}
+    inputs:
+      targetType: 'inline'
+      script: |
+        $toolPath = "$(SBOM_TOOL_PATH)"
+        $outputDir = "$(Build.ArtifactStagingDirectory)/sbom"
+        New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
+
+        Write-Host "Generating SBOM for ${{ parameters.packageName }} v${{ parameters.packageVersion }}..."
+        & $toolPath generate `
+          -b "$(Build.SourcesDirectory)" `
+          -bc "$(Build.SourcesDirectory)/src" `
+          -pn "${{ parameters.packageName }}" `
+          -pv "${{ parameters.packageVersion }}" `
+          -ps "${{ parameters.packageSupplier }}" `
+          -nsb "https://github.com/lluppesms/dadabase.demo" `
+          -m "$outputDir" `
+          -V Verbose
+
+        if ($LASTEXITCODE -ne 0) {
+          Write-Host "##vso[task.logissue type=warning]SBOM generation completed with exit code $LASTEXITCODE"
+        } else {
+          Write-Host "✅ SBOM generated successfully!"
+        }
+
+        $sbomFile = Get-ChildItem -Path $outputDir -Recurse -Filter "manifest.spdx.json" | Select-Object -First 1
+        if ($sbomFile) {
+          Write-Host "SBOM file: $($sbomFile.FullName)"
+          try {
+            $sbomContent = Get-Content $sbomFile.FullName -Raw | ConvertFrom-Json
+            $packageCount = $sbomContent.packages.Count
+            Write-Host "Package count: $packageCount"
+          } catch {
+            Write-Host "##vso[task.logissue type=warning]Could not parse SBOM JSON to count packages: $_"
+          }
+        } else {
+          Write-Host "##vso[task.logissue type=warning]SBOM manifest file not found in output directory"
+        }
+
+  - task: PublishBuildArtifacts@1
+    displayName: Publish SBOM Artifact
+    condition: always()
+    continueOnError: ${{ eq(parameters.continueOnSBOMError, 'true') }}
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDirectory)/sbom'
+      artifactName: 'sbom'
+      publishLocation: 'Container'
+
+  # ----------------------------------------------------------------------------------------------------
+  # Download Grype, scan the generated SPDX SBOM for known vulnerabilities, and produce reports.
+  # Grype cross-references each package against the OSV/NVD vulnerability databases.
+  # See: https://github.com/anchore/grype
+  # ----------------------------------------------------------------------------------------------------
+  - task: PowerShell@2
+    displayName: Download Grype Vulnerability Scanner
+    continueOnError: ${{ eq(parameters.continueOnSBOMError, 'true') }}
+    inputs:
+      targetType: 'inline'
+      script: |
+        $toolDir = "$(Agent.TempDirectory)/grype"
+        New-Item -ItemType Directory -Force -Path $toolDir | Out-Null
+        $toolPath = "$toolDir/grype.exe"
+
+        Write-Host "Downloading Grype vulnerability scanner..."
+        $releaseApiUrl = "https://api.github.com/repos/anchore/grype/releases/latest"
+        $headers = @{ "User-Agent" = "AzureDevOps-SBOM-Pipeline" }
+        $release = Invoke-RestMethod -Uri $releaseApiUrl -Headers $headers
+
+        $grypeAsset = $release.assets | Where-Object { $_.name -like "grype_*_windows_amd64.zip" } | Select-Object -First 1
+        if (-not $grypeAsset) {
+          Write-Error "Could not find grype Windows amd64 zip in the latest release"
+          exit 1
+        }
+
+        $zipPath = "$toolDir/grype.zip"
+        Invoke-WebRequest -Uri $grypeAsset.browser_download_url -OutFile $zipPath -UseBasicParsing
+        Expand-Archive -Path $zipPath -DestinationPath $toolDir -Force
+        Write-Host "Grype downloaded to: $toolPath"
+        Write-Host "##vso[task.setvariable variable=GRYPE_PATH]$toolPath"
+
+  - task: PowerShell@2
+    displayName: Scan SBOM for Vulnerabilities
+    continueOnError: ${{ eq(parameters.continueOnSBOMError, 'true') }}
+    inputs:
+      targetType: 'inline'
+      script: |
+        $grypePath = "$(GRYPE_PATH)"
+        $reportDir = "$(Build.ArtifactStagingDirectory)/sbom-report"
+        New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
+
+        $sbomFile = Get-ChildItem -Path "$(Build.ArtifactStagingDirectory)/sbom" -Recurse -Filter "manifest.spdx.json" | Select-Object -First 1
+        if (-not $sbomFile) {
+          Write-Host "##vso[task.logissue type=warning]SBOM manifest file not found - skipping vulnerability scan"
+          exit 0
+        }
+
+        Write-Host "Scanning SBOM: $($sbomFile.FullName)"
+
+        # Display table summary to pipeline log
+        Write-Host ""
+        Write-Host "=== Vulnerability Summary ==="
+        & $grypePath "sbom:$($sbomFile.FullName)" --output table
+        Write-Host "============================="
+
+        # Generate SARIF report
+        Write-Host "Generating SARIF report..."
+        & $grypePath "sbom:$($sbomFile.FullName)" --output sarif | Out-File -FilePath "$reportDir/grype-results.sarif" -Encoding utf8
+        Write-Host "SARIF report: $reportDir/grype-results.sarif"
+
+        # Generate JSON for HTML conversion
+        Write-Host "Generating JSON report..."
+        & $grypePath "sbom:$($sbomFile.FullName)" --output json | Out-File -FilePath "$reportDir/grype-results.json" -Encoding utf8
+        Write-Host "JSON report: $reportDir/grype-results.json"
+
+        Write-Host "##vso[task.setvariable variable=SBOM_REPORT_DIR]$reportDir"
+        Write-Host "##vso[task.setvariable variable=GRYPE_JSON_PATH]$reportDir/grype-results.json"
+        Write-Host "##vso[task.setvariable variable=GRYPE_SARIF_PATH]$reportDir/grype-results.sarif"
+
+  - task: PowerShell@2
+    displayName: Generate HTML Vulnerability Report
+    continueOnError: ${{ eq(parameters.continueOnSBOMError, 'true') }}
+    inputs:
+      targetType: 'inline'
+      script: |
+        $jsonPath = "$(GRYPE_JSON_PATH)"
+        $reportDir = "$(SBOM_REPORT_DIR)"
+        $htmlPath = "$reportDir/sbom-report.html"
+
+        if (-not (Test-Path $jsonPath)) {
+          Write-Host "##vso[task.logissue type=warning]Grype JSON report not found - skipping HTML generation"
+          exit 0
+        }
+
+        $data = Get-Content $jsonPath -Raw | ConvertFrom-Json
+        $matches = @($data.matches)
+        $generatedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm UTC")
+        $maxDescLength = 200
+        $repoRoot = "$(Build.SourcesDirectory)"
+        $sbomRoot = "$(Build.ArtifactStagingDirectory)/sbom"
+
+        function Convert-ToHtml {
+          param([object]$Value)
+
+          if ($null -eq $Value) {
+            return ''
+          }
+
+          return [System.Net.WebUtility]::HtmlEncode([string]$Value)
+        }
+
+        function Get-DisplayValue {
+          param(
+            [object]$Value,
+            [string]$Default = '-'
+          )
+
+          if ($null -eq $Value) {
+            return $Default
+          }
+
+          $text = [string]$Value
+          if ([string]::IsNullOrWhiteSpace($text)) {
+            return $Default
+          }
+
+          return $text
+        }
+
+        function Get-RelativeRepoPath {
+          param(
+            [string]$FullPath,
+            [string]$RepositoryRoot
+          )
+
+          $relativePath = $FullPath
+          if ($relativePath.StartsWith($RepositoryRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $relativePath = $relativePath.Substring($RepositoryRoot.Length).TrimStart('\', '/')
+          }
+
+          return ($relativePath -replace '\\', '/')
+        }
+
+        $sourceInput = 'SBOM scan'
+        if ($null -ne $data.source) {
+          if ($null -ne $data.source.target) {
+            if ($data.source.target.PSObject.Properties.Name -contains 'userInput') {
+              $sourceInput = [string]$data.source.target.userInput
+            } elseif ($data.source.target -is [string]) {
+              $sourceInput = [string]$data.source.target
+            }
+          } elseif ($data.source -is [string]) {
+            $sourceInput = [string]$data.source
+          }
+        }
+
+        $allPackages = @()
+        $sbomFile = Get-ChildItem -Path $sbomRoot -Recurse -Filter 'manifest.spdx.json' -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($sbomFile) {
+          try {
+            $sbomData = Get-Content $sbomFile.FullName -Raw | ConvertFrom-Json
+            foreach ($pkg in @($sbomData.packages)) {
+              $allPackages += [pscustomobject]@{
+                Name = Get-DisplayValue $pkg.name ''
+                Version = Get-DisplayValue $pkg.versionInfo '-'
+                License = Get-DisplayValue $pkg.licenseConcluded '-'
+                Supplier = Get-DisplayValue $pkg.supplier '-'
+              }
+            }
+
+            $allPackages = @($allPackages | Sort-Object Name, Version)
+          } catch {
+            Write-Host "##vso[task.logissue type=warning]Could not read SBOM manifest for package inventory: $_"
+          }
+        } else {
+          Write-Host "##vso[task.logissue type=warning]SBOM manifest file not found for package inventory"
+        }
+
+        $dotnetPackages = @{}
+        $srcRoot = Join-Path $repoRoot 'src'
+        if (Test-Path $srcRoot) {
+          $assetsFiles = @(Get-ChildItem -Path $srcRoot -Recurse -Filter 'project.assets.json' -ErrorAction SilentlyContinue | Where-Object { $_.FullName -like '*\obj\project.assets.json' })
+          foreach ($assetsPath in $assetsFiles) {
+            try {
+              $assetsData = Get-Content $assetsPath.FullName -Raw | ConvertFrom-Json
+            } catch {
+              Write-Host "##vso[task.logissue type=warning]Could not read $($assetsPath.FullName): $_"
+              continue
+            }
+
+            if ($null -eq $assetsData.libraries) {
+              continue
+            }
+
+            $projectPath = Split-Path -Path (Split-Path -Path $assetsPath.FullName -Parent) -Parent
+            $projectPathRelative = Get-RelativeRepoPath -FullPath $projectPath -RepositoryRoot $repoRoot
+
+            foreach ($library in $assetsData.libraries.PSObject.Properties) {
+              $libraryInfo = $library.Value
+              if ($null -eq $libraryInfo -or $libraryInfo.type -ne 'package') {
+                continue
+              }
+
+              $packageName = $library.Name
+              $packageVersion = '-'
+              if ($library.Name.Contains('/')) {
+                $parts = $library.Name -split '/', 2
+                $packageName = $parts[0]
+                $packageVersion = $parts[1]
+              }
+
+              $key = '{0}|{1}' -f $packageName, $packageVersion
+              if (-not $dotnetPackages.ContainsKey($key)) {
+                $dotnetPackages[$key] = [pscustomobject]@{
+                  Name = $packageName
+                  Version = $packageVersion
+                  Projects = @()
+                }
+              }
+
+              if ($dotnetPackages[$key].Projects -notcontains $projectPathRelative) {
+                $dotnetPackages[$key].Projects += $projectPathRelative
+              }
+            }
+          }
+        }
+
+        $dotnetPackageList = @($dotnetPackages.Values | Sort-Object Name, Version)
+
+        $vulnPkgNames = @{}
+        foreach ($match in $matches) {
+          $artifactName = ''
+          if ($null -ne $match.artifact) {
+            $artifactName = [string]$match.artifact.name
+          }
+
+          if (-not [string]::IsNullOrWhiteSpace($artifactName)) {
+            $vulnPkgNames[$artifactName.ToLowerInvariant()] = $true
+          }
+        }
+
+        $sevOrder = @('Critical', 'High', 'Medium', 'Low', 'Negligible', 'Unknown')
+        $sevColors = @{
+          Critical   = '#9b2226'
+          High       = '#ae2012'
+          Medium     = '#ca6702'
+          Low        = '#0a9396'
+          Negligible = '#94d2bd'
+          Unknown    = '#868e96'
+        }
+
+        $counts = @{}
+        foreach ($s in $sevOrder) { $counts[$s] = 0 }
+        foreach ($m in $matches) {
+          $sev = $m.vulnerability.severity
+          if (-not $sev -or -not $counts.ContainsKey($sev)) { $sev = 'Unknown' }
+          $counts[$sev]++
+        }
+
+        $sortedMatches = $matches | Sort-Object {
+          $sev = $_.vulnerability.severity
+          $idx = $sevOrder.IndexOf($sev)
+          if ($idx -lt 0) { $sevOrder.Count } else { $idx }
+        }
+
+        $summaryHeaders = ($sevOrder | ForEach-Object { '<th>{0}</th>' -f (Convert-ToHtml $_) }) -join ''
+        $summaryCells = ($sevOrder | ForEach-Object {
+          $color = $sevColors[$_]
+          '<td style="color:{0};font-weight:bold;text-align:center">{1}</td>' -f $color, $counts[$_]
+        }) -join ''
+
+        $vulnRows = foreach ($m in $sortedMatches) {
+          $vuln = $m.vulnerability
+          $artifact = $m.artifact
+          $severity = if ($vuln.severity -and $sevColors.ContainsKey($vuln.severity)) { $vuln.severity } else { 'Unknown' }
+          $color = $sevColors[$severity]
+          $fixVersions = if ($null -ne $vuln.fix -and $vuln.fix.versions) { ($vuln.fix.versions -join ', ') } else { '-' }
+          $vulnId = Get-DisplayValue $vuln.id ''
+          $url = if ($vuln.urls) { [string]$vuln.urls[0] } else { '' }
+          $artifactName = Get-DisplayValue $artifact.name ''
+          $artifactVersion = Get-DisplayValue $artifact.version ''
+          $description = if ($vuln.description) { [string]$vuln.description } else { '' }
+          if ($description.Length -gt $maxDescLength) { $description = $description.Substring(0, $maxDescLength) + '...' }
+
+          $vulnLink = if (-not [string]::IsNullOrWhiteSpace($url)) {
+            '<a href="{0}" target="_blank" rel="noopener">{1}</a>' -f (Convert-ToHtml $url), (Convert-ToHtml $vulnId)
+          } else {
+            Convert-ToHtml $vulnId
+          }
+
+          '<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td><span class="badge" style="background:{4}">{5}</span></td><td class="desc">{6}</td></tr>' -f `
+            $vulnLink, `
+            (Convert-ToHtml $artifactName), `
+            (Convert-ToHtml $artifactVersion), `
+            (Convert-ToHtml $fixVersions), `
+            $color, `
+            (Convert-ToHtml $severity), `
+            (Convert-ToHtml $description)
+        }
+        $vulnRowsHtml = if ($vulnRows) { $vulnRows -join "`n" } else { '<tr><td colspan="6" class="empty">&#10003; No vulnerabilities found</td></tr>' }
+
+        $pkgRows = foreach ($package in $allPackages) {
+          $packageName = Get-DisplayValue $package.Name ''
+          $vulnerable = $vulnPkgNames.ContainsKey($packageName.ToLowerInvariant())
+          $rowClass = if ($vulnerable) { ' class="pkg-vuln"' } else { '' }
+          $flag = if ($vulnerable) { ' [vulnerable]' } else { '' }
+
+          '<tr{0}><td>{1}{2}</td><td>{3}</td><td>{4}</td><td class="desc">{5}</td></tr>' -f `
+            $rowClass, `
+            (Convert-ToHtml $packageName), `
+            (Convert-ToHtml $flag), `
+            (Convert-ToHtml (Get-DisplayValue $package.Version '-')), `
+            (Convert-ToHtml (Get-DisplayValue $package.License '-')), `
+            (Convert-ToHtml (Get-DisplayValue $package.Supplier '-'))
+        }
+        $pkgRowsHtml = if ($pkgRows) { $pkgRows -join "`n" } else { '<tr><td colspan="4" class="empty">No packages found in SBOM</td></tr>' }
+
+        $dotnetRows = foreach ($package in $dotnetPackageList) {
+          $packageName = Get-DisplayValue $package.Name ''
+          $vulnerable = $vulnPkgNames.ContainsKey($packageName.ToLowerInvariant())
+          $rowClass = if ($vulnerable) { ' class="pkg-vuln"' } else { '' }
+          $projectList = @($package.Projects | Sort-Object | ForEach-Object { Convert-ToHtml $_ }) -join '<br>'
+          if ([string]::IsNullOrWhiteSpace($projectList)) { $projectList = '-' }
+
+          '<tr{0}><td>{1}</td><td>{2}</td><td class="desc">{3}</td></tr>' -f `
+            $rowClass, `
+            (Convert-ToHtml $packageName), `
+            (Convert-ToHtml (Get-DisplayValue $package.Version '-')), `
+            $projectList
+        }
+        $dotnetRowsHtml = if ($dotnetRows) { $dotnetRows -join "`n" } else { '<tr><td colspan="3" class="empty">No resolved .NET packages found. Check that restore completed successfully.</td></tr>' }
+
+        $html = @(
+          '<!DOCTYPE html>'
+          '<html lang="en">'
+          '<head>'
+          '  <meta charset="UTF-8">'
+          '  <meta name="viewport" content="width=device-width, initial-scale=1">'
+          '  <title>SBOM Report</title>'
+          '  <style>'
+          '    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 24px; background: #f8f9fa; color: #212529; }'
+          '    h1 { margin-bottom: 4px; }'
+          '    .meta { color: #6c757d; font-size: 0.9em; margin-bottom: 24px; }'
+          '    h2 { color: #495057; border-bottom: 2px solid #dee2e6; padding-bottom: 8px; margin-top: 32px; }'
+          '    table { border-collapse: collapse; width: 100%; background: white; box-shadow: 0 1px 3px rgba(0,0,0,.12); border-radius: 6px; overflow: hidden; margin-bottom: 24px; }'
+          '    th { background: #343a40; color: white; padding: 10px 16px; text-align: left; font-weight: 600; }'
+          '    td { padding: 9px 16px; border-bottom: 1px solid #e9ecef; vertical-align: top; }'
+          '    tr:last-child td { border-bottom: none; }'
+          '    tbody tr:hover td { background: #f1f3f5; }'
+          '    tr.pkg-vuln td { background: #fff3cd; }'
+          '    tr.pkg-vuln:hover td { background: #ffe69c; }'
+          '    .badge { color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.8em; font-weight: 700; white-space: nowrap; }'
+          '    .desc { font-size: 0.85em; color: #495057; max-width: 360px; }'
+          '    .empty { text-align: center; padding: 24px; color: #6c757d; }'
+          '    a { color: #0d6efd; text-decoration: none; }'
+          '    a:hover { text-decoration: underline; }'
+          '  </style>'
+          '</head>'
+          '<body>'
+          '  <h1>SBOM Report</h1>'
+          ('  <p class="meta">Source: {0} &nbsp;|&nbsp; Generated: {1} &nbsp;|&nbsp; SBOM packages: {2} &nbsp;|&nbsp; Resolved .NET packages: {3} &nbsp;|&nbsp; Vulnerabilities: {4}</p>' -f (Convert-ToHtml $sourceInput), (Convert-ToHtml $generatedAt), $allPackages.Count, $dotnetPackageList.Count, $matches.Count)
+          '  <h2>Vulnerability Summary by Severity</h2>'
+          ('  <table><thead><tr>{0}</tr></thead><tbody><tr>{1}</tr></tbody></table>' -f $summaryHeaders, $summaryCells)
+          ('  <h2>Vulnerability Details ({0} total)</h2>' -f $matches.Count)
+          '  <table>'
+          '    <thead><tr><th>CVE / ID</th><th>Package</th><th>Version</th><th>Fixed In</th><th>Severity</th><th>Description</th></tr></thead>'
+          ('    <tbody>{0}</tbody>' -f $vulnRowsHtml)
+          '  </table>'
+          ('  <h2>Package Inventory ({0} total)</h2>' -f $allPackages.Count)
+          '  <p class="meta">Packages highlighted in yellow have known vulnerabilities listed above.</p>'
+          '  <table>'
+          '    <thead><tr><th>Package</th><th>Version</th><th>License</th><th>Supplier</th></tr></thead>'
+          ('    <tbody>{0}</tbody>' -f $pkgRowsHtml)
+          '  </table>'
+          ('  <h2>.NET Resolved Package Inventory ({0} total)</h2>' -f $dotnetPackageList.Count)
+          '  <p class="meta">This section is built from restored NuGet asset manifests so you can see the packages your .NET projects actually resolve.</p>'
+          '  <table>'
+          '    <thead><tr><th>Package</th><th>Version</th><th>Referenced In Folders</th></tr></thead>'
+          ('    <tbody>{0}</tbody>' -f $dotnetRowsHtml)
+          '  </table>'
+          '</body>'
+          '</html>'
+        ) -join "`r`n"
+        Set-Content -Path $htmlPath -Value $html -Encoding utf8
+        Write-Host ("HTML report generated: {0} vulnerabilities, {1} SBOM packages, {2} resolved .NET packages" -f $matches.Count, $allPackages.Count, $dotnetPackageList.Count)
+
+  - task: PublishBuildArtifacts@1
+    displayName: Publish SBOM Vulnerability Report
+    condition: always()
+    continueOnError: ${{ eq(parameters.continueOnSBOMError, 'true') }}
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDirectory)/sbom-report'
+      artifactName: 'sbom-report'
+      publishLocation: 'Container'
