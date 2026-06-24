@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------------
-// This BICEP file will create a KeyVault using AVM
+// This BICEP file will create a KeyVault
 // FYI: To purge a KV with soft delete enabled: > az keyvault purge --name kvName
 // --------------------------------------------------------------------------------
 param keyVaultName string = 'mykeyvaultname'
@@ -87,44 +87,75 @@ var kvIpRules = keyVaultOwnerIpAddress == '' ? [] : [
 ] 
 
 // --------------------------------------------------------------------------------
-module keyVault 'br/public:avm/res/key-vault/vault:0.13.3' = {
-  name: 'keyVault-${uniqueString(keyVaultName, resourceGroup().id)}'
-  params: {
-    name: keyVaultName
-    location: location
-    tags: tags
-    sku: skuName
+resource keyVaultResource 'Microsoft.KeyVault/vaults@2023-07-01' = {
+  name: keyVaultName
+  location: location
+  tags: tags
+  properties: {
+    sku: {
+      family: 'A'
+      name: skuName
+    }
+    tenantId: subTenantId
     enableRbacAuthorization: useRBAC
     accessPolicies: accessPolicies
-    enableVaultForDeployment: enabledForDeployment
-    enableVaultForTemplateDeployment: enabledForTemplateDeployment
-    enableVaultForDiskEncryption: enabledForDiskEncryption
+    enabledForDeployment: enabledForDeployment
+    enabledForDiskEncryption: enabledForDiskEncryption
+    enabledForTemplateDeployment: enabledForTemplateDeployment
     enableSoftDelete: enableSoftDelete
+    enablePurgeProtection: enablePurgeProtection // Not allowing to purge key vault or its objects after deletion
+    createMode: 'default'                        // Creating or updating the key vault (not recovering)
     softDeleteRetentionInDays: softDeleteRetentionInDays
-    enablePurgeProtection: enablePurgeProtection
-    createMode: 'default'
-    publicNetworkAccess: publicNetworkAccess
+    publicNetworkAccess: publicNetworkAccess   // Allow access from all networks
     networkAcls: {
       defaultAction: allowNetworkAccess
       bypass: 'AzureServices'
       ipRules: kvIpRules
       virtualNetworkRules: []
     }
-    diagnosticSettings: workspaceId != '' ? [
+  }
+}
+
+resource keyVaultAuditLogging 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (workspaceId != '') {
+  name: '${keyVaultResource.name}-auditlogs'
+  scope: keyVaultResource
+  properties: {
+    workspaceId: workspaceId
+    logs: [
       {
-        workspaceResourceId: workspaceId
-        logCategoriesAndGroups: [
-          { category: 'AuditEvent' }
-        ]
-        metricCategories: [
-          { category: 'AllMetrics' }
-        ]
+        category: 'AuditEvent'
+        enabled: true
+        // Note: Causes error: Diagnostic settings does not support retention for new diagnostic settings.
+        // retentionPolicy: {
+        //   days: 180
+        //   enabled: true 
+        // }
       }
-    ] : []
-    enableTelemetry: false
+    ]
+  }
+}
+
+resource keyVaultMetricLogging 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (workspaceId != '') {
+  name: '${keyVaultResource.name}-metrics'
+  scope: keyVaultResource
+  properties: {
+    workspaceId: workspaceId
+    metrics: [
+      {
+        category: 'AllMetrics'
+        enabled: true
+        // Note: Causes error: Diagnostic settings does not support retention for new diagnostic settings.
+        // retentionPolicy: {
+        //   days: 30
+        //   enabled: true 
+        // }
+      }
+    ]
   }
 }
 
 // --------------------------------------------------------------------------------
-output name string = keyVault.outputs.name
-output id string = keyVault.outputs.resourceId
+output name string = keyVaultResource.name
+output id string = keyVaultResource.id
+// output userManagedIdentityId string = grantManagedIdentityAccess ? existingManagedIdentity.id : ''
+// output daprManagedIdentityId string = grantDAPRIdentityAccess ? existingDaprIdentity.id : ''

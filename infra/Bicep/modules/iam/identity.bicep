@@ -1,5 +1,8 @@
 // --------------------------------------------------------------------------------------------------------------
-// Bicep file to deploy a user assigned identity using AVM
+// Bicep file to deploy and identity
+// --------------------------------------------------------------------------------------------------------------
+// Test Deploy Command:
+//   az deployment group create -n manual-identity --resource-group rg-ai-docs-114-dev --template-file 'core/iam/identity.bicep' --parameters existingIdentityName='llaz114-app-id'
 // --------------------------------------------------------------------------------------------------------------
 param identityName string = ''
 param existingIdentityName string  = ''
@@ -12,21 +15,17 @@ resource existingIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023
   name: existingIdentityName
 }
 
-module newIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.5.0' = if (!useExistingIdentity) {
-  name: 'identity-${uniqueString(identityName, resourceGroup().id)}'
-  params: {
-    name: identityName
-    location: location
-    tags: tags
-    enableTelemetry: false
-  }
+resource newIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-07-31-preview' = if (!useExistingIdentity) {
+  name: identityName
+  location: location
+  tags: tags
 }
 
 // --------------------------------------------------------------------------------------------------------------
 // Outputs
 // --------------------------------------------------------------------------------------------------------------
-output managedIdentityId string = useExistingIdentity ? existingIdentity.id : newIdentity!.outputs.resourceId
-output managedIdentityName string = useExistingIdentity ? existingIdentity.name : newIdentity!.outputs.name
-output managedIdentityTenantId string = useExistingIdentity ? existingIdentity.properties.tenantId : subscription().tenantId
-output managedIdentityClientId string = useExistingIdentity ? existingIdentity.properties.clientId : newIdentity!.outputs.clientId
-output managedIdentityPrincipalId string = useExistingIdentity ? existingIdentity.properties.principalId : newIdentity!.outputs.principalId
+output managedIdentityId string = useExistingIdentity ? existingIdentity.id : newIdentity.id
+output managedIdentityName string = useExistingIdentity ? existingIdentity.name : newIdentity.name
+output managedIdentityTenantId string = useExistingIdentity ? existingIdentity.properties.tenantId : newIdentity.properties.tenantId
+output managedIdentityClientId string = useExistingIdentity ? existingIdentity.properties.clientId : newIdentity.properties.clientId
+output managedIdentityPrincipalId string = useExistingIdentity ? existingIdentity.properties.principalId : newIdentity.properties.principalId

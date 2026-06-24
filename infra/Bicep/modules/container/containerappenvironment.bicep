@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------------
-// Azure Container Apps Environment Module using AVM
+// Azure Container Apps Environment Module
 // --------------------------------------------------------------------------------
 param environmentName string
 param location string = resourceGroup().location
@@ -17,25 +17,25 @@ var templateTag = { TemplateFile: '~containerappenvironment.bicep' }
 var tags = union(commonTags, templateTag)
 
 // --------------------------------------------------------------------------------
-module containerAppsEnvironment 'br/public:avm/res/app/managed-environment:0.13.2' = {
-  name: 'containerAppsEnv-${uniqueString(environmentName, resourceGroup().id)}'
-  params: {
-    name: environmentName
-    location: location
-    tags: tags
+resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
+  name: environmentName
+  location: location
+  tags: tags
+  properties: {
     appLogsConfiguration: {
       destination: 'log-analytics'
-      logAnalyticsWorkspaceResourceId: workspaceId
+      logAnalyticsConfiguration: {
+        customerId: reference(workspaceId, '2022-10-01').customerId
+        sharedKey: listKeys(workspaceId, '2022-10-01').primarySharedKey
+      }
     }
     daprAIConnectionString: appInsightsConnectionString
-    publicNetworkAccess: 'Enabled'
     zoneRedundant: false
-    enableTelemetry: false
   }
 }
 
 // --------------------------------------------------------------------------------
-output id string = containerAppsEnvironment.outputs.resourceId
-output name string = containerAppsEnvironment.outputs.name
-output defaultDomain string = containerAppsEnvironment.outputs.defaultDomain
-output staticIp string = containerAppsEnvironment.outputs.staticIp
+output id string = containerAppsEnvironment.id
+output name string = containerAppsEnvironment.name
+output defaultDomain string = containerAppsEnvironment.properties.defaultDomain
+output staticIp string = containerAppsEnvironment.properties.staticIp
