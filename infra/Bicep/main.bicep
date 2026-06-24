@@ -91,6 +91,11 @@ var defaultContainerImage = 'mcr.microsoft.com/azuredocs/containerapps-helloworl
 var effectiveContainerImage = empty(trim(containerImage)) || contains(containerImage, '#{')
   ? defaultContainerImage
   : containerImage
+var existingServicePlanNameEffective = empty(trim(servicePlanName)) || contains(servicePlanName, '#{') ? '' : trim(servicePlanName)
+var existingServicePlanRgNameEffective = empty(trim(servicePlanResourceGroupName)) || contains(servicePlanResourceGroupName, '#{') ? '' : trim(servicePlanResourceGroupName)
+var existingSqlServerNameEffective = empty(trim(existingSqlServerName)) || contains(existingSqlServerName, '#{') ? '' : trim(existingSqlServerName)
+var existingSqlDatabaseNameEffective = empty(trim(existingSqlDatabaseName)) || contains(existingSqlDatabaseName, '#{') ? '' : trim(existingSqlDatabaseName)
+var existingSqlServerRgNameEffective = empty(trim(existingSqlServerResourceGroupName)) || contains(existingSqlServerResourceGroupName, '#{') ? '' : trim(existingSqlServerResourceGroupName)
 var commonTags = {         
   LastDeployed: runDateTime
   Application: appName
@@ -161,9 +166,9 @@ module sqlDbModule './modules/database/sqlserver.bicep' = if (!websiteOnly) {
   params: {
     sqlServerName: resourceNames.outputs.sqlServerName
     sqlDBName: sqlDatabaseName
-    existingSqlServerName: existingSqlServerName
-    existingSqlDatabaseName: existingSqlDatabaseName
-    existingSqlServerResourceGroupName: existingSqlServerResourceGroupName
+    existingSqlServerName: existingSqlServerNameEffective
+    existingSqlDatabaseName: existingSqlDatabaseNameEffective
+    existingSqlServerResourceGroupName: existingSqlServerRgNameEffective
     sqlSkuTier: sqlSkuTier
     sqlSkuName: sqlSkuName
     sqlSkuFamily: sqlSkuFamily
@@ -344,9 +349,9 @@ module appServicePlanModule './modules/webapp/websiteserviceplan.bicep' = if (de
     location: location
     commonTags: commonTags
     sku: webSiteSku
-    appServicePlanName: servicePlanName == '' ? resourceNames.outputs.webSiteAppServicePlanName : servicePlanName
-    existingServicePlanName: servicePlanName
-    existingServicePlanResourceGroupName: servicePlanResourceGroupName
+    appServicePlanName: empty(existingServicePlanNameEffective) ? resourceNames.outputs.webSiteAppServicePlanName : existingServicePlanNameEffective
+    existingServicePlanName: existingServicePlanNameEffective
+    existingServicePlanResourceGroupName: existingServicePlanRgNameEffective
     webAppKind: webAppKind
   }
 }
