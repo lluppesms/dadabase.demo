@@ -377,7 +377,7 @@ infra/Bicep/
 | Azure App Service | `modules/webapp/` | Linux or Windows, configurable SKU (default: B1) |
 | Azure Container Apps | `modules/container/` | With Container Registry (Basic/Standard/Premium) |
 | Azure Functions | `modules/function/` | Flex Consumption plan, .NET 10 Isolated |
-| Azure SQL Database | `modules/database/` | Default: GeneralPurpose GP_S_Gen5; configurable |
+| Azure SQL Database | `modules/database/` | Default: GeneralPurpose GP_S_Gen5_2 (serverless, Gen5, 2 vCores max); configurable |
 | Azure Key Vault | `modules/security/` | Secrets management; supports admin user access |
 | Application Insights | `modules/monitor/` | OpenTelemetry exporter connected |
 | Azure Storage | `modules/storage/` | Used by Function + web app (images) |
