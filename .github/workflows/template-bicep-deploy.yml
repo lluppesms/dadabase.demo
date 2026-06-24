@@ -220,15 +220,21 @@ jobs:
           # Deployment summary
           - Resource Group: ${{ steps.deploy-bicep-rg.outputs.RESOURCE_GROUP_NAME || steps.deploy-bicep-sub.outputs.RESOURCE_GROUP_NAME }}
           - Environment: ${{ inputs.envCode }}
-          - Application URL: [https://${{ steps.deploy-bicep-rg.outputs.HOST_NAME || steps.deploy-bicep-sub.outputs.HOST_NAME }}](https://${{ steps.deploy-bicep-rg.outputs.HOST_NAME || steps.deploy-bicep-sub.outputs.HOST_NAME }})
+          - Application URL: [https://${{ steps.deploy-bicep-rg.outputs.WEB_HOST_NAME || steps.deploy-bicep-sub.outputs.WEB_HOST_NAME }}](https://${{ steps.deploy-bicep-rg.outputs.WEB_HOST_NAME || steps.deploy-bicep-sub.outputs.WEB_HOST_NAME }})
 
           ## First-time SQL database permissions
-          If this is the first time you created the SQL database, grant full rights to your CI/CD service principal so it can deploy the DACPAC schema, then grant the application managed identity access to use the data.
+          If this is the first time you created the SQL database, grant rights to your CI/CD service principal so it can deploy the DACPAC schema, create the schema, then grant the application access to use the data.
 
           **CI/CD:**
           ```sql
           CREATE USER [yourServicePrincipalName] FROM EXTERNAL PROVIDER;
           ALTER ROLE db_owner ADD MEMBER [yourServicePrincipalName];
+          ```
+
+          **Schema:**
+          ```sql
+          CREATE SCHEMA [Dad];
+          GO
           ```
 
           **Application:**
