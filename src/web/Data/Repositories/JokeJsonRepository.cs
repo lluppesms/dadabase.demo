@@ -173,6 +173,17 @@ public class JokeJsonRepository : IJokeRepository
     }
 
     /// <summary>
+    /// Gets the count of jokes contained in the JSON repository.
+    /// </summary>
+    /// <param name="activeInd">The active indicator filter, ignored for the JSON repository.</param>
+    /// <param name="requestingUserName">The username of the caller requesting the count.</param>
+    /// <returns>The number of jokes in the repository.</returns>
+    public int CountAll(string activeInd = "Y", string requestingUserName = "ANON")
+    {
+        return _jokes.Count;
+    }
+
+    /// <summary>
     /// Returns the most recently modified jokes from the JSON repository, ordered by last-modified date descending and limited to <paramref name="count"/> records.
     /// </summary>
     /// <param name="count">The maximum number of jokes to return. The default is 100.</param>

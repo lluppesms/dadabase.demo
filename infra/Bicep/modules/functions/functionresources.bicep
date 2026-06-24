@@ -1,5 +1,5 @@
 // -------------------------------------------------------------------------------------------------
-// This BICEP file creates the shared infrastructure for Azure Functions Flex Consumption
+// This BICEP file creates the shared infrastructure for Azure Functions Flex Consumption using AVM
 // - Application Insights
 // - Storage Account (for function deployment packages)
 // -------------------------------------------------------------------------------------------------
@@ -27,58 +27,56 @@ var deploymentStorageContainerName = 'app-package-${take(functionStorageAccountN
 
 // --------------------------------------------------------------------------------
 // Application Insights for monitoring
-resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
-  name: functionInsightsName
-  location: location
-  tags: tags
-  kind: 'web'
-  properties: {
-    Application_Type: 'web'
-    WorkspaceResourceId: workspaceId
-    DisableLocalAuth: true
+module applicationInsights 'br/public:avm/res/insights/component:0.7.1' = {
+  name: 'appInsights-${uniqueString(functionInsightsName, resourceGroup().id)}'
+  params: {
+    name: functionInsightsName
+    location: location
+    tags: tags
+    workspaceResourceId: workspaceId
+    applicationType: 'web'
+    disableLocalAuth: true
     publicNetworkAccessForIngestion: 'Enabled'
     publicNetworkAccessForQuery: 'Enabled'
+    enableTelemetry: false
   }
 }
 
 // Backing storage for Azure Functions deployment packages
-resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
-  name: functionStorageAccountName
-  location: location
-  tags: tags
-  kind: 'StorageV2'
-  sku: {
-    name: 'Standard_LRS'
-  }
-  properties: {
+module storageAccount 'br/public:avm/res/storage/storage-account:0.32.0' = {
+  name: 'funcStorage-${uniqueString(functionStorageAccountName, resourceGroup().id)}'
+  params: {
+    name: functionStorageAccountName
+    location: location
+    tags: tags
+    skuName: 'Standard_LRS'
+    kind: 'StorageV2'
     allowBlobPublicAccess: false
     allowSharedKeyAccess: false
-    dnsEndpointType: 'Standard'
+    minimumTlsVersion: 'TLS1_2'
     publicNetworkAccess: 'Enabled'
     networkAcls: {
       defaultAction: 'Allow'
       bypass: 'AzureServices'
+      ipRules: []
+      virtualNetworkRules: []
     }
-    minimumTlsVersion: 'TLS1_2'
-    supportsHttpsTrafficOnly: true
+    blobServices: {
+      containers: [
+        {
+          name: deploymentStorageContainerName
+        }
+      ]
+    }
+    enableTelemetry: false
   }
-}
-
-resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-01-01' = {
-  parent: storageAccount
-  name: 'default'
-}
-
-resource deploymentContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {
-  parent: blobService
-  name: deploymentStorageContainerName
 }
 
 // --------------------------------------------------------------------------------
 // Outputs
-output appInsightsConnectionString string = applicationInsights.properties.ConnectionString
-output appInsightsInstrumentationKey string = applicationInsights.properties.InstrumentationKey
-output appInsightsName string = applicationInsights.name
-output storageAccountName string = storageAccount.name
-output storagePrimaryBlobEndpoint string = storageAccount.properties.primaryEndpoints.blob
+output appInsightsConnectionString string = applicationInsights.outputs.connectionString
+output appInsightsInstrumentationKey string = applicationInsights.outputs.instrumentationKey
+output appInsightsName string = applicationInsights.outputs.name
+output storageAccountName string = storageAccount.outputs.name
+output storagePrimaryBlobEndpoint string = storageAccount.outputs.primaryBlobEndpoint
 output deploymentStorageContainerName string = deploymentStorageContainerName

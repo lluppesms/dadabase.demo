@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------------
-// This BICEP file will create a Azure App Service Plan or use an existing one
+// This BICEP file will create an Azure App Service Plan using AVM, or use an existing one
 // --------------------------------------------------------------------------------
 @description('The name of the app service plan')
 param appServicePlanName string = ''
@@ -19,24 +19,24 @@ var templateTag = { TemplateFile: '~website.bicep'}
 var tags = union(commonTags, templateTag)
 
 // --------------------------------------------------------------------------------
-
 resource existingAppServiceResource 'Microsoft.Web/serverfarms@2024-11-01' existing = if (!empty(existingServicePlanName)) {
   name: existingServicePlanName
   scope: resourceGroup(existingServicePlanResourceGroupName == '' ? resourceGroup().name : existingServicePlanResourceGroupName)
 }
 
-resource appServiceResource 'Microsoft.Web/serverfarms@2024-11-01' = if (empty(existingServicePlanName)) {
-  name: appServicePlanName
-  location: location
-  tags: tags
-  sku: {
-    name: sku
-  }
-  kind: webAppKind
-  properties: {
+module newAppServicePlan 'br/public:avm/res/web/serverfarm:0.7.0' = if (empty(existingServicePlanName)) {
+  name: 'appServicePlan-${uniqueString(appServicePlanName, resourceGroup().id)}'
+  params: {
+    name: appServicePlanName
+    location: location
+    tags: tags
+    skuName: sku
+    kind: webAppKind
     reserved: webAppKind == 'linux' ? true : false
+    enableTelemetry: false
   }
 }
-output name string = empty(existingServicePlanName) ? appServiceResource.name : existingAppServiceResource.name
-output id string = empty(existingServicePlanName) ? appServiceResource.id : existingAppServiceResource.id
+
+output name string = empty(existingServicePlanName) ? newAppServicePlan!.outputs.name : existingAppServiceResource.name
+output id string = empty(existingServicePlanName) ? newAppServicePlan!.outputs.resourceId : existingAppServiceResource.id
 output resourceGroupName string = empty(existingServicePlanName) ? resourceGroup().name : existingServicePlanResourceGroupName
