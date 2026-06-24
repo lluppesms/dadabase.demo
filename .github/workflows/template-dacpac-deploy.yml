@@ -38,9 +38,6 @@ jobs:
     runs-on: windows-latest
     environment:
       name: ${{ inputs.envCode }}
-    env:
-      sqlServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}'
-      fqdnServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}.database.windows.net'
     permissions:
       id-token: write
     steps:
@@ -53,6 +50,27 @@ jobs:
           name: ${{ inputs.artifactName }}
           path: ./dacpac
 
+      - name: Resolve SQL target
+        shell: pwsh
+        run: |
+          $useExistingSqlResources = -not [string]::IsNullOrWhiteSpace('${{ vars.EXISTING_SQLSERVER_NAME }}') -and -not [string]::IsNullOrWhiteSpace('${{ vars.EXISTING_SQLDATABASE_NAME }}')
+
+          if ($useExistingSqlResources) {
+            $sqlServerName = '${{ vars.EXISTING_SQLSERVER_NAME }}'
+            $sqlDatabaseName = '${{ vars.EXISTING_SQLDATABASE_NAME }}'
+          }
+          else {
+            $sqlServerName = '${{ vars.SQL_SERVER_NAME_PREFIX }}${{ vars.INSTANCE_NUMBER }}sql${{ inputs.envCode }}'
+            $sqlDatabaseName = '${{ vars.SQL_DATABASE_NAME }}'
+          }
+
+          $fqdnServerName = "$sqlServerName.database.windows.net"
+
+          Add-Content -Path $env:GITHUB_ENV -Value "USE_EXISTING_SQL_RESOURCES=$useExistingSqlResources"
+          Add-Content -Path $env:GITHUB_ENV -Value "SQL_SERVER_NAME=$sqlServerName"
+          Add-Content -Path $env:GITHUB_ENV -Value "SQL_DATABASE_NAME=$sqlDatabaseName"
+          Add-Content -Path $env:GITHUB_ENV -Value "FQDN_SERVER_NAME=$fqdnServerName"
+
       - name: Display Downloaded Files and Variables
         run: |
           Write-Host "Downloaded DACPAC files:"
@@ -60,10 +78,14 @@ jobs:
           echo ""
           echo "Deployment Variables:"
           echo "vars.INSTANCE_NUMBER=${{ vars.INSTANCE_NUMBER }}"
-          echo "env.sqlServerName=${{ env.sqlServerName }}"
-          echo "env.fqdnServerName=${{ env.fqdnServerName }}"
-          echo "Server: vars.SQL_SERVER_NAME_PREFIX=${{ vars.SQL_SERVER_NAME_PREFIX }}"
-          echo "Database: inputs.sqlDatabaseName=${{ vars.SQL_DATABASE_NAME }}"
+          echo "env.USE_EXISTING_SQL_RESOURCES=$env:USE_EXISTING_SQL_RESOURCES"
+          echo "env.SQL_SERVER_NAME=$env:SQL_SERVER_NAME"
+          echo "env.SQL_DATABASE_NAME=$env:SQL_DATABASE_NAME"
+          echo "env.FQDN_SERVER_NAME=$env:FQDN_SERVER_NAME"
+          echo "Server prefix: vars.SQL_SERVER_NAME_PREFIX=${{ vars.SQL_SERVER_NAME_PREFIX }}"
+          echo "Existing server: vars.EXISTING_SQLSERVER_NAME=${{ vars.EXISTING_SQLSERVER_NAME }}"
+          echo "Existing database: vars.EXISTING_SQLDATABASE_NAME=${{ vars.EXISTING_SQLDATABASE_NAME }}"
+          echo "Database: vars.SQL_DATABASE_NAME=${{ vars.SQL_DATABASE_NAME }}"
           echo "Project: inputs.appProjectName=${{ inputs.appProjectName }}"
 
       - name: Azure Login (Reusable Action)
@@ -79,7 +101,7 @@ jobs:
         if: inputs.loginAccountType == 'SVC_PRINCIPAL'
         uses: azure/sql-action@v2.3
         with:
-          connection-string: 'Server=${{ env.fqdnServerName }};Database=${{ vars.SQL_DATABASE_NAME }};Authentication=Active Directory Default; Encrypt=True;TrustServerCertificate=False;Connection Timeout=120;'
+          connection-string: 'Server=${{ env.FQDN_SERVER_NAME }};Database=${{ env.SQL_DATABASE_NAME }};Authentication=Active Directory Default; Encrypt=True;TrustServerCertificate=False;Connection Timeout=120;'
           # connection-string: 'Server=${{ env.fqdnServerName }};Database=${{ vars.SQL_DATABASE_NAME }};Authentication=Active Directory Service Principal;'
           path: './dacpac/${{ inputs.appProjectName }}.dacpac'
           action: 'publish'
@@ -89,7 +111,7 @@ jobs:
         if: inputs.loginAccountType == 'LOCAL_SQL'
         uses: azure/sql-action@v2.3
         with:
-          connection-string: 'Server=${{ env.fqdnServerName }};Database=${{ vars.SQL_DATABASE_NAME }};User Id=${{ secrets.SQL_ADMIN_USER }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};'
+          connection-string: 'Server=${{ env.FQDN_SERVER_NAME }};Database=${{ env.SQL_DATABASE_NAME }};User Id=${{ secrets.SQL_ADMIN_USER }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};'
           path: './dacpac/${{ inputs.appProjectName }}.dacpac'
           action: 'publish'
 
