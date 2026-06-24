@@ -6,7 +6,8 @@
     "EnvironmentName": "Development",
     "DataSource": "JSON",
     "EnableSwagger": true,
-
+    "DetailedErrors": true,
+    
     "NOTSET-USE-JSON-DefaultConnection": "",
     "DefaultConnection": "",
     "AdminUserList": "",

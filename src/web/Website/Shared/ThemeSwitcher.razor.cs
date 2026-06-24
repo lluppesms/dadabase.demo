@@ -37,20 +37,32 @@ public partial class ThemeSwitcher : ComponentBase
         if (firstRender && !_initialized)
         {
             _initialized = true;
-            var mode = await JS.InvokeAsync<string>("localStorage.getItem", ThemeKey);
-            if (!string.IsNullOrEmpty(mode))
+            try
             {
-                await ApplyTheme(mode);
+                var mode = await JS.InvokeAsync<string>("localStorage.getItem", ThemeKey);
+                if (!string.IsNullOrEmpty(mode))
+                {
+                    await ApplyTheme(mode);
+                }
+                else
+                {
+                    await ApplyTheme("system");
+                }
             }
-            else
+            catch (JSDisconnectedException)
             {
-                await ApplyTheme("system");
             }
         }
         else if (_pendingTheme is not null)
         {
-            await ApplyTheme(_pendingTheme);
-            _pendingTheme = null;
+            try
+            {
+                await ApplyTheme(_pendingTheme);
+                _pendingTheme = null;
+            }
+            catch (JSDisconnectedException)
+            {
+            }
         }
     }
 
@@ -62,9 +74,15 @@ public partial class ThemeSwitcher : ComponentBase
     private async Task SetTheme(ThemeMode mode)
     {
         var modeStr = mode.ToString().ToLower();
-        await JS.InvokeVoidAsync("localStorage.setItem", ThemeKey, modeStr);
-        _pendingTheme = modeStr;
-        StateHasChanged();
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", ThemeKey, modeStr);
+            _pendingTheme = modeStr;
+            StateHasChanged();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
     }
 
     /// <summary>
@@ -75,24 +93,30 @@ public partial class ThemeSwitcher : ComponentBase
     private async Task ApplyTheme(string mode)
     {
         // Remove all theme classes.
-        await JS.InvokeVoidAsync("eval", "document.body.classList.remove('theme-light','theme-dark','theme-nineties','theme-system');");
-        if (mode == "light")
+        try
         {
-            await JS.InvokeVoidAsync("eval", "document.body.classList.add('theme-light'); document.body.setAttribute('data-bs-theme','light');");
-        }
-        else if (mode == "dark")
-        {
-            await JS.InvokeVoidAsync("eval", "document.body.classList.add('theme-dark'); document.body.setAttribute('data-bs-theme','dark');");
-        }
-        else if (mode == "nineties")
-        {
-            await JS.InvokeVoidAsync("eval", "document.body.classList.add('theme-nineties'); document.body.setAttribute('data-bs-theme','light');");
-        }
-        else
-        {
-            await JS.InvokeVoidAsync("eval", "document.body.classList.add('theme-system'); document.body.removeAttribute('data-bs-theme');");
-        }
+            await JS.InvokeVoidAsync("eval", "document.body.classList.remove('theme-light','theme-dark','theme-nineties','theme-system');");
+            if (mode == "light")
+            {
+                await JS.InvokeVoidAsync("eval", "document.body.classList.add('theme-light'); document.body.setAttribute('data-bs-theme','light');");
+            }
+            else if (mode == "dark")
+            {
+                await JS.InvokeVoidAsync("eval", "document.body.classList.add('theme-dark'); document.body.setAttribute('data-bs-theme','dark');");
+            }
+            else if (mode == "nineties")
+            {
+                await JS.InvokeVoidAsync("eval", "document.body.classList.add('theme-nineties'); document.body.setAttribute('data-bs-theme','light');");
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("eval", "document.body.classList.add('theme-system'); document.body.removeAttribute('data-bs-theme');");
+            }
 
-        ThemeService.NotifyThemeChanged();
+            ThemeService.NotifyThemeChanged();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
     }
 }

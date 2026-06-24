@@ -100,6 +100,17 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
+    /// Gets the count of active jokes in the database.
+    /// </summary>
+    /// <param name="activeInd">The active indicator, typically "Y" or "N".</param>
+    /// <param name="requestingUserName">The username of the user requesting the count.</param>
+    /// <returns>The number of jokes matching the active indicator.</returns>
+    public int CountAll(string activeInd = "Y", string requestingUserName = "ANON")
+    {
+        return _context.Jokes.Count(j => j.ActiveInd == activeInd);
+    }
+
+    /// <summary>
     /// Returns the most recently modified active jokes, ordered by last-modified date descending and limited to <paramref name="count"/> records.
     /// </summary>
     /// <param name="count">The maximum number of jokes to return. The default is 100.</param>
