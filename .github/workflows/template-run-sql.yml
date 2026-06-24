@@ -45,9 +45,6 @@ jobs:
     runs-on: windows-latest
     environment:
       name: ${{ inputs.envCode }}
-    env:
-      sqlServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}'
-      fqdnServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.envCode }}.database.windows.net'
     permissions:
       id-token: write
     steps:
@@ -62,14 +59,39 @@ jobs:
           echo "runDateTime=$runDateTime" >> $env:GITHUB_OUTPUT
           echo "Run DateTime: $runDateTime"
 
+      - name: Resolve SQL target
+        shell: pwsh
+        run: |
+          $useExistingSqlResources = -not [string]::IsNullOrWhiteSpace('${{ vars.EXISTING_SQLSERVER_NAME }}') -and -not [string]::IsNullOrWhiteSpace('${{ vars.EXISTING_SQLDATABASE_NAME }}')
+
+          if ($useExistingSqlResources) {
+            $sqlServerName = '${{ vars.EXISTING_SQLSERVER_NAME }}'
+            $sqlDatabaseName = '${{ vars.EXISTING_SQLDATABASE_NAME }}'
+          }
+          else {
+            $sqlServerName = '${{ vars.SQL_SERVER_NAME_PREFIX }}${{ vars.INSTANCE_NUMBER }}sql${{ inputs.envCode }}'
+            $sqlDatabaseName = '${{ vars.SQL_DATABASE_NAME }}'
+          }
+
+          $fqdnServerName = "$sqlServerName.database.windows.net"
+
+          Add-Content -Path $env:GITHUB_ENV -Value "USE_EXISTING_SQL_RESOURCES=$useExistingSqlResources"
+          Add-Content -Path $env:GITHUB_ENV -Value "SQL_SERVER_NAME=$sqlServerName"
+          Add-Content -Path $env:GITHUB_ENV -Value "SQL_DATABASE_NAME=$sqlDatabaseName"
+          Add-Content -Path $env:GITHUB_ENV -Value "FQDN_SERVER_NAME=$fqdnServerName"
+
       - name: Display Variables
         shell: pwsh
         run: |
           Write-Host "Environment: ${{ inputs.envCode }}"
-          Write-Host "SQL Server Name: ${{ env.sqlServerName }}"
-          Write-Host "FQDN Server Name: ${{ env.fqdnServerName }}"
+          Write-Host "Use Existing SQL Resources: $env:USE_EXISTING_SQL_RESOURCES"
+          Write-Host "SQL Server Name: $env:SQL_SERVER_NAME"
+          Write-Host "SQL Database Name: $env:SQL_DATABASE_NAME"
+          Write-Host "FQDN Server Name: $env:FQDN_SERVER_NAME"
           echo "Server: vars.SQL_SERVER_NAME_PREFIX=${{ vars.SQL_SERVER_NAME_PREFIX }}"
-          echo "Database: inputs.sqlDatabaseName=${{ vars.SQL_DATABASE_NAME }}"
+          echo "Existing server: vars.EXISTING_SQLSERVER_NAME=${{ vars.EXISTING_SQLSERVER_NAME }}"
+          echo "Existing database: vars.EXISTING_SQLDATABASE_NAME=${{ vars.EXISTING_SQLDATABASE_NAME }}"
+          echo "Database: vars.SQL_DATABASE_NAME=${{ vars.SQL_DATABASE_NAME }}"
           Write-Host "SQL Folder: ${{ inputs.sqlFolderName }}"
           Write-Host "SQL File: ${{ inputs.sqlFileName }}"
           Write-Host "Login Type: ${{ inputs.loginAccountType }}"
@@ -102,7 +124,7 @@ jobs:
         shell: pwsh
         run: |
           $sqlFile = "${{ inputs.sqlFolderName }}/${{ inputs.sqlFileName }}"
-          Write-Host "Running SQL script: $sqlFile on ${{ env.fqdnServerName }} / ${{ vars.SQL_DATABASE_NAME }}"
+          Write-Host "Running SQL script: $sqlFile on $env:FQDN_SERVER_NAME / $env:SQL_DATABASE_NAME"
           
           # Install SqlServer module if not present
           if (-not (Get-Module -ListAvailable -Name SqlServer)) {
@@ -110,8 +132,8 @@ jobs:
           }
           Import-Module SqlServer
           
-          Invoke-Sqlcmd -ServerInstance "${{ env.fqdnServerName }}" `
-            -Database "${{ vars.SQL_DATABASE_NAME }}" `
+          Invoke-Sqlcmd -ServerInstance "$env:FQDN_SERVER_NAME" `
+            -Database "$env:SQL_DATABASE_NAME" `
             -Username "${{ secrets.SQL_ADMIN_USER }}" `
             -Password "${{ secrets.SQL_ADMIN_PASSWORD }}" `
             -InputFile "$sqlFile" `
@@ -125,7 +147,7 @@ jobs:
         shell: pwsh
         run: |
           $sqlFile = "${{ inputs.sqlFolderName }}/${{ inputs.sqlFileName }}"
-          Write-Host "Running SQL script: $sqlFile on ${{ env.fqdnServerName }} / ${{ vars.SQL_DATABASE_NAME }}"
+          Write-Host "Running SQL script: $sqlFile on $env:FQDN_SERVER_NAME / $env:SQL_DATABASE_NAME"
           
           # Get access token for Azure SQL
           $accessToken = az account get-access-token --resource=https://database.windows.net/ --query accessToken -o tsv
@@ -136,8 +158,8 @@ jobs:
           }
           Import-Module SqlServer
           
-          Invoke-Sqlcmd -ServerInstance "${{ env.fqdnServerName }}" `
-            -Database "${{ vars.SQL_DATABASE_NAME }}" `
+          Invoke-Sqlcmd -ServerInstance "$env:FQDN_SERVER_NAME" `
+            -Database "$env:SQL_DATABASE_NAME" `
             -AccessToken $accessToken `
             -InputFile "$sqlFile" `
             -Verbose
@@ -149,8 +171,8 @@ jobs:
         if: inputs.loginAccountType == 'SVC_PRINCIPAL' && inputs.sqlFileName == 'DBCOPY'
         shell: pwsh
         run: |
-          Write-Host "Copying database ${{ vars.SQL_DATABASE_NAME }} to ${{ inputs.databaseCopyName }}"
-          Write-Host "Server: ${{ env.sqlServerName }}, Resource Group: ${{ inputs.resourceGroupName }}"
+          Write-Host "Copying database $env:SQL_DATABASE_NAME to ${{ inputs.databaseCopyName }}"
+          Write-Host "Server: $env:SQL_SERVER_NAME, Resource Group: ${{ inputs.resourceGroupName }}"
           
           # Install Az.Sql module if not present
           if (-not (Get-Module -ListAvailable -Name Az.Sql)) {
@@ -160,10 +182,10 @@ jobs:
           
           New-AzSqlDatabaseCopy `
             -ResourceGroupName "${{ inputs.resourceGroupName }}" `
-            -ServerName "${{ env.sqlServerName }}" `
-            -DatabaseName "${{ vars.SQL_DATABASE_NAME }}" `
+            -ServerName "$env:SQL_SERVER_NAME" `
+            -DatabaseName "$env:SQL_DATABASE_NAME" `
             -CopyResourceGroupName "${{ inputs.resourceGroupName }}" `
-            -CopyServerName "${{ env.sqlServerName }}" `
+            -CopyServerName "$env:SQL_SERVER_NAME" `
             -CopyDatabaseName "${{ inputs.databaseCopyName }}"
 
       - name: Azure Logout
