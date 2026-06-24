@@ -100,5 +100,8 @@ az pipelines variable-group create \
       EXISTING_SERVICEPLAN_NAME='' \
       EXISTING_SERVICEPLAN_RESOURCE_GROUP_NAME='' \
       EXISTING_SQLSERVER_NAME='' \
+      EXISTING_SQLDATABASE_NAME='' \
       EXISTING_SQLSERVER_RESOURCE_GROUP_NAME=''
 ```
+
+Leave the `EXISTING_*` variables blank to keep creating new infrastructure. To reuse existing Azure SQL resources, set both `EXISTING_SQLSERVER_NAME` and `EXISTING_SQLDATABASE_NAME`.

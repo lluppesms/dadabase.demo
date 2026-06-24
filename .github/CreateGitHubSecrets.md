@@ -52,6 +52,11 @@ gh variable set OPENAI_IMAGE_DEPLOYMENTNAME -b 'gpt-image-1.5'
 
 gh variable set SQL_SERVER_NAME_PREFIX -b 'your-dadabase-server'
 gh variable set SQL_DATABASE_NAME -b 'DadABase'
+gh variable set EXISTING_SERVICEPLAN_NAME -b ''
+gh variable set EXISTING_SERVICEPLAN_RESOURCE_GROUP_NAME -b ''
+gh variable set EXISTING_SQLSERVER_NAME -b ''
+gh variable set EXISTING_SQLDATABASE_NAME -b ''
+gh variable set EXISTING_SQLSERVER_RESOURCE_GROUP_NAME -b ''
 
 gh variable set SQLADMIN_LOGIN_USERID -b 'youruser@yourdomain.com'
 gh variable set SQLADMIN_LOGIN_USERSID -b 'yoursid'
@@ -59,6 +64,8 @@ gh variable set SQLADMIN_LOGIN_TENANTID -b 'yourtennant'
 
 gh variable set ADMIN_USER_LIST -b 'user1@domain.com,user2@domain.com'
 ```
+
+Leave the `EXISTING_*` variables blank to let Bicep create a new App Service Plan and Azure SQL resources. To reuse SQL resources, set both `EXISTING_SQLSERVER_NAME` and `EXISTING_SQLDATABASE_NAME`.
 
 ---
 
