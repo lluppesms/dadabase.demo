@@ -13,11 +13,11 @@ param userAssignedIdentityResourceId string = ''
 param location string = resourceGroup().location
 param commonTags object = {}
 
-// basic serverless config: Tier='GeneralPurpose', Family='Gen5', Name='GP_S_Gen5'
+// basic serverless config: Tier='GeneralPurpose', Family='Gen5', Name='GP_S_Gen5_2'
 @allowed(['Basic','Standard','Premium','BusinessCritical','GeneralPurpose'])
 param sqlSkuTier string = 'GeneralPurpose'
 param sqlSkuFamily string = 'Gen5'
-param sqlSkuName string = 'GP_S_Gen5'
+param sqlSkuName string = 'GP_S_Gen5_2'
 param mincores int = 2 // number of cores (from 0.5 to 40)
 param autopause int = 60 // time in minutes
 

@@ -41,7 +41,7 @@ param sqlDatabaseName string = 'dadabase'
 @allowed(['Basic','Standard','Premium','BusinessCritical','GeneralPurpose'])
 param sqlSkuTier string = 'GeneralPurpose'
 param sqlSkuFamily string = 'Gen5'
-param sqlSkuName string = 'GP_S_Gen5'
+param sqlSkuName string = 'GP_S_Gen5_2'
 param sqlAdminLoginUserId string = ''
 param sqlAdminLoginUserSid string = ''
 param sqlAdminLoginTenantId string = ''
