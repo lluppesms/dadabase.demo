@@ -30,6 +30,7 @@ param sqlAdminLoginTenantId = '#{SQLADMIN_LOGIN_TENANTID}#'
 
 param sqlDatabaseName = '#{SQL_DATABASE_NAME}#'
 param existingSqlServerName = '#{EXISTING_SQLSERVER_NAME}#'
+param existingSqlDatabaseName = '#{EXISTING_SQLDATABASE_NAME}#'
 param existingSqlServerResourceGroupName = '#{EXISTING_SQLSERVER_RESOURCE_GROUP_NAME}#'
 
 param adminUserId = '#{KEYVAULT_OWNER_USERID}#'

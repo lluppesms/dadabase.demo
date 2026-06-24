@@ -50,6 +50,7 @@ param sqlAdminUser string = ''
 param sqlAdminPassword string = ''
 
 param existingSqlServerName string = ''
+param existingSqlDatabaseName string = ''
 param existingSqlServerResourceGroupName string = ''
 
 param adInstance string = environment().authentication.loginEndpoint // 'https://login.microsoftonline.com/'
@@ -161,6 +162,7 @@ module sqlDbModule './modules/database/sqlserver.bicep' = if (!websiteOnly) {
     sqlServerName: resourceNames.outputs.sqlServerName
     sqlDBName: sqlDatabaseName
     existingSqlServerName: existingSqlServerName
+    existingSqlDatabaseName: existingSqlDatabaseName
     existingSqlServerResourceGroupName: existingSqlServerResourceGroupName
     sqlSkuTier: sqlSkuTier
     sqlSkuName: sqlSkuName
@@ -450,4 +452,3 @@ output WEB_URL string = deployWebAppEffective ? 'https://${webSiteModule!.output
 output CONTAINER_REGISTRY_NAME string = deployContainerAppEffective ? containerRegistryModule!.outputs.name : ''
 output CONTAINER_REGISTRY_LOGIN_SERVER string = deployContainerAppEffective ? containerRegistryModule!.outputs.loginServer : ''
 //output FUNCTION_HOST_NAME string = functionModule.outputs.hostname
-

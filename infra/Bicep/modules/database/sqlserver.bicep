@@ -6,6 +6,7 @@
 param sqlServerName string = uniqueString('sql', resourceGroup().id)
 param sqlDBName string = 'SampleDB'
 param existingSqlServerName string = ''
+param existingSqlDatabaseName string = ''
 param existingSqlServerResourceGroupName string = ''
 
 param adAdminUserId string = '' // 'somebody@somedomain.com'
@@ -58,16 +59,18 @@ var adminDefinition = adAdminUserId == '' ? {} : {
 } 
 var primaryUserIdentity = userAssignedIdentityResourceId
 
-var deployNewServer = empty(existingSqlServerName)
+var existingSqlServerRgName = empty(existingSqlServerResourceGroupName) ? resourceGroup().name : existingSqlServerResourceGroupName
+var useExistingSqlResources = !empty(existingSqlServerName) && !empty(existingSqlDatabaseName)
+var deployNewServer = !useExistingSqlResources
 
 // --------------------------------------------------------------------------------
-resource existingSqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' existing = if (!deployNewServer) {
+resource existingSqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' existing = if (useExistingSqlResources) {
   name: existingSqlServerName
-  scope: resourceGroup(existingSqlServerResourceGroupName)
+  scope: resourceGroup(existingSqlServerRgName)
 }
-resource existingSqlDBResource 'Microsoft.Sql/servers/databases@2024-11-01-preview' existing = if (!deployNewServer) {
+resource existingSqlDBResource 'Microsoft.Sql/servers/databases@2024-11-01-preview' existing = if (useExistingSqlResources) {
   parent: existingSqlServerResource
-  name: sqlDBName
+  name: existingSqlDatabaseName
 }
 
 resource sqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' = if (deployNewServer) {
