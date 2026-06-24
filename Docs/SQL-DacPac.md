@@ -1,4 +1,17 @@
-# SQL Server Deploy Example
+---
+title: SQL Server Deploy Example
+description: DACPAC deployment example for Azure SQL and DadABase database schema changes
+author: DadABase maintainers
+ms.date: 2026-05-14
+ms.topic: how-to
+keywords:
+    - dacpac
+    - azure sql
+    - deployment
+estimated_reading_time: 6
+---
+
+## SQL Server Deploy Example
 
 ## Introduction
 
@@ -16,7 +29,7 @@ Follow these steps to publish and update a database schema to an existing Azure 
 
 1. Import the database schema into the project by right-clicking on the project and select `Import...` and then `Database...` and select the database you wish to import, which will populate the project with the schema objects.
 
-1. If an initial set of data is desired in the database, add a post deployment script to the project by right clicking on the `dbo` folder and selecting `Add` and then `Script...` and then selecting Post-Deployment script.  Name the script something like `Post-Deployment.sql` and add the desired SQL commands to populate the database with data.
+1. If an initial set of data is desired in the database, add a post deployment script to the project by right clicking on the `Dad` schema folder and selecting `Add` and then `Script...` and then selecting Post-Deployment script. Name the script something like `Post-Deployment.sql` and add the desired SQL commands to populate the database with data.
 
     > Note: The script will be run **EVERY TIME** the database is created or updated, so be sure the script is [**idempotent**](https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/applying?tabs=dotnet-core-cli#idempotent-sql-scripts) and will not create multiple versions of the initial data.
 
@@ -52,6 +65,10 @@ See the [.azdo/pipeline/readme.md](../.azdo/pipelines/readme.md) file for detail
 ## Additional Notes
 
 - This project is mostly focused on database **SCHEMA** changes, not on changing to the actual **DATA** in a database (except for the initial data populate). However, there is an example of running scripts as part of the post-deployment.
+
+- For a fresh DadABase environment, provision the empty database, publish the DACPAC, optionally load starter data, and grant the app identity access to `SCHEMA::[Dad]`. The legacy `dbo` cleanup path is only needed when deploying over an existing database that already contains the old DadABase objects.
+
+- When publishing this DACPAC with SqlPackage, use `/p:ScriptDatabaseOptions=False` if the target database may have environment-specific database options such as change tracking. This keeps the deployment focused on application-owned schema objects.
 
 - In addition, this project has [a pipeline that runs a script](../.azdo/pipelines/5-run-sql-script.yml). The scripts allowed are defined in the YML code and the user may choose which one at runtime.
 - One of the custom scripts in this example does an Azure DB Copy, which must run in the Master database, so there is custom logic in the run SQL pipeline template for that.

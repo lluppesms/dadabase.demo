@@ -21,7 +21,7 @@ PRINT '  ALTER ROLE db_owner ADD MEMBER [your_cicd_pipeline_sp];'
 
 PRINT 'To grant rights to your application to use database:'
 PRINT '  Creating user [your_managed_identity] from external provider...';
-PRINT '  ALTER ROLE db_datareader ADD MEMBER [your_managed_identity];'
-PRINT '  ALTER ROLE db_datawriter ADD MEMBER [your_managed_identity];'
+PRINT '  GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::[Dad] TO [your_managed_identity];'
+PRINT '  GRANT EXECUTE ON SCHEMA::[Dad] TO [your_managed_identity];'
 
 GO

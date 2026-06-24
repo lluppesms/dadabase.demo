@@ -1,4 +1,4 @@
-CREATE PROCEDURE [dbo].[usp_Joke_Import]
+CREATE PROCEDURE [Dad].[usp_Joke_Import]
     @tsvData              NVARCHAR(MAX),  -- Full tab-separated export (with header row), one joke per line
     @RemovePreviousJokes  BIT = 0         -- When 1: DELETE all existing jokes/categories and RESEED identities before importing
 AS
@@ -31,13 +31,13 @@ BEGIN
     -- ── Step 0 (optional): Wipe all existing joke data and reseed identities ────
     IF @RemovePreviousJokes = 1
     BEGIN
-        DELETE FROM JokeRating
-        DELETE FROM JokeJokeCategory
-        DELETE FROM JokeCategory
-        DELETE FROM Joke
-        DBCC CHECKIDENT('JokeRating',  RESEED, 1)
-        DBCC CHECKIDENT('JokeCategory', RESEED, 1)
-        DBCC CHECKIDENT('Joke',         RESEED, 1)
+        DELETE FROM [Dad].[JokeRating]
+        DELETE FROM [Dad].[JokeJokeCategory]
+        DELETE FROM [Dad].[JokeCategory]
+        DELETE FROM [Dad].[Joke]
+        DBCC CHECKIDENT('[Dad].[JokeRating]',  RESEED, 1)
+        DBCC CHECKIDENT('[Dad].[JokeCategory]', RESEED, 1)
+        DBCC CHECKIDENT('[Dad].[Joke]',         RESEED, 1)
     END
 
     -- ── Step 1: Parse the TSV into a temp table ────────────────────────────────
@@ -77,17 +77,17 @@ BEGIN
       AND LEFT(LTRIM(line), 6) <> 'JokeId';
 
     -- ── Step 2: Ensure all referenced categories exist ─────────────────────────
-    INSERT INTO JokeCategory (JokeCategoryTxt, ActiveInd, SortOrderNbr, CreateDateTime, CreateUserName, ChangeDateTime, ChangeUserName)
+    INSERT INTO [Dad].[JokeCategory] (JokeCategoryTxt, ActiveInd, SortOrderNbr, CreateDateTime, CreateUserName, ChangeDateTime, ChangeUserName)
     SELECT DISTINCT
         LTRIM(RTRIM(cat.value)) AS JokeCategoryTxt,
         'Y', 50, @ImportDateTime, 'IMPORT', @ImportDateTime, 'IMPORT'
     FROM #ImportRows r
     CROSS APPLY STRING_SPLIT(ISNULL(r.Categories, ''), ',') cat
     WHERE LTRIM(RTRIM(cat.value)) <> ''
-      AND LTRIM(RTRIM(cat.value)) NOT IN (SELECT JokeCategoryTxt FROM JokeCategory WHERE JokeCategoryTxt IS NOT NULL);
+      AND LTRIM(RTRIM(cat.value)) NOT IN (SELECT JokeCategoryTxt FROM [Dad].[JokeCategory] WHERE JokeCategoryTxt IS NOT NULL);
 
     -- ── Step 3: Insert new jokes (skip duplicates matched by JokeTxt) ──────────
-    INSERT INTO Joke
+    INSERT INTO [Dad].[Joke]
         (JokeTxt, Attribution, ImageTxt, ActiveInd, SortOrderNbr, Rating, VoteCount,
          CreateDateTime, CreateUserName, ChangeDateTime, ChangeUserName)
     SELECT
@@ -101,20 +101,20 @@ BEGIN
         @ImportDateTime, 'IMPORT', @ImportDateTime, 'IMPORT'
     FROM #ImportRows r
     WHERE r.JokeTxt IS NOT NULL
-      AND r.JokeTxt NOT IN (SELECT JokeTxt FROM Joke WHERE JokeTxt IS NOT NULL);
+      AND r.JokeTxt NOT IN (SELECT JokeTxt FROM [Dad].[Joke] WHERE JokeTxt IS NOT NULL);
 
     DECLARE @ImportedCount INT = @@ROWCOUNT;
 
     -- ── Step 4: Wire up joke-category associations for the newly inserted jokes ─
-    INSERT INTO JokeJokeCategory (JokeId, JokeCategoryId)
+    INSERT INTO [Dad].[JokeJokeCategory] (JokeId, JokeCategoryId)
     SELECT DISTINCT jk.JokeId, c.JokeCategoryId
-    FROM Joke jk
+    FROM [Dad].[Joke] jk
     INNER JOIN #ImportRows r ON jk.JokeTxt = r.JokeTxt
     CROSS APPLY STRING_SPLIT(ISNULL(r.Categories, ''), ',') cat
-    INNER JOIN JokeCategory c ON c.JokeCategoryTxt = LTRIM(RTRIM(cat.value))
+    INNER JOIN [Dad].[JokeCategory] c ON c.JokeCategoryTxt = LTRIM(RTRIM(cat.value))
     WHERE LTRIM(RTRIM(cat.value)) <> ''
       AND NOT EXISTS (
-          SELECT 1 FROM JokeJokeCategory jjc
+          SELECT 1 FROM [Dad].[JokeJokeCategory] jjc
           WHERE jjc.JokeId = jk.JokeId AND jjc.JokeCategoryId = c.JokeCategoryId
       );
 

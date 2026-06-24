@@ -1,4 +1,18 @@
-# Dad-A-Base Architecture Document
+---
+title: Dad-A-Base Architecture Document
+description: Architecture overview for the DadABase demo repository
+author: DadABase maintainers
+ms.date: 2026-05-14
+ms.topic: overview
+keywords:
+  - dadabase
+  - architecture
+  - azure
+  - dotnet
+estimated_reading_time: 10
+---
+
+## Dad-A-Base Architecture Document
 
 > **Version:** 1.1 · Generated: 2026-04-06 · Repository: [lluppesms/dadabase.demo](https://github.com/lluppesms/dadabase.demo)
 
@@ -207,10 +221,10 @@ This is implemented via the repository pattern (`IJokeRepository`) with two conc
 
 | Model | Table | Description |
 |-------|-------|-------------|
-| `Joke` | `dbo.Joke` | Core joke entity (JokeId, JokeTxt, JokeCategoryId, Attribution, SortOrderNbr, Rating, ActiveInd, audit fields) |
-| `JokeCategory` | `dbo.JokeCategory` | Category definitions |
-| `JokeJokeCategory` | join table | Many-to-many joke ↔ category |
-| `JokeRating` | `dbo.JokeRating` | User ratings for jokes |
+| `Joke` | `Dad.Joke` | Core joke entity (JokeId, JokeTxt, Attribution, SortOrderNbr, Rating, ActiveInd, audit fields) |
+| `JokeCategory` | `Dad.JokeCategory` | Category definitions |
+| `JokeJokeCategory` | `Dad.JokeJokeCategory` | Many-to-many joke/category join table |
+| `JokeRating` | `Dad.JokeRating` | User ratings for jokes |
 | `JsonJoke` | n/a | Deserialization model for JSON data source |
 
 **Repository interface:** `IJokeRepository`
@@ -284,7 +298,7 @@ Save() / Delete()  - write operations
 | Path | `src/sql.database/` |
 | Type | SQL Server Database Project (`.sqlproj`) |
 | Output | DACPAC artifact |
-| Schema | `dbo/` — tables, views, stored procedures |
+| Schema | `Dad/` — tables, views, stored procedures |
 
 **Tables defined:**
 - `Joke` — core joke storage

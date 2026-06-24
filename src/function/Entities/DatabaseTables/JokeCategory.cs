@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------
+//-----------------------------------------------------------------------
 // <copyright file="JokeCategory.cs" company="Luppes Consulting, Inc.">
 // Copyright 2026, Luppes Consulting, Inc. All rights reserved.
 // </copyright>
@@ -12,10 +12,10 @@ namespace DadABase.Data;
 /// <summary>
 /// JokeCategory Table
 /// </summary>
-[Table("JokeCategory")]
+[Table("JokeCategory", Schema = "Dad")]
 public class JokeCategory
 {
-    //CREATE TABLE [dbo].[JokeCategory](
+    //CREATE TABLE [Dad].[JokeCategory](
     //	[JokeCategoryId] [int] IDENTITY(1,1) NOT NULL,
     //	[JokeCategoryTxt] [nvarchar](500) NULL,
     //	[SortOrderNbr] [int] NOT NULL,

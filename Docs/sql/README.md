@@ -1,4 +1,17 @@
-# SQL Database Setup for DadABase
+---
+title: SQL Database Setup for DadABase
+description: Setup guide for the DadABase SQL database project and deployment scripts
+author: DadABase maintainers
+ms.date: 2026-05-14
+ms.topic: how-to
+keywords:
+  - dadabase
+  - sql database
+  - dacpac
+estimated_reading_time: 7
+---
+
+## SQL Database Setup for DadABase
 
 ## Overview
 
@@ -23,25 +36,28 @@ This project can be used by any application in the repository (web app, function
 
 ### Database Project Structure
 
-```
+```text
 src/sql.database/
-├── sql.database/
-│   ├── dbo/
-│   │   ├── Tables/
-│   │   │   ├── Joke.sql              # Main jokes table
-│   │   │   ├── JokeCategory.sql      # Joke categories
-│   │   │   └── JokeRating.sql        # User ratings
-│   │   ├── Views/
-│   │   │   └── vw_Jokes.sql          # Simplified view of active jokes
-│   │   └── Post.Deployment.sql       # Post-deployment script
-│   ├── Patch/                         # Patch scripts for updates
-│   ├── sql.database.sqlproj          # SQL Server Database Project
-│   └── README.md                      # Detailed project documentation
-├── sql.database.sln                   # Visual Studio solution
-└── .gitignore                         # Version control exclusions
+├── Dad/
+│   ├── Tables/
+│   │   ├── Joke.sql              # Main jokes table
+│   │   ├── JokeCategory.sql      # Joke categories
+│   │   ├── JokeJokeCategory.sql  # Joke/category relationships
+│   │   └── JokeRating.sql        # User ratings
+│   ├── Views/
+│   │   └── vw_Jokes.sql          # Simplified view of active jokes
+│   ├── Pre.Deployment.sql        # Drops legacy dbo objects for offline migration
+│   └── Post.Deployment.sql       # Post-deployment script
+├── Schemas/
+│   └── Dad.sql                   # Dad schema definition
+├── Patch/                        # Patch scripts for updates
+├── sql.database.sqlproj          # SQL Server Database Project
+├── sql.database.sln              # Visual Studio solution
+├── README.md                     # Detailed project documentation
+└── .gitignore                    # Version control exclusions
 ```
 
-For detailed information about the database project, see: [`/src/sql.database/sql.database/README.md`](../../src/sql.database/sql.database/README.md)
+For detailed information about the database project, see: [`/src/sql.database/README.md`](../../src/sql.database/README.md)
 
 ## Bicep Infrastructure
 
@@ -65,11 +81,12 @@ az deployment group create \
 
 ## Database Schema
 
-The database consists of three main tables:
+The database consists of four main tables:
 
 1. **Joke** - Stores individual jokes with their text, category, rating, and metadata
 2. **JokeCategory** - Stores joke category definitions
-3. **JokeRating** - Stores individual user ratings for jokes
+3. **JokeJokeCategory** - Stores many-to-many joke/category relationships
+4. **JokeRating** - Stores individual user ratings for jokes
 
 Additionally, there is a view:
 - **vw_Jokes** - Provides a simplified view of active jokes
@@ -85,7 +102,7 @@ Additionally, there is a view:
 # Open sql.database.sln and build the project
 
 # OR using MSBuild
-cd src/sql.database/sql.database
+cd src/sql.database
 msbuild sql.database.sqlproj /p:Configuration=Release
 ```
 
@@ -94,11 +111,14 @@ msbuild sql.database.sqlproj /p:Configuration=Release
 ```bash
 SqlPackage.exe /Action:Publish \
   /SourceFile:bin/Release/sql.database.dacpac \
-  /TargetServerName:yourserver.database.windows.net \
-  /TargetDatabaseName:DadABase \
-  /TargetUser:yourusername \
-  /TargetPassword:yourpassword
+  /TargetConnectionString:"Server=tcp:yourserver.database.windows.net,1433;Initial Catalog=DadABase;Authentication=Active Directory Default;Encrypt=True;TrustServerCertificate=False;Connection Timeout=120;" \
+  /p:ScriptDatabaseOptions=False
 ```
+
+For a fresh environment, publish the DACPAC to the empty database, load starter
+data only if the environment needs it, then grant the app identity access to
+`SCHEMA::[Dad]`. You do not need to run legacy `dbo` migration steps in a new
+database.
 
 For Visual Studio deployment:
 1. Right-click on `sql.database.sqlproj` in Solution Explorer

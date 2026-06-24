@@ -12,22 +12,26 @@
     <ProjectGuid>{8b3e4f01-6a8c-4d2e-9f3a-1c5d7e8f9a0b}</ProjectGuid>
   </PropertyGroup>
   <ItemGroup>
-    <PostDeploy Include="dbo\Post.Deployment.sql" />
+    <PreDeploy Include="Dad\Pre.Deployment.sql" />
+    <PostDeploy Include="Dad\Post.Deployment.sql" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="dbo\" />
-    <Folder Include="dbo\Stored Procedures" />
-    <Folder Include="dbo\Tables" />
-    <Folder Include="dbo\Views" />
+    <Folder Include="Schemas\" />
+    <Folder Include="Dad\" />
+    <Folder Include="Dad\Stored Procedures" />
+    <Folder Include="Dad\Tables" />
+    <Folder Include="Dad\Views" />
   </ItemGroup>
   <ItemGroup>
-    <Build Include="dbo\Stored Procedures\usp_Get_Random_Joke.sql" />
-    <Build Include="dbo\Stored Procedures\usp_Joke_Import.sql" />
-    <Build Include="dbo\Stored Procedures\usp_Joke_Search.sql" />
-    <Build Include="dbo\Tables\Joke.sql" />
-    <Build Include="dbo\Tables\JokeCategory.sql" />
-    <Build Include="dbo\Tables\JokeJokeCategory.sql" />
-    <Build Include="dbo\Tables\JokeRating.sql" />
-    <Build Include="dbo\Views\vw_Jokes.sql" />
+    <Build Include="Schemas\Dad.sql" />
+    <Build Include="Dad\Stored Procedures\usp_Get_Random_Joke.sql" />
+    <Build Include="Dad\Stored Procedures\usp_Joke_Import.sql" />
+    <Build Include="Dad\Stored Procedures\usp_Joke_Search.sql" />
+    <Build Include="Dad\Stored Procedures\usp_Joke_Update_ImageTxt.sql" />
+    <Build Include="Dad\Tables\Joke.sql" />
+    <Build Include="Dad\Tables\JokeCategory.sql" />
+    <Build Include="Dad\Tables\JokeJokeCategory.sql" />
+    <Build Include="Dad\Tables\JokeRating.sql" />
+    <Build Include="Dad\Views\vw_Jokes.sql" />
   </ItemGroup>
 </Project>
