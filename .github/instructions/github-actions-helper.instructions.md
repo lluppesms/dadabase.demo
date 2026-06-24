@@ -41,7 +41,7 @@ jobs:
     timeout-minutes: 10
 
     steps:
-\n\nuses: actions/checkout@v5
+\n\nuses: actions/checkout@v6
 \n\nuses: actions/setup-node@v4
 
         with:

@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Step 1
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 ```
 
 ## File Organization
