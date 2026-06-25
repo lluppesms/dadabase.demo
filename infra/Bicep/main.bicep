@@ -106,8 +106,8 @@ var useSqlDataSource = toUpper(appDataSource) == 'SQL' && !websiteOnly
 var webAppConnectionString = useSqlDataSource ? sqlDbModule!.outputs.identityConnectionString : ''
 var deploymentTypeNormalized = toLower(deploymentType)
 var deployWebAppEffective = contains(['webapp', 'all'], deploymentTypeNormalized)
-var deployContainerAppEffective = contains(['containerapp', 'all'], deploymentTypeNormalized)
 var deployWebsiteEffective = deployWebAppEffective || deployContainerAppEffective
+var deployContainerAppEffective = contains(['containerapp', 'all'], deploymentTypeNormalized)
 var deployFunctionEffective = contains(['functionapp', 'all'], deploymentTypeNormalized) && !websiteOnly
 var keyVaultApplicationUserObjectIds = deployWebsiteEffective
   ? concat(
@@ -187,7 +187,6 @@ module sqlDbModule './modules/database/sqlserver.bicep' = if (!websiteOnly) {
   }
 }
 
-
 // --------------------------------------------------------------------------------
 module identity './modules/iam/identity.bicep' = {
   name: 'appIdentity${deploymentSuffix}'
@@ -196,6 +195,7 @@ module identity './modules/iam/identity.bicep' = {
     location: location
   }
 }
+
 module appRoleAssignments './modules/iam/roleassignments.bicep' = if (addRoleAssignments) {
   name: 'appRoleAssignments${deploymentSuffix}'
   params: {
@@ -232,15 +232,6 @@ module appRoleAssignments3 './modules/iam/roleassignments.bicep' = if (addRoleAs
     storageAccountName: functionStorageModule!.outputs.name
   }
 }
-// module adminRoleAssignments './modules/iam/roleassignments.bicep' = if (addRoleAssignments) {
-//   name: 'userRoleAssignments${deploymentSuffix}'
-//   params: {
-//     identityPrincipalId: adminUserId
-//     principalType: 'User'
-//     storageAccountName: storageModule.outputs.name
-//     keyVaultName:  keyVaultModule.outputs.name
-//   }
-// }
 
 // --------------------------------------------------------------------------------
 module keyVaultModule './modules/security/keyvault.bicep' = {

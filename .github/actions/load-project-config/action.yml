@@ -152,7 +152,7 @@ runs:
           exit 1
         fi
         
-        echo "📦 Loading all project configurations from $CONFIG_FILE"
+        echo "?? Loading all project configurations from $CONFIG_FILE"
         echo ""
         
         # Get all project keys
@@ -163,7 +163,7 @@ runs:
         
         # Loop through each project and output its values
         for PROJECT in $(yq '.projects | keys | .[]' "$CONFIG_FILE"); do
-          echo "── $PROJECT ──"
+          echo "-- $PROJECT --"
           
           SHORT_NAME=$(yq ".projects.${PROJECT}.shortName // \"\"" "$CONFIG_FILE")
           ROOT_DIR=$(yq ".projects.${PROJECT}.rootDirectory // \"\"" "$CONFIG_FILE")
@@ -191,4 +191,4 @@ runs:
           echo ""
         done
         
-        echo "✅ All configurations loaded successfully"
+        echo "? All configurations loaded successfully"

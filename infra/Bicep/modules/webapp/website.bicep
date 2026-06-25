@@ -57,7 +57,7 @@ resource appInsightsResource 'Microsoft.Insights/components@2020-02-02' = {
 
 resource appServiceResource 'Microsoft.Web/serverfarms@2024-11-01' existing = {
   name: appServicePlanName
-  scope: resourceGroup(appServicePlanResourceGroupName)
+  scope: resourceGroup(empty(appServicePlanResourceGroupName) ? resourceGroup().name : appServicePlanResourceGroupName)
 }
 
 resource webSiteResource 'Microsoft.Web/sites@2024-11-01' = {

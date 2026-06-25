@@ -6,12 +6,18 @@
 #   jobs:
 #     load-config:
 #       uses: ./.github/workflows/template-load-config.yml
-#     build:
+#     build-web:
 #       needs: load-config
 #       uses: ./.github/workflows/template-webapp-build.yml
 #       with:
 #         rootDirectory: ${{ needs.load-config.outputs.web_rootDirectory }}
 #         projectName: ${{ needs.load-config.outputs.web_projectName }}
+#     build-dacpac:
+#       needs: load-config
+#       uses: ./.github/workflows/template-dacpac-build.yml
+#       with:
+#         appFolderName: ${{ needs.load-config.outputs.sql_rootDirectory }}
+#         appProjectName: ${{ needs.load-config.outputs.sql_projectName }}
 # ------------------------------------------------------------------------------------------------------------------------
 
 projects:
