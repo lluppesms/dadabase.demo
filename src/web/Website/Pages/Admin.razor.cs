@@ -27,6 +27,7 @@ public partial class Admin : ComponentBase
     private string apiKeyInfo = string.Empty;
     private string aiChatInfo = string.Empty;
     private string aiImageInfo = string.Empty;
+    private bool isInAdminRole = false;
 
     /// <summary>
     /// Initialization
@@ -40,7 +41,7 @@ public partial class Admin : ComponentBase
             await JsInterop.InvokeVoidAsync("syncHeaderTitle");
             var userIdentity = Context.HttpContext.User;
             userName = userIdentity != null ? userIdentity.Identity.Name : string.Empty;
-            var isInAdminRole = userIdentity != null && userIdentity.IsInRole("Admin");
+            isInAdminRole = userIdentity != null && userIdentity.IsInRole("Admin");
             if (isInAdminRole)
             {
                 try
