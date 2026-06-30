@@ -8128,9 +8128,23 @@ BEGIN
   DELETE FROM [Dad].[JokeJokeCategory]
   DELETE FROM [Dad].[JokeCategory]
   DELETE FROM [Dad].[Joke]
-  DBCC CHECKIDENT('[Dad].[JokeRating]', RESEED, 0)
-  DBCC CHECKIDENT('[Dad].[JokeCategory]', RESEED, 0)
-  DBCC CHECKIDENT('[Dad].[Joke]', RESEED, 0)
+  BEGIN TRY
+    PRINT 'Reseeding tables...'
+    DBCC CHECKIDENT('[Dad].[JokeRating]',  RESEED, 0)
+    DBCC CHECKIDENT('[Dad].[JokeCategory]', RESEED, 0)
+    DBCC CHECKIDENT('[Dad].[Joke]',         RESEED, 0)
+  END TRY
+  BEGIN CATCH
+    -- Fallback path: run privileged reseed proc only if direct DBCC fails.
+    BEGIN TRY
+        PRINT 'Reseed failed!  Using Fallback path: run privileged reseed proc only if direct DBCC fails.'
+        EXEC [Dad].[usp_Joke_Reseed_Identities];
+    END TRY
+    BEGIN CATCH
+        -- Import should continue even when reseed cannot be performed.
+        PRINT 'Warning: identity reseed skipped: ' + ERROR_MESSAGE();
+    END CATCH
+  END CATCH
 END
 
 DECLARE @CategoryCount int

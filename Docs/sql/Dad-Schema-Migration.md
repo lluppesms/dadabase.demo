@@ -2,7 +2,7 @@
 title: Dad Schema Migration Analysis
 description: Analysis and migration plan for moving DadABase SQL objects from dbo to the Dad schema
 author: GitHub Copilot
-ms.date: 2026-05-14
+ms.date: 2026-06-30
 ms.topic: how-to
 keywords:
   - dadabase
@@ -16,15 +16,14 @@ estimated_reading_time: 12
 ## Executive Summary
 
 Move the DadABase application-owned database objects from `dbo` to a dedicated
-`Dad` schema with an offline cutover. Because an export already exists from the
-current export function and downtime is acceptable, the preferred path is not an
-in-place table transfer. Stop the application, publish a DACPAC that creates the
-new `[Dad]` objects and drops the legacy `[dbo]` objects, then import the exported
-data into the fresh `[Dad]` tables.
+`Dad` schema with an in-place transfer during a maintenance window. The runbook
+below provides an exact, copy-paste set of `ALTER SCHEMA ... TRANSFER` commands
+for all DadABase tables and stored procedures currently modeled by the SQL
+project, plus validation and permission re-grants.
 
-This approach avoids the fragile part of a schema migration: preserving live data
-while SQL project object names change. The tradeoff is intentional downtime and a
-hard dependency on validating the export file before the destructive step.
+This path preserves existing data in place and avoids a drop-and-reload step. The
+tradeoff is that every dependency should be validated after transfer, and all app
+code must already target `[Dad]` before traffic is reopened.
 
 ## Current State
 
@@ -57,6 +56,7 @@ These objects are owned by the DadABase SQL project and should be moved to the
 | Table | `[Dad].[JokeRating]` | `src/sql.database/Dad/Tables/JokeRating.sql` |
 | View | `[Dad].[vw_Jokes]` | `src/sql.database/Dad/Views/vw_Jokes.sql` |
 | Procedure | `[Dad].[usp_Get_Random_Joke]` | `src/sql.database/Dad/Stored Procedures/usp_Get_Random_Joke.sql` |
+| Procedure | `[Dad].[usp_Joke_Reseed_Identities]` | `src/sql.database/Dad/Stored Procedures/usp_Joke_Reseed_Identities.sql` |
 | Procedure | `[Dad].[usp_Joke_Search]` | `src/sql.database/Dad/Stored Procedures/usp_Joke_Search.sql` |
 | Procedure | `[Dad].[usp_Joke_Import]` | `src/sql.database/Dad/Stored Procedures/usp_Joke_Import.sql` |
 | Procedure | `[Dad].[usp_Joke_Update_ImageTxt]` | `src/sql.database/Dad/Stored Procedures/usp_Joke_Update_ImageTxt.sql` |
@@ -72,14 +72,13 @@ schema decision because it has different application and migration risks.
 
 Several SQL Server and EF Core behaviors shape the implementation plan.
 
-* `ALTER SCHEMA [Dad] TRANSFER [dbo].[Joke]` can move a table and keep data, but
-  it is no longer the recommended route for this migration because the exported
-  backup file is the data preservation mechanism.
+* `ALTER SCHEMA [Dad] TRANSFER [dbo].[Joke]` moves a table in place and preserves
+  data, keys, indexes, and constraints.
 * Dropping the legacy `[dbo]` tables is destructive. Validate the export file and
   keep a database backup or copy before the pre-deploy cleanup runs.
-* Microsoft recommends not using `ALTER SCHEMA` to move stored procedures,
-  functions, views, or triggers when the module definition contains the old schema
-  name. Drop and recreate those modules in the new schema instead.
+* When transferring procedures and views, validate module definitions afterward.
+  If any definition still contains hardcoded `[dbo]` references, update and
+  redeploy that module under `[Dad]`.
 * `CREATE SCHEMA [Dad]` creates a database-level schema. The deployment principal
   needs permission to create schemas or needs `db_owner`.
 * EF Core maps SQL Server entities to `dbo` by convention when no schema is
@@ -104,10 +103,10 @@ Add a schema script and change the DACPAC source model to `Dad`.
 
 1. Add a schema definition script, for example `src/sql.database/Schemas/Dad.sql`:
 
-   ```sql
-  CREATE SCHEMA [Dad];
-   GO
-   ```
+    ```sql
+    CREATE SCHEMA [Dad];
+    GO
+    ```
 
 2. Rename the SQL project folder from `dbo` to `Dad`, or create a new `Dad`
    folder and move the object scripts into it.
@@ -120,6 +119,7 @@ Add a schema script and change the DACPAC source model to `Dad`.
    <Build Include="Schemas\Dad.sql" />
    <Build Include="Dad\Stored Procedures\usp_Get_Random_Joke.sql" />
    <Build Include="Dad\Stored Procedures\usp_Joke_Import.sql" />
+  <Build Include="Dad\Stored Procedures\usp_Joke_Reseed_Identities.sql" />
    <Build Include="Dad\Stored Procedures\usp_Joke_Search.sql" />
    <Build Include="Dad\Stored Procedures\usp_Joke_Update_ImageTxt.sql" />
    <Build Include="Dad\Tables\Joke.sql" />
@@ -170,6 +170,9 @@ IF OBJECT_ID(N'[dbo].[usp_Joke_Search]', N'P') IS NOT NULL
 
 IF OBJECT_ID(N'[dbo].[usp_Joke_Import]', N'P') IS NOT NULL
     DROP PROCEDURE [dbo].[usp_Joke_Import];
+
+IF OBJECT_ID(N'[dbo].[usp_Joke_Reseed_Identities]', N'P') IS NOT NULL
+  DROP PROCEDURE [dbo].[usp_Joke_Reseed_Identities];
 
 IF OBJECT_ID(N'[dbo].[usp_Joke_Update_ImageTxt]', N'P') IS NOT NULL
     DROP PROCEDURE [dbo].[usp_Joke_Update_ImageTxt];
@@ -248,6 +251,129 @@ Update these documentation files after the code and SQL project changes are made
 | `src/sql.database/README.md` | Replace `dbo` folder and object examples with `Dad`. |
 
 ## Deployment Order
+
+### Existing Database Migration Runbook (In-Place Transfer)
+
+Run during a maintenance window after taking a full backup.
+
+1. Ensure the target schema exists.
+
+```sql
+IF SCHEMA_ID(N'Dad') IS NULL
+    EXEC(N'CREATE SCHEMA [Dad]');
+```
+
+2. Optional preflight inventory for all expected DadABase objects.
+
+```sql
+SELECT
+    s.name AS SchemaName,
+    o.type_desc,
+    o.name AS ObjectName
+FROM sys.objects o
+INNER JOIN sys.schemas s ON s.schema_id = o.schema_id
+WHERE o.name IN (
+    N'Joke',
+    N'JokeCategory',
+    N'JokeJokeCategory',
+    N'JokeRating',
+    N'usp_Get_Random_Joke',
+    N'usp_Joke_Reseed_Identities',
+    N'usp_Joke_Search',
+    N'usp_Joke_Import',
+    N'usp_Joke_Update_ImageTxt',
+    N'vw_Jokes')
+ORDER BY o.type_desc, o.name, s.name;
+```
+
+3. Transfer application tables to the new schema.
+
+```sql
+ALTER SCHEMA [Dad] TRANSFER [dbo].[Joke];
+ALTER SCHEMA [Dad] TRANSFER [dbo].[JokeCategory];
+ALTER SCHEMA [Dad] TRANSFER [dbo].[JokeJokeCategory];
+ALTER SCHEMA [Dad] TRANSFER [dbo].[JokeRating];
+```
+
+4. Transfer stored procedures used by the application.
+
+```sql
+ALTER SCHEMA [Dad] TRANSFER [dbo].[usp_Get_Random_Joke];
+ALTER SCHEMA [Dad] TRANSFER [dbo].[usp_Joke_Reseed_Identities];
+ALTER SCHEMA [Dad] TRANSFER [dbo].[usp_Joke_Search];
+ALTER SCHEMA [Dad] TRANSFER [dbo].[usp_Joke_Import];
+ALTER SCHEMA [Dad] TRANSFER [dbo].[usp_Joke_Update_ImageTxt];
+```
+
+5. Transfer the DadABase view.
+
+```sql
+ALTER SCHEMA [Dad] TRANSFER [dbo].[vw_Jokes];
+```
+
+6. Regrant runtime permissions on the target schema.
+
+```sql
+GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::[Dad] TO [<app-role-or-user>];
+GRANT EXECUTE ON SCHEMA::[Dad] TO [<app-role-or-user>];
+```
+
+7. Validate nothing from the DadABase object set remains in `dbo`.
+
+```sql
+SELECT
+    s.name AS SchemaName,
+    o.type_desc,
+    o.name AS ObjectName
+FROM sys.objects o
+INNER JOIN sys.schemas s ON s.schema_id = o.schema_id
+WHERE s.name = N'dbo'
+  AND o.name IN (
+      N'Joke',
+      N'JokeCategory',
+      N'JokeJokeCategory',
+      N'JokeRating',
+      N'usp_Get_Random_Joke',
+      N'usp_Joke_Reseed_Identities',
+      N'usp_Joke_Search',
+      N'usp_Joke_Import',
+      N'usp_Joke_Update_ImageTxt',
+      N'vw_Jokes');
+```
+
+8. Rebuild the vs_Jokes.sql View so it points to the new table
+
+9. Validate dependencies and runtime behavior.
+
+```sql
+SELECT OBJECT_SCHEMA_NAME(referencing_id) AS referencing_schema,
+       OBJECT_NAME(referencing_id) AS referencing_object,
+       referenced_schema_name,
+       referenced_entity_name
+FROM sys.sql_expression_dependencies
+WHERE referenced_schema_name = N'dbo';
+
+SELECT COUNT(*) AS JokeCount FROM [Dad].[Joke];
+SELECT COUNT(*) AS CategoryCount FROM [Dad].[JokeCategory];
+SELECT COUNT(*) AS JokeCategoryLinkCount FROM [Dad].[JokeJokeCategory];
+SELECT COUNT(*) AS RatingCount FROM [Dad].[JokeRating];
+
+EXEC [Dad].[usp_Get_Random_Joke];
+EXEC [Dad].[usp_Joke_Search] @searchTxt = N'sun';
+SELECT TOP 10 * FROM [Dad].[vw_Jokes];
+```
+
+#### Exact Object Coverage Notes
+
+The command list above is generated from the current SQL project content in
+`src/sql.database`.
+
+* Tables transferred: `Joke`, `JokeCategory`, `JokeJokeCategory`, `JokeRating`
+* Procedures transferred: `usp_Get_Random_Joke`, `usp_Joke_Search`,
+  `usp_Joke_Import`, `usp_Joke_Reseed_Identities`, `usp_Joke_Update_ImageTxt`
+* View transferred: `vw_Jokes`
+* Suggested but not present in this app: any ASP.NET Identity tables (for
+  example, `AspNetUsers`, `AspNetRoles`) and related Identity procedures.
 
 Use the fresh environment path for a new database. Use the existing database
 path only when the target already contains the old `dbo` DadABase objects.

@@ -1,6 +1,6 @@
 CREATE PROCEDURE [Dad].[usp_Joke_Import]
     @tsvData              NVARCHAR(MAX),  -- Full tab-separated export (with header row), one joke per line
-    @RemovePreviousJokes  BIT = 0         -- When 1: DELETE all existing jokes/categories and RESEED identities before importing
+    @RemovePreviousJokes  BIT = 0         -- When 1: DELETE all existing jokes/categories before importing (identity reseed is best effort)
 AS
 /*
   Description: Imports jokes from a tab-delimited (TSV) string.
@@ -10,8 +10,8 @@ AS
                new categories, new jokes, and their category associations.
                Duplicate jokes (matched by JokeTxt) are silently skipped.
                No permanent tables are created.
-               When @RemovePreviousJokes = 1, all existing joke data is removed and
-               identity columns are reseeded to 1 before the import runs.
+               When @RemovePreviousJokes = 1, all existing joke data is removed.
+               Identity reseed is attempted but not required for import success.
   Returns:     A single-row result set with ImportedCount INT.
   Example Usage:
     -- Merge import (keep existing jokes):
@@ -28,16 +28,31 @@ BEGIN
     -- Capture a single timestamp for all inserts so audit dates are consistent
     DECLARE @ImportDateTime DATETIME = GETUTCDATE();
 
-    -- ── Step 0 (optional): Wipe all existing joke data and reseed identities ────
+    -- ── Step 0 (optional): Wipe all existing joke data (identity reseed is best effort) ────
     IF @RemovePreviousJokes = 1
     BEGIN
         DELETE FROM [Dad].[JokeRating]
         DELETE FROM [Dad].[JokeJokeCategory]
         DELETE FROM [Dad].[JokeCategory]
         DELETE FROM [Dad].[Joke]
-        DBCC CHECKIDENT('[Dad].[JokeRating]',  RESEED, 1)
-        DBCC CHECKIDENT('[Dad].[JokeCategory]', RESEED, 1)
-        DBCC CHECKIDENT('[Dad].[Joke]',         RESEED, 1)
+
+      BEGIN TRY
+        PRINT 'Reseeding tables...'
+        DBCC CHECKIDENT('[Dad].[JokeRating]',  RESEED, 0)
+        DBCC CHECKIDENT('[Dad].[JokeCategory]', RESEED, 0)
+        DBCC CHECKIDENT('[Dad].[Joke]',         RESEED, 0)
+      END TRY
+      BEGIN CATCH
+        -- Fallback path: run privileged reseed proc only if direct DBCC fails.
+        BEGIN TRY
+            PRINT 'Reseed failed!  Using Fallback path: run privileged reseed proc only if direct DBCC fails.'
+            EXEC [Dad].[usp_Joke_Reseed_Identities];
+        END TRY
+        BEGIN CATCH
+            -- Import should continue even when reseed cannot be performed.
+            PRINT 'Warning: identity reseed skipped: ' + ERROR_MESSAGE();
+        END CATCH
+      END CATCH
     END
 
     -- ── Step 1: Parse the TSV into a temp table ────────────────────────────────

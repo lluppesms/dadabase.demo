@@ -26,6 +26,7 @@
     <Build Include="Schemas\Dad.sql" />
     <Build Include="Dad\Stored Procedures\usp_Get_Random_Joke.sql" />
     <Build Include="Dad\Stored Procedures\usp_Joke_Import.sql" />
+    <Build Include="Dad\Stored Procedures\usp_Joke_Reseed_Identities.sql" />
     <Build Include="Dad\Stored Procedures\usp_Joke_Search.sql" />
     <Build Include="Dad\Stored Procedures\usp_Joke_Update_ImageTxt.sql" />
     <Build Include="Dad\Tables\Joke.sql" />
