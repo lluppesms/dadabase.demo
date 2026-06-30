@@ -55,7 +55,7 @@ The architecture document always contains exactly these 15 sections in this orde
 | 4 | Source Code Projects | All `.csproj` files across `src/` |
 | 5 | AI/GenAI Integration | `src/web/Website/Repositories/AIHelper.cs`, `src/web/Website/*.Web.csproj` |
 | 6 | Infrastructure as Code (Bicep) | `infra/Bicep/main.bicep`, `infra/Bicep/modules/`, `infra/Bicep/resourcenames.bicep` |
-| 7 | CI/CD Pipelines | `.github/workflows/`, `.azuredevops/pipelines/` |
+| 7 | CI/CD Pipelines | `.github/workflows/`, `.azdo/pipelines/` |
 | 8 | Testing | `src/web/Tests/`, `src/function/Tests/`, `playwright/`, `playwright.config.*.ts` |
 | 9 | Authentication & Security | `src/web/Website/Helpers/AuthorizeApiKey.cs`, `src/web/Website/Program.cs` |
 | 10 | Theme and UI | `src/web/Website/Pages/`, `src/web/Website/Components/`, `wwwroot/` |
@@ -84,7 +84,7 @@ Read all source files that feed into the architecture document:
 | Console + Analyzer | `src/console/`, `src/analyzer/` |
 | SQL project | `src/sql.database/sql.database.sqlproj`, `src/sql.database/dbo/` |
 | Infrastructure | `infra/Bicep/main.bicep`, `infra/Bicep/modules/`, `infra/Bicep/resourcenames.bicep`, `infra/Bicep/data/` |
-| CI/CD | `.github/workflows/` (all `.yml` files), `.azuredevops/pipelines/` |
+| CI/CD | `.github/workflows/` (all `.yml` files), `.azdo/pipelines/` |
 | Testing | `src/web/Tests/`, `src/function/Tests/`, `playwright/`, all `playwright.config.*.ts` |
 | Security/Auth | `src/web/Website/Helpers/AuthorizeApiKey.cs`, `src/web/Website/Helpers/Utilities.cs` |
 | Copilot config | `.github/copilot-instructions.md`, `.github/skills/`, `.github/instructions/`, `.github/agents/` |

@@ -205,7 +205,7 @@ After deployment, your application will be available at:
 For detailed documentation, see:
 
 - [Deployment_Options.md](Deployment_Options.md) - Comprehensive deployment guide
-- [Infra_As_Code.md](Infra_As_Code.md) - Infrastructure overview
+- [Bicep Instructions](../.github/instructions/bicep-instructions.md) - Infrastructure overview
 
 ---
 

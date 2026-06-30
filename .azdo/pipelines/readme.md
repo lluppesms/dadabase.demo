@@ -34,7 +34,7 @@ The following pipelines are available for various deployment scenarios.
 
 ### Testing
 
-- [9-smoke-test-webapp.yml](9-smoke-test-webapp.yml): Runs smoke tests against deployed Web App
+- [8-smoke-test-webapp.yml](8-smoke-test-webapp.yml): Runs smoke tests against deployed Web App
 - [11-auto-test-pipeline.yml](11-auto-test-pipeline.yml): Runs automated tests (unit, integration, UI tests)
 
 ---
