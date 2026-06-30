@@ -239,7 +239,7 @@ Update these documentation files after the code and SQL project changes are made
 | File | Required documentation change |
 |------|-------------------------------|
 | `Docs/Application-Architecture.md` | Change the SQL object table and SQL project schema from `dbo` to `Dad`. |
-| `Docs/SQL-DacPac.md` | Change guidance that refers to the `dbo` folder and add a note about schema migrations requiring pre-deploy review. |
+| `.github/instructions/sql-database-dacpac-instructions.md` | Change guidance that refers to the `dbo` folder and add a note about schema migrations requiring pre-deploy review. |
 | `Docs/sql/README.md` | Replace the project structure and setup examples with `Dad` schema references. |
 | `Docs/sql/CreateDatabase.sql` | If kept as a manual setup script, change all `[dbo]` references to `[Dad]` and create the schema first. |
 | `Docs/sql/CreateJokeView.sql` | Change the view and table references to `[Dad]`. |

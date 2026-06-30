@@ -462,14 +462,14 @@ Dedicated Azure DevOps pipeline YAML files are not included in this repository. 
 |------|---------|
 | `.azuredevops/policies/copilot-preferences.yml` | Repository-level GitHub Copilot policy settings |
 
-To use Azure DevOps CI/CD with this project, the GitHub Actions workflow templates in `.github/workflows/` can be adapted and imported manually into an Azure DevOps project. The `Docs/YML_AzDO.md` guide describes this process.
+To use Azure DevOps CI/CD with this project, follow the instruction-first guidance in `.github/instructions/azure-devops-pipeline-instructions.md`.
 
 ### 7.3 Deployment Methods Summary
 
 | Method | Entry Point | Difficulty |
 |--------|------------|------------|
 | GitHub Actions | `.github/workflows/` | ⭐⭐⭐ |
-| Azure DevOps | Adapt `.github/workflows/` templates (see `Docs/YML_AzDO.md`) | ⭐⭐⭐⭐ |
+| Azure DevOps | Use `.azdo/pipelines/` templates (see `.github/instructions/azure-devops-pipeline-instructions.md`) | ⭐⭐⭐⭐ |
 | Azure Developer CLI | `azure.yaml` + `azd up` | ⭐⭐ |
 
 ---
@@ -620,21 +620,20 @@ The repository is `azd`-compatible:
 
 | Document | Location | Description |
 |----------|----------|-------------|
-| README | `README.md` | Project overview and quick start |
-| Coding Standards | `Docs/Coding_Standards.md` | Team conventions |
-| Infrastructure as Code | `Docs/Infra_As_Code.md` | Bicep deployment guide |
-| SQL DACPAC | `Docs/SQL-DacPac.md` | Database deployment guide |
-| Azure DevOps Pipelines | `Docs/YML_AzDO.md` | AzDO pipeline reference |
-| GitHub Actions | `Docs/YML_GitHub.md` | GHA workflow reference |
-| Deployment Options | `Docs/Deployment_Options.md` | Deployment method comparison |
-| Deployment Quick Ref | `Docs/Deployment_QuickRef.md` | Quick reference card |
-| Export Functionality | `Docs/ExportFunctionality.md` | Data export guide |
-| SQL Permissions | `Docs/SQL-Permissions-Queries.md` | SQL permission reference |
-| Database Fallback | `Docs/DATABASE-FALLBACK.md` | JSON fallback mode guide |
-| .NET 10 Upgrade Notes | `Docs/console-dotnet10-upgrade.md` | Upgrade notes |
-| Architecture (this doc) | `Docs/DadABase-Architecture.md` | This document |
-| Architecture PDF | `Docs/DadABase-Architecture.pdf` | PDF export of this document |
-| Architecture Deck | `Docs/DadABase-Architecture.pptx` | PowerPoint presentation deck |
+| README | [README.md](../README.md) | Project overview and quick start |
+| Coding Standards | [Docs/Coding_Standards.md](./Coding_Standards.md) | Team conventions |
+| Infrastructure as Code | [Bicep instructions](../.github/instructions/bicep-instructions.md) | Bicep deployment guide |
+| SQL DACPAC | [SQL/DACPAC instructions](../.github/instructions/sql-database-dacpac-instructions.md) | Database deployment guide |
+| Azure DevOps Pipelines | [AzDO pipeline instructions](../.github/instructions/azure-devops-pipeline-instructions.md) | AzDO pipeline reference |
+| GitHub Actions | [GitHub Actions instructions](../.github/instructions/github-actions-instructions.md) | GHA workflow reference |
+| Deployment Options | [Docs/Deployment_Options.md](./Deployment_Options.md) | Deployment method comparison |
+| Deployment Quick Ref | [Docs/Deployment_QuickRef.md](./Deployment_QuickRef.md) | Quick reference card |
+| Export Functionality | [Docs/ExportFunctionality.md](./ExportFunctionality.md) | Data export guide |
+| SQL Permissions | [Docs/sql/SQL-Permissions-Queries.md](./sql/SQL-Permissions-Queries.md) | SQL permission reference |
+| Database Fallback | [Docs/sql/DATABASE-FALLBACK.md](./sql/DATABASE-FALLBACK.md) | JSON fallback mode guide |
+| Architecture (this doc) | [Docs/Application-Architecture.md](./Application-Architecture.md) | This document |
+| Architecture PDF | `Docs/Application-Architecture.pdf` | PDF export of this document |
+| Architecture Deck | `Docs/Application-Architecture.pptx` | PowerPoint presentation deck |
 
 ---
 

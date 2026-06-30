@@ -5,6 +5,8 @@
 ![Dad Joke Level: Expert](https://img.shields.io/badge/Dad%20Joke%20Level-Expert-gold?style=for-the-badge&logo=laughing)
 ![Groan Factor](https://img.shields.io/badge/Groan%20Factor-Maximum-purple?style=for-the-badge)
 ![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
+![Architecture](https://img.shields.io/badge/Architecture-🏗️%20Over--Engineered%20Perfection-blue?style=for-the-badge)
+
 
 ---
 
@@ -14,7 +16,9 @@ This isn't just a repository. This is a **monument to dad jokes** and a shrine t
 
 Want to see every cutting-edge development and automation practice demonstrated through the lens of corny humor? **You're in the right place.**
 
-![Architecture](https://img.shields.io/badge/Architecture-🏗️%20Over--Engineered%20Perfection-blue?style=flat-square)
+[![Open in vscode.dev](https://img.shields.io/badge/Open%20in-vscode.dev-blue?style=for-the-badge)][1]
+
+[1]: https://vscode.dev/github/lluppesms/dadabase.demo/
 
 ---
 
@@ -276,10 +280,10 @@ Same great taste, GitHub flavor:
 | Topic | Link |
 |-------|------|
 | 📖 Coding Standards | [Coding_Standards.md](./Docs/Coding_Standards.md) |
-| 🏗️ Infrastructure as Code | [Infra_As_Code.md](./Docs/Infra_As_Code.md) |
-| 🗃️ SQL DACPAC Deployment | [SQL-DacPac.md](./Docs/SQL-DacPac.md) |
-| 🔄 Azure DevOps Pipelines | [YML_AzDO.md](./Docs/YML_AzDO.md) |
-| 🐙 GitHub Actions | [YML_GitHub.md](./Docs/YML_GitHub.md) |
+| 🏗️ Infrastructure as Code | [Bicep Instructions](./.github/instructions/bicep-instructions.md) |
+| 🗃️ SQL DACPAC Deployment | [SQL/DACPAC Instructions](./.github/instructions/sql-database-dacpac-instructions.md) |
+| 🔄 Azure DevOps Pipelines | [AzDO Pipeline Instructions](./.github/instructions/azure-devops-pipeline-instructions.md) |
+| 🐙 GitHub Actions | [GitHub Actions Instructions](./.github/instructions/github-actions-instructions.md) |
 | 🤝 Contributing & Dev Setup | [CONTRIBUTING.md](./CONTRIBUTING.md) |
 | 🤝 Contributing Guide | [CONTRIBUTING.md](./CONTRIBUTING.md) |
 
@@ -298,14 +302,6 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for developer setup and contribution gu
 ## 📜 License
 
 [MIT](./LICENSE) - Because dad jokes should be free for everyone.
-
----
-
-<div align="center">
-
-[![Open in vscode.dev](https://img.shields.io/badge/Open%20in-vscode.dev-blue?style=for-the-badge)][1]
-
-[1]: https://vscode.dev/github/lluppesms/dadabase.demo/
 
 ---
 
