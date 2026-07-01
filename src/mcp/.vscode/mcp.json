@@ -1,37 +1,49 @@
 {
   "servers": {
-    "my-dadjoke-server-5d14d5f3": {
-      "type": "stdio",
-      "command": "dotnet",
-      "args": [
-        "run",
-        "--project",
-        "C:\\AI\\mcp\\DadJokeMCP\\DadJokeMCPStdIO\\DadJokeMCPStdIO.csproj"
-      ]
-    },
-    // "dad-jokes-stdio-docker": {
-    //   "type": "stdio",
-    //   "command": "docker",
-    //   "args": [
-    //       "run",
-    //       "-i",
-    //       "--rm",
-    //       "dadjokemcp:local"
-    //   ]
-    // }
-    // "dad-jokes-sse-local": {
-    //   "type": "sse",
-    //   "url": "http://localhost:3001/mcp",
-    //   "command": "dotnet",
-    //   "args": [
-    //       "run",
-    //       "--project",
-    //       "C:\\AI\\mcp\\DadJokeMCP\\DadJokeMCPSSE\\DadJokeMCPSSE.csproj"
-    //   ]
-    // },
-    // "dad-jokes-hosted": {
-    //   "type": "sse",
-    //   "url": "http://localhost:3001/mcp"
-    // },
+		// "dad-jokes-hosted-local": {
+		// 	"type": "sse",
+		// 	"url": "http://localhost:3001/mcp"
+		// }
+		// "dad-jokes-sse-local": {
+		//     "type": "sse",
+		//     "url": "http://localhost:3001/mcp",
+		//     "command": "dotnet",
+		//     "args": [
+		//         "run",
+		//         "--project",
+		//         "C:\\Lyle\\Dadabase\\dadabase.demo.lluppesms\\src\\mcp\\\\DadJokeMCPSSE\\DadJokeMCPSSE.csproj"
+		//     ]
+		// },
+		// "dad-jokes-stdio-local": {
+		// 	"type": "stdio",
+		// 	"command": "dotnet",
+		// 	"args": [
+		// 		"run",
+		// 		"--project",
+		// 		"C:\\Lyle\\Dadabase\\dadabase.demo.lluppesms\\src\\mcp\\DadJokeMCPStdIO\\DadJokeMCPStdIO.csproj"
+		// 	]
+		// },
+		// "dad-jokes-stdio-docker": {
+		//     "type": "stdio",
+		//     "command": "docker",
+		//     "args": [
+		//         "run",
+		//         "-i",
+		//         "--rm",
+		//         "dadjokemcp:local"
+		//     ]
+		// },
+		// "dad-jokes-sse-docker": {
+		//     "type": "sse",
+		//     "url": "http://localhost:3001/mcp",
+		//     "command": "docker",
+		//     "args": [
+		//         "run",
+		//         "--rm",
+		//         "-p",
+		//         "3001:3001",
+		//         "dadjokemcp-sse:local"
+		//     ]
+		// }
   }
 }
