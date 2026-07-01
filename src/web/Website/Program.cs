@@ -64,6 +64,7 @@ builder.Services.AddLogging(builder =>
 {
     builder.ClearProviders();
     builder.AddConsole();
+    builder.AddFilter("Microsoft.AspNetCore.Authorization", LogLevel.Warning);
 });
 
 builder.Services.AddSingleton(builder.Configuration);

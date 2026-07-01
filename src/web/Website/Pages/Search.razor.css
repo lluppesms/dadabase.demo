@@ -6,6 +6,11 @@
     color: var(--text-primary-light);
 }
 
+.search-container h1 {
+    font-size: clamp(2.2rem, 4.5vw, 3.6rem);
+    margin-bottom: 0.8rem;
+}
+
 body[data-bs-theme='dark'] .search-container,
 .theme-dark .search-container {
     color: var(--text-primary-dark);
@@ -21,20 +26,54 @@ body[data-bs-theme='dark'] .search-container,
 }
 
 .search-form {
-    background: white;
+    background: rgba(255, 255, 255, 0.7);
     padding: 2rem;
-    border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border-radius: 18px;
+    box-shadow: var(--shadow-md);
     margin: 2rem 0;
-    border: 1px solid rgba(102, 126, 234, 0.1);
+    border: 1px solid var(--surface-border-light);
     color: inherit;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
 }
 
 body[data-bs-theme='dark'] .search-form,
 .theme-dark .search-form {
     background: var(--card-bg-dark);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--surface-border-dark);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.42);
+}
+
+body[data-bs-theme='dark'] .search-form .mud-input-label,
+.theme-dark .search-form .mud-input-label {
+    color: #cfe2ff !important;
+}
+
+body[data-bs-theme='dark'] .search-form .mud-input-input,
+body[data-bs-theme='dark'] .search-form .mud-select-input,
+body[data-bs-theme='dark'] .search-form .mud-input-adornment,
+body[data-bs-theme='dark'] .search-form .mud-typography,
+.theme-dark .search-form .mud-input-input,
+.theme-dark .search-form .mud-select-input,
+.theme-dark .search-form .mud-input-adornment,
+.theme-dark .search-form .mud-typography {
+    color: #f2fbff !important;
+}
+
+body[data-bs-theme='dark'] .search-form .mud-input-outlined-border,
+.theme-dark .search-form .mud-input-outlined-border {
+    border-color: rgba(180, 216, 255, 0.75) !important;
+}
+
+body[data-bs-theme='dark'] .search-form .mud-input-control.mud-input-outlined .mud-input-outlined-border:hover,
+.theme-dark .search-form .mud-input-control.mud-input-outlined .mud-input-outlined-border:hover {
+    border-color: rgba(215, 247, 161, 0.95) !important;
+}
+
+body[data-bs-theme='dark'] .search-form .mud-input-control.mud-input-outlined.mud-input-focused .mud-input-outlined-border,
+.theme-dark .search-form .mud-input-control.mud-input-outlined.mud-input-focused .mud-input-outlined-border {
+    border-color: var(--highlight-color) !important;
+    border-width: 2px !important;
 }
 
 .search-form .mud-input-root,
@@ -59,20 +98,28 @@ body[data-bs-theme='dark'] .search-form,
 
 body[data-bs-theme='dark'] .search-form .mud-input-input::placeholder,
 .theme-dark .search-form .mud-input-input::placeholder {
-    color: var(--text-muted-dark);
+    color: #a9c5e6;
+    opacity: 1;
+}
+
+body[data-bs-theme='dark'] .search-form .mud-button-filled-primary,
+.theme-dark .search-form .mud-button-filled-primary {
+    background: linear-gradient(130deg, #44d680, #1da35a) !important;
+    color: #092014 !important;
+    font-weight: 700;
 }
 
 .search-input {
     border-radius: 12px;
-    border: 2px solid rgba(102, 126, 234, 0.2);
+    border: 1px solid var(--surface-border-light);
     padding: 0.75rem 1rem;
     font-size: 1rem;
     transition: all 0.3s ease;
 }
 
 .search-input:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 4px rgba(0, 183, 201, 0.12);
 }
 
 .search-results {
@@ -97,15 +144,16 @@ body[data-bs-theme='dark'] .search-form .mud-input-input::placeholder,
     min-width: 2rem;
     font-size: 1.1rem;
     font-weight: 700;
-    color: var(--primary-gradient-start, #667eea);
+    color: var(--accent-color-strong);
     padding-top: 1.5rem;
     text-align: right;
     opacity: 0.75;
+    font-family: 'IBM Plex Mono', 'Courier New', Courier, monospace;
 }
 
 body[data-bs-theme='dark'] .joke-seq-number,
 .theme-dark .joke-seq-number {
-    color: var(--primary-gradient-end, #764ba2);
+    color: var(--highlight-color);
 }
 
 .joke-item-content {
@@ -117,7 +165,8 @@ body[data-bs-theme='dark'] .joke-seq-number,
     font-size: 0.75rem;
     color: var(--text-muted-light, #6c757d);
     margin-bottom: 0.25rem;
-    font-style: italic;
+    font-style: normal;
+    font-family: 'IBM Plex Mono', 'Courier New', Courier, monospace;
 }
 
 body[data-bs-theme='dark'] .joke-modified-date,

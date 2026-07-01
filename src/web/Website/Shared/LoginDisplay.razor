@@ -1,9 +1,18 @@
-<AuthorizeView>
-    <Authorized>
-        Hello, @context.User.Identity?.Name!
-        <a href="MicrosoftIdentity/Account/SignOut">Log out</a>
-    </Authorized>
-    <NotAuthorized>
-        <a href="MicrosoftIdentity/Account/SignIn">Log in</a>
-    </NotAuthorized>
-</AuthorizeView>
+@inject IConfiguration Configuration
+
+@if (IsAuthEnabled)
+{
+    <AuthorizeView>
+        <Authorized>
+            Hello, @context.User.Identity?.Name!
+            <a href="/MicrosoftIdentity/Account/SignOut">Log out</a>
+        </Authorized>
+        <NotAuthorized>
+            <a href="/MicrosoftIdentity/Account/SignIn">Log in</a>
+        </NotAuthorized>
+    </AuthorizeView>
+}
+
+@code {
+    private bool IsAuthEnabled => !string.IsNullOrWhiteSpace(Configuration["AzureAD:TenantId"]);
+}
