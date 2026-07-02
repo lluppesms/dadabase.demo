@@ -9,6 +9,7 @@ param location = '#{RESOURCE_GROUP_LOCATION}#'
 param instanceNumber = '#{INSTANCE_NUMBER}#'
 param deploymentType = '#{DEPLOYMENT_TYPE}#'
 param appDataSource = 'SQL'
+param addRoleAssignments = toLower('#{ADD_ROLE_ASSIGNMENTS}#') == 'true'
 
 param adminUserList = '#{ADMIN_USER_LIST}#'
 param adInstance = '#{LOGIN_INSTANCEENDPOINT}#'

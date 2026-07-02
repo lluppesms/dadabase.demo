@@ -21,6 +21,8 @@ parameters:
   default: 'false'
 - name: deploymentType
   default: 'functionapp' # 'webapp' | 'containerapp' | 'functionapp' | 'all'
+- name: addRoleAssignments
+  default: true
 
 # ----------------------------------------------------------------------------------------------------
 stages:
@@ -61,6 +63,7 @@ stages:
         environmentName: ${{ environmentName }}
         parseBicepOutputs: ${{ parameters.parseBicepOutputs }}
         deploymentType: ${{ parameters.deploymentType }}
+        addRoleAssignments: ${{ parameters.addRoleAssignments }}
 
   - stage: DeployFunction${{ environmentName }}
     displayName: Deploy ${{ environmentName }} Function

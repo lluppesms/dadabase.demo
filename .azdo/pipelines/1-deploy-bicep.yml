@@ -46,6 +46,10 @@ parameters:
     displayName: Run GHAS Scan
     type: boolean
     default: false
+  - name: addRoleAssignments
+    displayName: Add Role Assignments
+    type: boolean
+    default: true
 
 # ----------------------------------------------------------------------------------------------------
 variables:
@@ -63,6 +67,7 @@ stages:
       runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
       runGHASScan: ${{ parameters.runGHASScan }}
       deploymentType: ${{ parameters.deploymentType }}
+      addRoleAssignments: ${{ parameters.addRoleAssignments }}
 
 - ${{ if eq(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
   - template: stages/bicep-only-stages.yml
@@ -72,3 +77,4 @@ stages:
       runMSDevSecOpsScan: ${{ parameters.runMSDevSecOpsScan }}
       runGHASScan: ${{ parameters.runGHASScan }}
       deploymentType: ${{ parameters.deploymentType }}
+      addRoleAssignments: ${{ parameters.addRoleAssignments }}

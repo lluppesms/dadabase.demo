@@ -17,6 +17,9 @@ parameters:
   default: false
 - name: deploymentType
   default: 'webapp' # 'webapp' | 'containerapp' | 'functionapp' | 'all'
+- name: addRoleAssignments
+  type: boolean
+  default: true
 
 # ----------------------------------------------------------------------------------------------------
 jobs:
@@ -33,6 +36,8 @@ jobs:
       value: ${{ upper(parameters.environmentName) }}
     - name: environmentNameLower
       value: ${{ lower(parameters.environmentName) }}
+    - name: ADD_ROLE_ASSIGNMENTS
+      value: ${{ parameters.addRoleAssignments }}
       
     # If you use Windows Build agents, use the \ delimiter, if Ubuntu Linux, use the / delimiter
     - name: templateFile
@@ -92,6 +97,7 @@ jobs:
         echo "parameterFileName=${{ parameters.parameterFileName }}"
         echo "parameterFile=$(parameterFile)"
         echo "deploymentMode=${{ parameters.deploymentMode }}"
+        echo "addRoleAssignments=$(ADD_ROLE_ASSIGNMENTS)"
         echo "resourceGroupName=$(resourceGroupName)"
         echo "ENVCODE=$(ENVCODE)"
         echo "appName=$(APP_NAME)"
