@@ -44,6 +44,10 @@ on:
         description: Run Smoke Tests
         default: false
         type: boolean
+      addRoleAssignments:
+        description: Add Role Assignments
+        type: boolean
+        default: true
       logLevel:
         description: Log level
         required: false
@@ -100,6 +104,7 @@ jobs:
       requestorName: ${{ github.actor }}
       createResourceGroup: ${{ inputs.createResourceGroup }}
       bicepDeploymentMode: ${{ inputs.bicepDeploymentMode }}
+      addRoleAssignments: ${{ inputs.addRoleAssignments }}
 
   # ------------------------------------------------------------------------------------------------------------------------
   build-container:

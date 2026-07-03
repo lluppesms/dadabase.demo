@@ -52,6 +52,11 @@ on:
         required: false
         type: string
         default: 'create'
+      addRoleAssignments:
+        description: Add Role Assignments
+        required: false
+        type: boolean
+        default: true
 
 # ------------------------------------------------------------------------------------------------------------------------
 jobs:
@@ -76,6 +81,7 @@ jobs:
       DEPLOYMENT_TYPE: ${{ inputs.deploymentType }}
       createResourceGroup: ${{ inputs.createResourceGroup }}
       requestorName: ${{ inputs.requestorName }}
+      ADD_ROLE_ASSIGNMENTS: ${{ inputs.addRoleAssignments }}
 
     # ------------------------------------------------------------------------------------------------------------------------
     # Outputs

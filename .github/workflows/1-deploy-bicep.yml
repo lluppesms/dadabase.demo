@@ -38,6 +38,10 @@ on:
         description: Run Security Scan
         type: boolean
         default: false
+      addRoleAssignments:
+        description: Add Role Assignments
+        type: boolean
+        default: true
 
 # ------------------------------------------------------------------------------------------------------------------------
 permissions:
@@ -77,3 +81,4 @@ jobs:
       requestorName: ${{ github.actor }}
       createResourceGroup: ${{ inputs.createResourceGroup }}
       bicepDeploymentMode: ${{ inputs.bicepDeploymentMode }}
+      addRoleAssignments: ${{ inputs.addRoleAssignments }}

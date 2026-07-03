@@ -49,6 +49,10 @@ parameters:
     displayName: Run GHAS Scan
     type: boolean
     default: false
+  - name: addRoleAssignments
+    displayName: Add Role Assignments
+    type: boolean
+    default: true
 
 # ----------------------------------------------------------------------------------------------------
 variables:
@@ -68,6 +72,7 @@ stages:
       runGHASScan: ${{ parameters.runGHASScan }}
       runUnitTests: ${{ parameters.runUnitTests }}
       deploymentType: 'webapp'
+      addRoleAssignments: ${{ parameters.addRoleAssignments }}
 
 - ${{ if eq(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
   - template: stages/bicep-and-webapp-stages.yml
@@ -80,3 +85,4 @@ stages:
       runGHASScan: ${{ parameters.runGHASScan }}
       runUnitTests: ${{ parameters.runUnitTests }}
       deploymentType: 'webapp'
+      addRoleAssignments: ${{ parameters.addRoleAssignments }}
