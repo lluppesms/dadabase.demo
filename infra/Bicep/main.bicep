@@ -53,6 +53,8 @@ param existingSqlServerName string = ''
 param existingSqlDatabaseName string = ''
 param existingSqlServerResourceGroupName string = ''
 
+param existingLogAnalyticsWorkspaceName string = ''
+
 param adInstance string = environment().authentication.loginEndpoint // 'https://login.microsoftonline.com/'
 param adDomain string = ''
 param adTenantId string = ''
@@ -96,6 +98,7 @@ var existingServicePlanRgNameEffective = empty(trim(servicePlanResourceGroupName
 var existingSqlServerNameEffective = empty(trim(existingSqlServerName)) || contains(existingSqlServerName, '#{') ? '' : trim(existingSqlServerName)
 var existingSqlDatabaseNameEffective = empty(trim(existingSqlDatabaseName)) || contains(existingSqlDatabaseName, '#{') ? '' : trim(existingSqlDatabaseName)
 var existingSqlServerRgNameEffective = empty(trim(existingSqlServerResourceGroupName)) || contains(existingSqlServerResourceGroupName, '#{') ? '' : trim(existingSqlServerResourceGroupName)
+var existingLogAnalyticsWorkspaceNameEffective = empty(trim(existingLogAnalyticsWorkspaceName)) || contains(existingLogAnalyticsWorkspaceName, '#{') ? '' : trim(existingLogAnalyticsWorkspaceName)
 var commonTags = {         
   LastDeployed: runDateTime
   Application: appName
@@ -130,6 +133,7 @@ module logAnalyticsWorkspaceModule './modules/monitor/loganalyticsworkspace.bice
   name: 'logAnalytics${deploymentSuffix}'
   params: {
     logAnalyticsWorkspaceName: resourceNames.outputs.logAnalyticsWorkspaceName
+    existingLogAnalyticsWorkspaceName: existingLogAnalyticsWorkspaceNameEffective
     location: location
     commonTags: commonTags
   }

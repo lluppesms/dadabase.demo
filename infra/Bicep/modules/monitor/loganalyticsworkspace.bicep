@@ -1,16 +1,22 @@
 // --------------------------------------------------------------------------------
-// Creates a Log Analytics Workspace
+// Creates or references a Log Analytics Workspace
 // --------------------------------------------------------------------------------
 param logAnalyticsWorkspaceName string = 'myLogAnalyticsWorkspaceName'
+param existingLogAnalyticsWorkspaceName string = ''
 param location string = resourceGroup().location
 param commonTags object = {}
 
 // --------------------------------------------------------------------------------
 var templateTag = { TemplateFile: '~loganalytics.bicep' }
 var tags = union(commonTags, templateTag)
+var useExisting = !empty(existingLogAnalyticsWorkspaceName)
 
 // --------------------------------------------------------------------------------
-resource logWorkspaceResource 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
+resource existingLogWorkspace 'Microsoft.OperationalInsights/workspaces@2021-06-01' existing = if (useExisting) {
+  name: existingLogAnalyticsWorkspaceName
+}
+
+resource newLogWorkspaceResource 'Microsoft.OperationalInsights/workspaces@2021-06-01' = if (!useExisting) {
   name: logAnalyticsWorkspaceName
   location: location
   tags: tags
@@ -34,5 +40,5 @@ resource logWorkspaceResource 'Microsoft.OperationalInsights/workspaces@2021-06-
 }
 
 // --------------------------------------------------------------------------------
-output id string = logWorkspaceResource.id
-output name string = logWorkspaceResource.name
+output id string = useExisting ? existingLogWorkspace.id : newLogWorkspaceResource!.id
+output name string = useExisting ? existingLogWorkspace.name : newLogWorkspaceResource!.name
