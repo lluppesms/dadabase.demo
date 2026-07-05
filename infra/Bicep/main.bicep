@@ -4,7 +4,7 @@
 // To deploy this Bicep manually:
 // 	 az login
 //   az account set --subscription <subscriptionId>
-//   az deployment group create -n "manual-$(Get-Date -Format 'yyyyMMdd-HHmmss')" --resource-group rg_dadabase_web_full --template-file 'main.bicep' --parameters appName=xxx-dad-full environmentCode=dev adminUserId=xxxxxxxx-xxxx-xxxx
+//   az deployment group create -n "manual-$(Get-Date -Format 'yyyyMMdd-HHmmss')" --resource-group rg_dadabase_test --template-file 'main.bicep' --parameters appName=xxx-dad-test environmentCode=test keyVaultOwnerUserId=xxxxxxxx-xxxx-xxxx
 // --------------------------------------------------------------------------------
 param appName string = ''
 param environmentCode string = 'azd'
@@ -52,8 +52,8 @@ param sqlAdminPassword string = ''
 param existingSqlServerName string = ''
 param existingSqlDatabaseName string = ''
 param existingSqlServerResourceGroupName string = ''
-
 param existingLogAnalyticsWorkspaceName string = ''
+param existingLogAnalyticsWorkspaceResourceGroupName string = ''
 
 param adInstance string = environment().authentication.loginEndpoint // 'https://login.microsoftonline.com/'
 param adDomain string = ''
@@ -102,9 +102,10 @@ var existingSqlServerNameEffective = empty(trim(existingSqlServerName)) || conta
 var existingSqlDatabaseNameEffective = empty(trim(existingSqlDatabaseName)) || contains(existingSqlDatabaseName, '#{') ? '' : trim(existingSqlDatabaseName)
 var existingSqlServerRgNameEffective = empty(trim(existingSqlServerResourceGroupName)) || contains(existingSqlServerResourceGroupName, '#{') ? '' : trim(existingSqlServerResourceGroupName)
 var existingLogAnalyticsWorkspaceNameEffective = empty(trim(existingLogAnalyticsWorkspaceName)) || contains(existingLogAnalyticsWorkspaceName, '#{') ? '' : trim(existingLogAnalyticsWorkspaceName)
+var existingLogAnalyticsWorkspaceRgNameEffective = empty(trim(existingLogAnalyticsWorkspaceResourceGroupName)) || contains(existingLogAnalyticsWorkspaceResourceGroupName, '#{') ? '' : trim(existingLogAnalyticsWorkspaceResourceGroupName)
 var effectiveManagedIdentityId = createUserAssignedIdentity ? identity!.outputs.managedIdentityId : ''
 var effectiveManagedIdentityPrincipalId = createUserAssignedIdentity ? identity!.outputs.managedIdentityPrincipalId : ''
-var commonTags = {         
+var commonTags = {
   LastDeployed: runDateTime
   Application: appName
   Environment: environmentCode
@@ -133,12 +134,14 @@ module resourceNames 'resourcenames.bicep' = {
     instanceNumber: instanceNumber
   }
 }
+
 // --------------------------------------------------------------------------------
 module logAnalyticsWorkspaceModule './modules/monitor/loganalyticsworkspace.bicep' = {
   name: 'logAnalytics${deploymentSuffix}'
   params: {
     logAnalyticsWorkspaceName: resourceNames.outputs.logAnalyticsWorkspaceName
     existingLogAnalyticsWorkspaceName: existingLogAnalyticsWorkspaceNameEffective
+    existingLogAnalyticsWorkspaceResourceGroupName: existingLogAnalyticsWorkspaceRgNameEffective
     location: location
     commonTags: commonTags
   }
@@ -152,7 +155,7 @@ module storageModule './modules/storage/storageaccount.bicep' = {
     storageAccountName: resourceNames.outputs.storageAccountName
     location: location
     commonTags: commonTags
-    containerNames: ['input', 'output', 'joke-images']
+    containerNames: ['input', 'output', 'backup-data', 'joke-images']
   }
 }
 
@@ -456,4 +459,4 @@ output WEB_HOST_NAME string = deployWebAppEffective ? webSiteModule!.outputs.hos
 output WEB_URL string = deployWebAppEffective ? 'https://${webSiteModule!.outputs.hostName}' : (deployContainerAppEffective ? containerAppModule!.outputs.url : '')
 output CONTAINER_REGISTRY_NAME string = deployContainerAppEffective ? containerRegistryModule!.outputs.name : ''
 output CONTAINER_REGISTRY_LOGIN_SERVER string = deployContainerAppEffective ? containerRegistryModule!.outputs.loginServer : ''
-//output FUNCTION_HOST_NAME string = functionModule.outputs.hostname
+

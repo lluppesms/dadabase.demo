@@ -56,6 +56,12 @@ public partial class JokeEditor : ComponentBase
     // MudDataGrid sorting
     private Func<Joke, object> _sortByJokeText = x => x.JokeTxt;
 
+    private static bool MatchesSearchText(Joke joke, string searchText)
+    {
+        return (joke.JokeTxt ?? string.Empty).Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            || (joke.Attribution ?? string.Empty).Contains(searchText, StringComparison.OrdinalIgnoreCase);
+    }
+
     /// <summary>
     /// Convert UTC DateTime to user's local time
     /// </summary>
@@ -126,7 +132,7 @@ public partial class JokeEditor : ComponentBase
         // Filter by search text
         if (!string.IsNullOrWhiteSpace(searchText))
         {
-            query = query.Where(j => j.JokeTxt?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false);
+            query = query.Where(j => MatchesSearchText(j, searchText));
         }
 
         // Filter by category

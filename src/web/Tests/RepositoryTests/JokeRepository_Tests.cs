@@ -34,6 +34,15 @@ public class Joke_Repository_Tests : BaseTest
         Assert.True(Jokes.Count >= 0, "Found no Jokes!");
     }
 
+    [Fact]
+    public void Repo_Joke_SearchJokes_SearchesAttribution()
+    {
+        var jokes = repo.SearchJokes("Snapple bottle cap", string.Empty, testData.UserName).ToList();
+
+        Assert.NotEmpty(jokes);
+        Assert.All(jokes, joke => Assert.Contains("Snapple bottle cap", joke.Attribution ?? string.Empty, StringComparison.OrdinalIgnoreCase));
+    }
+
     //[Theory]
     //[InlineData("ADD")]
     //[InlineData("UPDATE")]

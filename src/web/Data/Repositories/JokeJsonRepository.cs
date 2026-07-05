@@ -62,6 +62,12 @@ public class JokeJsonRepository : IJokeRepository
         _jokeCategories = allCategories.Order().ToList();
     }
 
+    private static bool MatchesSearchText(Joke joke, string searchTxt)
+    {
+        return (joke.JokeTxt ?? string.Empty).Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase)
+            || (joke.Attribution ?? string.Empty).Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase);
+    }
+
     /// <summary>
     /// Gets a random joke from the in-memory collection.
     /// </summary>
@@ -118,7 +124,7 @@ public class JokeJsonRepository : IJokeRepository
                     if (string.IsNullOrEmpty(joke.Categories)) return false;
                     var jokeCategories = joke.Categories.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                     return jokeCategoryList!.Any(category => jokeCategories.Contains(category, StringComparer.OrdinalIgnoreCase))
-                        && (joke.JokeTxt ?? string.Empty).Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase);
+                        && MatchesSearchText(joke, searchTxt);
                 })
                 .ToList();
             return jokesByTermAndCategory.AsQueryable();
@@ -142,7 +148,7 @@ public class JokeJsonRepository : IJokeRepository
         if (string.IsNullOrEmpty(jokeCategoryTxt) && !string.IsNullOrEmpty(searchTxt))
         {
             var jokesByTerm = _jokes
-                .Where(joke => (joke.JokeTxt ?? string.Empty).Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase))
+                .Where(joke => MatchesSearchText(joke, searchTxt))
                 .ToList();
             return jokesByTerm.AsQueryable();
         }
