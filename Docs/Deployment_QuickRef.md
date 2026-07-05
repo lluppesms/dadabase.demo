@@ -91,6 +91,12 @@ Use these optional parameters in `infra/Bicep/main.bicepparam` when you want to 
 
 Leave these values blank to keep the existing create-new behavior. SQL reuse is enabled only when both `existingSqlServerName` and `existingSqlDatabaseName` are supplied. Log Analytics reuse is enabled when `existingLogAnalyticsWorkspaceName` is supplied.
 
+### Optional Deployment Control Parameters
+
+| Bicep parameter | CI/CD token | Default | Purpose |
+|---|---|---|---|
+| `createUserAssignedIdentity` | `CREATE_USER_ASSIGNED_IDENTITY` | `false` | When `true`, creates a dedicated user-assigned managed identity shared across resources. When `false` (default), each resource uses its own system-assigned identity for Key Vault, storage, and database access. |
+
 ## Environment Variables
 
 Both deployment types require these environment variables:

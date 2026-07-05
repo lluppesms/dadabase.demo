@@ -102,7 +102,8 @@ az pipelines variable-group create \
       EXISTING_SQLSERVER_NAME='' \
       EXISTING_SQLDATABASE_NAME='' \
       EXISTING_SQLSERVER_RESOURCE_GROUP_NAME='' \
-      EXISTING_LOGANALYTICSWORKSPACE=''
+      EXISTING_LOGANALYTICSWORKSPACE='' \
+      CREATE_USER_ASSIGNED_IDENTITY='false'
 ```
 
-Leave the `EXISTING_*` variables blank to keep creating new infrastructure. To reuse existing Azure SQL resources, set both `EXISTING_SQLSERVER_NAME` and `EXISTING_SQLDATABASE_NAME`. To reuse an existing Log Analytics Workspace, set `EXISTING_LOGANALYTICSWORKSPACE` to its name.
+Leave the `EXISTING_*` variables blank to keep creating new infrastructure. To reuse existing Azure SQL resources, set both `EXISTING_SQLSERVER_NAME` and `EXISTING_SQLDATABASE_NAME`. To reuse an existing Log Analytics Workspace, set `EXISTING_LOGANALYTICSWORKSPACE` to its name. Set `CREATE_USER_ASSIGNED_IDENTITY` to `'true'` to provision a separate user-assigned managed identity; leave it `'false'` (default) to use each resource's own system-assigned identity.

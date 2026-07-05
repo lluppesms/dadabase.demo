@@ -6,8 +6,8 @@ param location string = resourceGroup().location
 param appInsightsLocation string = resourceGroup().location
 param environmentCode string = 'dev'
 param commonTags object = {}
-param managedIdentityId string
-param managedIdentityPrincipalId string
+param managedIdentityId string = ''
+param managedIdentityPrincipalId string = ''
 
 @description('The workspace to store audit logs.')
 param workspaceId string = ''
@@ -64,10 +64,12 @@ resource webSiteResource 'Microsoft.Web/sites@2024-11-01' = {
   name: webSiteName
   location: location
   kind: 'app'
-  identity: {
+  identity: any(empty(managedIdentityId) ? {
+    type: 'SystemAssigned'
+  } : {
     type: 'SystemAssigned, UserAssigned'
     userAssignedIdentities: { '${managedIdentityId}': {} }
-  }
+  })
   tags: webSiteTags
   properties: {
     serverFarmId: appServiceResource.id

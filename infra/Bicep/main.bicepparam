@@ -10,6 +10,7 @@ param instanceNumber = '#{INSTANCE_NUMBER}#'
 param deploymentType = '#{DEPLOYMENT_TYPE}#'
 param appDataSource = 'SQL'
 param addRoleAssignments = trim(toLower('#{ADD_ROLE_ASSIGNMENTS}#')) == 'true'
+param createUserAssignedIdentity = trim(toLower('#{CREATE_USER_ASSIGNED_IDENTITY}#')) == 'true'
 
 param adminUserList = '#{ADMIN_USER_LIST}#'
 param adInstance = '#{LOGIN_INSTANCEENDPOINT}#'
