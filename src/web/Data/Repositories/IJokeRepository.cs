@@ -175,6 +175,49 @@ public interface IJokeRepository
     bool DeleteJoke(int jokeId, string requestingUserName = "ANON");
 
     /// <summary>
+    /// Submits or updates a star rating (1–5) for a joke from a specific user key.
+    /// If a rating already exists for the (jokeId, ratingUserKey) pair it is updated;
+    /// otherwise a new row is inserted.  The parent Joke's aggregated Rating and
+    /// VoteCount are recomputed after the upsert.
+    /// </summary>
+    /// <param name="jokeId">The identifier of the joke being rated.</param>
+    /// <param name="userRating">The star rating value (1–5 inclusive).</param>
+    /// <param name="ratingUserKey">
+    /// Opaque key identifying the rater.
+    /// Authenticated users: their identity claim value.
+    /// Anonymous users: "ANON_IP_" + SHA-256(clientIP + salt).
+    /// </param>
+    /// <param name="requestingUserName">Display name stored in the audit column. Defaults to "ANON".</param>
+    /// <returns>
+    /// A tuple containing:
+    /// <list type="bullet">
+    ///   <item><c>Success</c> – whether the operation succeeded.</item>
+    ///   <item><c>UserRating</c> – the persisted star value.</item>
+    ///   <item><c>AverageRating</c> – updated aggregate average.</item>
+    ///   <item><c>VoteCount</c> – updated total vote count.</item>
+    ///   <item><c>WasInsert</c> – true if a new row was created, false if an existing row was updated.</item>
+    /// </list>
+    /// </returns>
+    (bool Success, int UserRating, decimal AverageRating, int VoteCount, bool WasInsert) SubmitOrUpdateRating(
+        int jokeId, int userRating, string ratingUserKey, string requestingUserName = "ANON");
+
+    /// <summary>
+    /// Returns the current star rating that a specific user key has given to a joke,
+    /// or <see langword="null"/> if the user has not yet rated that joke.
+    /// </summary>
+    /// <param name="jokeId">The identifier of the joke.</param>
+    /// <param name="ratingUserKey">The opaque key identifying the rater.</param>
+    /// <returns>The persisted rating (1–5), or <see langword="null"/> if not rated.</returns>
+    int? GetUserRatingForJoke(int jokeId, string ratingUserKey);
+
+    /// <summary>
+    /// Returns the current aggregate rating summary for a joke.
+    /// </summary>
+    /// <param name="jokeId">The identifier of the joke.</param>
+    /// <returns>A tuple of (AverageRating, VoteCount).</returns>
+    (decimal AverageRating, int VoteCount) GetRatingSummaryForJoke(int jokeId);
+
+    /// <summary>
     /// Disposal
     /// </summary>
     void Dispose();

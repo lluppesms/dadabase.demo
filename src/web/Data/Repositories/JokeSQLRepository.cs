@@ -1070,6 +1070,78 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     }
 
     /// <summary>
+    /// Submits or updates a star rating for a joke using the usp_Joke_Rate stored procedure.
+    /// </summary>
+    public (bool Success, int UserRating, decimal AverageRating, int VoteCount, bool WasInsert) SubmitOrUpdateRating(
+        int jokeId, int userRating, string ratingUserKey, string requestingUserName = "ANON")
+    {
+        try
+        {
+            var results = _context.JokeRatingResults
+                .FromSqlInterpolated(
+                    $"EXEC [Dad].[usp_Joke_Rate] @jokeId = {jokeId}, @userRating = {userRating}, @ratingUserKey = {ratingUserKey}, @userName = {requestingUserName}")
+                .AsEnumerable()
+                .FirstOrDefault();
+
+            if (results == null)
+            {
+                return (false, userRating, 0m, 0, false);
+            }
+
+            return (true, results.UserRating, results.AverageRating, results.VoteCount, results.WasInsert);
+        }
+        catch (Exception ex)
+        {
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error submitting rating for joke {jokeId}: {msg}");
+            return (false, userRating, 0m, 0, false);
+        }
+    }
+
+    /// <summary>
+    /// Returns the current star rating that a specific user key has given to a joke.
+    /// </summary>
+    public int? GetUserRatingForJoke(int jokeId, string ratingUserKey)
+    {
+        try
+        {
+            return _context.JokeRatings
+                .Where(r => r.JokeId == jokeId && r.RatingUserKey == ratingUserKey)
+                .Select(r => (int?)r.UserRating)
+                .FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error fetching user rating for joke {jokeId}: {msg}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Returns the current aggregate rating summary for a joke.
+    /// </summary>
+    public (decimal AverageRating, int VoteCount) GetRatingSummaryForJoke(int jokeId)
+    {
+        try
+        {
+            var joke = _context.Jokes.AsNoTracking().FirstOrDefault(j => j.JokeId == jokeId);
+            if (joke == null)
+            {
+                return (0m, 0);
+            }
+
+            return (joke.Rating ?? 0m, joke.VoteCount ?? 0);
+        }
+        catch (Exception ex)
+        {
+            var msg = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Error fetching rating summary for joke {jokeId}: {msg}");
+            return (0m, 0);
+        }
+    }
+
+    /// <summary>
     /// Disposes the repository and its underlying resources.
     /// </summary>
     public void Dispose()

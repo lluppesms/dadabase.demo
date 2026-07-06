@@ -1,11 +1,17 @@
 -- =============================================
 -- Table: JokeRating
--- Description: Stores user ratings for jokes
+-- Description: Stores user ratings for jokes.
+--              RatingUserKey identifies the rater:
+--              - Authenticated users: their identity claim value
+--              - Anonymous users:     ANON_IP_<SHA256 of IP+salt>
+--              The unique index on (JokeId, RatingUserKey) ensures
+--              one rating per user per joke; upsert via usp_Joke_Rate.
 -- =============================================
 CREATE TABLE [Dad].[JokeRating](
 	[JokeRatingId] [int] IDENTITY(1,1) NOT NULL,
 	[JokeId] [int] NOT NULL,
 	[UserRating] [int] NOT NULL,
+	[RatingUserKey] [nvarchar](255) NOT NULL,
 	[CreateDateTime] [datetime] NOT NULL,
 	[CreateUserName] [nvarchar](255) NOT NULL,
  CONSTRAINT [PK_JokeRating] PRIMARY KEY CLUSTERED ([JokeRatingId] ASC)
@@ -16,6 +22,8 @@ GO
 ALTER TABLE [Dad].[JokeRating] ADD CONSTRAINT [DF_JokeRating_CreateDateTime] DEFAULT (getdate()) FOR [CreateDateTime]
 GO
 ALTER TABLE [Dad].[JokeRating] ADD CONSTRAINT [DF_JokeRating_CreateUserName] DEFAULT (N'UNKNOWN') FOR [CreateUserName]
+GO
+ALTER TABLE [Dad].[JokeRating] ADD CONSTRAINT [DF_JokeRating_RatingUserKey] DEFAULT (N'UNKNOWN') FOR [RatingUserKey]
 GO
 
 -- Check constraints
@@ -29,4 +37,9 @@ REFERENCES [Dad].[Joke] ([JokeId])
 	ON DELETE CASCADE
 GO
 ALTER TABLE [Dad].[JokeRating] CHECK CONSTRAINT [FK_JokeRating_Joke]
+GO
+
+-- Unique index: one rating per user key per joke (enables upsert semantics)
+CREATE UNIQUE NONCLUSTERED INDEX [IX_JokeRating_JokeId_RatingUserKey]
+    ON [Dad].[JokeRating] ([JokeId] ASC, [RatingUserKey] ASC)
 GO

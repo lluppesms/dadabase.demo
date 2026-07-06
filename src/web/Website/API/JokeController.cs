@@ -10,6 +10,7 @@ namespace DadABase.API;
 
 using DadABase.Data.Models;
 using DadABase.Data.Repositories;
+using DadABase.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
 
@@ -30,18 +31,25 @@ public class JokeController : BaseAPIController
     public IJokeRepository JokeRepo { get; private set; }
 
     /// <summary>
+    /// Rating user key resolver
+    /// </summary>
+    private readonly RatingUserKeyResolver _ratingKeyResolver;
+
+    /// <summary>
     /// Joke API Controller (for unit tests)
     /// </summary>
     /// <param name="settings">Settings</param>
     /// <param name="contextAccessor">Context</param>
     /// <param name="jokeRepo">Repository</param>
-    public JokeController(AppSettings settings, IHttpContextAccessor contextAccessor, IJokeRepository jokeRepo)
+    /// <param name="ratingKeyResolver">Rating user key resolver</param>
+    public JokeController(AppSettings settings, IHttpContextAccessor contextAccessor, IJokeRepository jokeRepo, RatingUserKeyResolver ratingKeyResolver)
     {
         SetupAutoMapper();
         context = contextAccessor;
         AppSettingsValues = settings;
         AppSettingsValues.UserName = GetUserName();
         JokeRepo = jokeRepo;
+        _ratingKeyResolver = ratingKeyResolver;
     }
     #endregion
 
@@ -130,5 +138,82 @@ public class JokeController : BaseAPIController
         var jokes = JokeRepo.SearchJokes(searchTxt, categoryTxt, userName);
         var simplifiedJokes = iMapper.Map<IEnumerable<Joke>, List<JokeBasic>>(jokes);
         return simplifiedJokes;
+    }
+
+    /// <summary>
+    /// Submit or update a star rating (1–5) for a joke.
+    /// Authenticated users are identified by their identity claim.
+    /// Anonymous users are identified by a hash of their client IP.
+    /// </summary>
+    /// <param name="request">Rating request containing JokeId and UserRating.</param>
+    /// <returns>Updated rating details.</returns>
+    [HttpPost]
+    [Route("rate")]
+    [AllowAnonymous]
+    public IActionResult Rate([FromBody] JokeRateRequest request)
+    {
+        if (request == null || request.JokeId <= 0 || request.UserRating < 1 || request.UserRating > 5)
+        {
+            return BadRequest(new { error = "JokeId must be positive and UserRating must be 1–5." });
+        }
+
+        var userName = GetUserName();
+        var ratingKey = _ratingKeyResolver.Resolve(context?.HttpContext);
+
+        var (success, userRating, averageRating, voteCount, wasInsert) =
+            JokeRepo.SubmitOrUpdateRating(request.JokeId, request.UserRating, ratingKey, userName);
+
+        if (!success)
+        {
+            return StatusCode(500, new { error = "Rating could not be saved." });
+        }
+
+        return Ok(new
+        {
+            jokeId = request.JokeId,
+            userRating,
+            averageRating,
+            voteCount,
+            wasInsert
+        });
+    }
+
+    /// <summary>
+    /// Returns the aggregate rating summary (average and vote count) for a joke.
+    /// </summary>
+    /// <param name="id">The joke identifier.</param>
+    /// <returns>Average rating and vote count.</returns>
+    [HttpGet]
+    [Route("{id}/rating/summary")]
+    [AllowAnonymous]
+    public IActionResult RatingSummary(int id)
+    {
+        if (id <= 0)
+        {
+            return BadRequest(new { error = "Invalid joke id." });
+        }
+
+        var (averageRating, voteCount) = JokeRepo.GetRatingSummaryForJoke(id);
+        return Ok(new { jokeId = id, averageRating, voteCount });
+    }
+
+    /// <summary>
+    /// Returns the current user's rating for a specific joke, or null if not yet rated.
+    /// </summary>
+    /// <param name="id">The joke identifier.</param>
+    /// <returns>The current user's rating (1–5) or null.</returns>
+    [HttpGet]
+    [Route("{id}/rating/current")]
+    [AllowAnonymous]
+    public IActionResult UserRating(int id)
+    {
+        if (id <= 0)
+        {
+            return BadRequest(new { error = "Invalid joke id." });
+        }
+
+        var ratingKey = _ratingKeyResolver.Resolve(context?.HttpContext);
+        var rating = JokeRepo.GetUserRatingForJoke(id, ratingKey);
+        return Ok(new { jokeId = id, userRating = rating });
     }
 }

@@ -113,6 +113,7 @@ builder.Services.AddSingleton<IJokeImageQueue, JokeImageQueue>();
 builder.Services.AddHostedService<JokeImageQueueService>();
 builder.Services.AddScoped<IBuildInfoService, BuildInfoService>();
 builder.Services.AddScoped<DadABase.Web.Repositories.ThemeService>();
+builder.Services.AddScoped<DadABase.Web.Services.RatingUserKeyResolver>();
 
 // ----- Configure Authentication ---------------------------------------------------------------------
 var authSettings = builder.Configuration.GetSection("AzureAD");

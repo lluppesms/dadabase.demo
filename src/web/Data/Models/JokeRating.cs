@@ -65,6 +65,18 @@ public class JokeRating
     public DateTime CreateDateTime { get; set; }
 
     /// <summary>
+    /// Gets or sets the opaque rating user key that uniquely identifies the rater.
+    /// Authenticated users: their identity claim value.
+    /// Anonymous users: "ANON_IP_" followed by a SHA-256 hash of the client IP and an app salt.
+    /// Together with <see cref="JokeId"/>, this forms the unique constraint that enforces
+    /// one rating per user per joke.
+    /// </summary>
+    /// <value>A non-empty string identifying the rater; never a raw IP address.</value>
+    [Display(Name = "Rating User Key", Description = "Opaque key identifying the rater.", Prompt = "Enter Rating User Key")]
+    [StringLength(255)]
+    public string RatingUserKey { get; set; } = "UNKNOWN";
+
+    /// <summary>
     /// Gets or sets the name of the user who created the record.
     /// </summary>
     /// <value>
@@ -82,6 +94,7 @@ public class JokeRating
         JokeRatingId = 0;
         JokeId = 0;
         UserRating = 0;
+        RatingUserKey = "UNKNOWN";
         CreateUserName = "UNKNOWN";
         CreateDateTime = DateTime.UtcNow;
     }
@@ -95,6 +108,7 @@ public class JokeRating
         JokeRatingId = 0;
         JokeId = jokeId;
         UserRating = 0;
+        RatingUserKey = "UNKNOWN";
         CreateUserName = "UNKNOWN";
         CreateDateTime = DateTime.UtcNow;
     }
@@ -109,7 +123,24 @@ public class JokeRating
         JokeRatingId = 0;
         JokeId = jokeId;
         UserRating = userRating;
+        RatingUserKey = "UNKNOWN";
         CreateUserName = "UNKNOWN";
+        CreateDateTime = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="JokeRating"/> class with a rating user key.
+    /// </summary>
+    /// <param name="jokeId">The associated joke identifier.</param>
+    /// <param name="userRating">The user rating value.</param>
+    /// <param name="ratingUserKey">The opaque key identifying the rater.</param>
+    public JokeRating(int jokeId, int userRating, string ratingUserKey)
+    {
+        JokeRatingId = 0;
+        JokeId = jokeId;
+        UserRating = userRating;
+        RatingUserKey = ratingUserKey ?? "UNKNOWN";
+        CreateUserName = ratingUserKey ?? "UNKNOWN";
         CreateDateTime = DateTime.UtcNow;
     }
 }

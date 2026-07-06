@@ -45,6 +45,11 @@ public class DadABaseDbContext(DbContextOptions<DadABaseDbContext> options) : Db
     public DbSet<JokeJokeCategory>? JokeJokeCategories { get; set; }
 
     /// <summary>
+    /// Gets or sets the keyless result type for stored procedure usp_Joke_Rate output.
+    /// </summary>
+    public DbSet<JokeRatingResult>? JokeRatingResults { get; set; }
+
+    /// <summary>
     /// Configures the schema needed for the DadABase context.
     /// </summary>
     /// <param name="modelBuilder">The builder being used to construct the model for this context.</param>
@@ -60,5 +65,8 @@ public class DadABaseDbContext(DbContextOptions<DadABaseDbContext> options) : Db
         // Configure composite key for JokeJokeCategory
         modelBuilder.Entity<JokeJokeCategory>()
             .HasKey(jjc => new { jjc.JokeId, jjc.JokeCategoryId });
+
+        // Register keyless entity for stored procedure result
+        modelBuilder.Entity<JokeRatingResult>().HasNoKey();
     }
 }

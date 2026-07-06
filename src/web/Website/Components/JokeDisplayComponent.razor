@@ -14,32 +14,16 @@
                 @((MarkupString)myFullText)
             </div>
         </div>
+        @if (!string.IsNullOrEmpty(myFullText))
+        {
+            <div class="joke-rating">
+                <MudRating SelectedValue="@displayRatingValue" MaxValue="5" Color="Color.Primary"
+                           SelectedValueChanged="OnRatingChanged" />
+                @if (ratingSubmitting)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Saving...</MudText>
+                }
+            </div>
+        }
     </div>
-        @*
-        <AuthorizeView Roles="Admin">
-            @if (!showJokeEditor)
-            {
-                <button @onclick="ShowJokeEditor" class="EditButton"><i class="fa fa-edit" /></button>
-            }
-        </AuthorizeView>
-        <div class="JokeText">
-             @if (showJokeEditor)
-            {
-                <JokeEditComponent JokeToEdit="@editJoke" OnSave="JokeEditorSave" OnCancel="JokeEditorCancel" />
-            }
-            else {
-                @((MarkupString)myFullText)
-            }
-            <br />
-        </div>
-   </div>
-        *@
-   @*
-    @if (supportsRatings && !string.IsNullOrEmpty(myFullText))
-    {
-        <div>
-            <MudRating @bind-SelectedValue="@displayRatingValue" MaxValue="5" Color="Color.Primary" />
-        </div>
-    }
-    *@
 }

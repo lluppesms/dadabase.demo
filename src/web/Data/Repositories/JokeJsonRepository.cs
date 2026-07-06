@@ -28,6 +28,12 @@ public class JokeJsonRepository : IJokeRepository
     private readonly List<string> _jokeCategories;
 
     /// <summary>
+    /// In-memory store for joke ratings keyed by (JokeId, RatingUserKey).
+    /// Provides the same upsert-with-aggregate behaviour as the SQL path.
+    /// </summary>
+    private readonly Dictionary<(int JokeId, string RatingUserKey), int> _ratings = new();
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="JokeJsonRepository"/> class.
     /// </summary>
     /// <param name="jsonFilePath">The path to the JSON file that contains the jokes payload.</param>
@@ -519,5 +525,67 @@ public class JokeJsonRepository : IJokeRepository
     public void Dispose()
     {
         // No resources to dispose for JSON-based repository
+    }
+
+    /// <summary>
+    /// Submits or updates a star rating (1–5) for a joke using an in-memory store.
+    /// Behaviour mirrors the SQL implementation: one rating per (JokeId, RatingUserKey);
+    /// aggregate Rating and VoteCount on the parent <see cref="Joke"/> are recomputed.
+    /// </summary>
+    public (bool Success, int UserRating, decimal AverageRating, int VoteCount, bool WasInsert) SubmitOrUpdateRating(
+        int jokeId, int userRating, string ratingUserKey, string requestingUserName = "ANON")
+    {
+        if (userRating < 1 || userRating > 5)
+        {
+            return (false, userRating, 0m, 0, false);
+        }
+
+        var joke = _jokes.FirstOrDefault(j => j.JokeId == jokeId);
+        if (joke == null)
+        {
+            return (false, userRating, 0m, 0, false);
+        }
+
+        var key = (jokeId, ratingUserKey ?? "UNKNOWN");
+        var wasInsert = !_ratings.ContainsKey(key);
+        _ratings[key] = userRating;
+
+        // Recompute aggregates
+        var jokeRatings = _ratings
+            .Where(kv => kv.Key.JokeId == jokeId)
+            .Select(kv => kv.Value)
+            .ToList();
+
+        var avg = jokeRatings.Count > 0 ? (decimal)jokeRatings.Average() : 0m;
+        var count = jokeRatings.Count;
+
+        joke.Rating = avg;
+        joke.VoteCount = count;
+
+        return (true, userRating, avg, count, wasInsert);
+    }
+
+    /// <summary>
+    /// Returns the current star rating a specific user key has given to a joke,
+    /// or <see langword="null"/> if not yet rated.
+    /// </summary>
+    public int? GetUserRatingForJoke(int jokeId, string ratingUserKey)
+    {
+        var key = (jokeId, ratingUserKey ?? "UNKNOWN");
+        return _ratings.TryGetValue(key, out var rating) ? rating : null;
+    }
+
+    /// <summary>
+    /// Returns the current aggregate rating summary for a joke.
+    /// </summary>
+    public (decimal AverageRating, int VoteCount) GetRatingSummaryForJoke(int jokeId)
+    {
+        var joke = _jokes.FirstOrDefault(j => j.JokeId == jokeId);
+        if (joke == null)
+        {
+            return (0m, 0);
+        }
+
+        return (joke.Rating ?? 0m, joke.VoteCount ?? 0);
     }
 }

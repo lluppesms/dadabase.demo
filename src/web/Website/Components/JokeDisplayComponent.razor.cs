@@ -20,16 +20,15 @@ public partial class JokeDisplayComponent : ComponentBase
     public Joke myJoke { get; set; }
 
     [Inject] IJokeRepository JokeRepository { get; set; }
-    [Inject] HttpContextAccessor Context { get; set; }
+    [Inject] IHttpContextAccessor HttpContextAccessor { get; set; }
     [Inject] SweetAlertService SweetAlert { get; set; }
     [Inject] ISnackbar Snackbar { get; set; }
+    [Inject] DadABase.Web.Services.RatingUserKeyResolver RatingKeyResolver { get; set; }
 
     private string myJokeText = string.Empty;
     private string myFullText = string.Empty;
-    //private int displayRatingValue = 0;
-    //private bool supportsRatings = false;
-    // private bool showJokeEditor = false;
-    // private Joke editJoke = new Joke();
+    private int displayRatingValue = 0;
+    private bool ratingSubmitting = false;
 
     /// <summary>
     /// Recomputes the display text when parameter values change.
@@ -47,10 +46,7 @@ public partial class JokeDisplayComponent : ComponentBase
     {
         if (string.IsNullOrEmpty(joke.JokeTxt) || myJokeText == joke.JokeTxt) return;
 
-        //JokeEditorCancel();
-
-        // supportsRatings = joke.Rating != null;
-        // displayRatingValue = joke.Rating != null ? Convert.ToInt16(Math.Round((decimal)joke.Rating)) : 0;
+        displayRatingValue = joke.Rating != null ? Convert.ToInt32(Math.Round((decimal)joke.Rating)) : 0;
 
         myJokeText = System.Web.HttpUtility.HtmlEncode(joke.JokeTxt);
         myJokeText = myJokeText.Replace("\n", "<br/>");
@@ -81,42 +77,51 @@ public partial class JokeDisplayComponent : ComponentBase
         }
     }
 
-    // private async Task SubmitRating(MouseEventArgs e)
-    // {
-    //     var oldValue = myJoke.Rating != null ? Convert.ToInt16(Math.Round((decimal)myJoke.Rating)) : 0;
-    //     var newValue = displayRatingValue;
-    //     var newJokeRatingRecord = new JokeRating(myJoke.JokeId, displayRatingValue);
-    //     var userIdentity = Context.HttpContext.User;
-    //     var userName = userIdentity != null ? userIdentity.Identity.Name : "ANON";
-    //     var newAverageRatingValue = JokeRepository.AddRating(newJokeRatingRecord, userName);
-    //     displayRatingValue = Convert.ToInt16(Math.Round(newAverageRatingValue));
-    //     Snackbar.Add($"Your Rating: {newValue}, Average Rating: {newAverageRatingValue}", Severity.Info);
-    //     _ = await Task.FromResult(true);
-    // }
+    /// <summary>
+    /// Handles a new star rating selection from the MudRating control.
+    /// </summary>
+    /// <param name="newValue">The newly selected star value (1–5).</param>
+    private async Task OnRatingChanged(int newValue)
+    {
+        if (myJoke == null || newValue < 1 || newValue > 5 || ratingSubmitting)
+        {
+            return;
+        }
 
-    // private async Task ShowJokeEditor()
-    // {
-    //     showJokeEditor = !showJokeEditor;
-    //     editJoke = new Joke();
-    //     editJoke.JokeId = myJoke.JokeId;
-    //     editJoke.JokeTxt = myJoke.JokeTxt;
-    //     editJoke.JokeTxt = myJoke.JokeTxt;
-    //     Snackbar.Add($"Editor is not complete and changes will not be saved!", Severity.Warning);
-    //     _ = await Task.FromResult(true);
-    // }
-    // private async void JokeEditorSave()
-    // {
-    //     myJoke.JokeId = editJoke.JokeId;
-    //     myJoke.JokeTxt = editJoke.JokeTxt;
-    //     // TODO: put code here to update the database...
-    //     // HOWEVER... the current edit form blows away all the line breaks and other formatting so it's not ready for prime time...!
-    //     Snackbar.Add("This feature is not complete and the edits have NOT been saved!", Severity.Error);
-    //     showJokeEditor = !showJokeEditor;
-    // }
-    // private void JokeEditorCancel()
-    // {
-    //     editJoke.JokeId = 0;
-    //     editJoke.JokeTxt = string.Empty;
-    //     showJokeEditor = false;
-    // }
+        displayRatingValue = newValue;
+        ratingSubmitting = true;
+        StateHasChanged();
+
+        try
+        {
+            var ratingKey = RatingKeyResolver.Resolve(HttpContextAccessor?.HttpContext);
+            var userName = HttpContextAccessor?.HttpContext?.User?.Identity?.Name ?? "ANON";
+
+            var (success, _, averageRating, voteCount, wasInsert) =
+                JokeRepository.SubmitOrUpdateRating(myJoke.JokeId, newValue, ratingKey, userName);
+
+            if (success)
+            {
+                myJoke.Rating = averageRating;
+                myJoke.VoteCount = voteCount;
+                var action = wasInsert ? "Rating saved" : "Rating updated";
+                Snackbar.Add($"{action}: {newValue} ★  |  Average: {averageRating:F1} ({voteCount} votes)", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Could not save your rating. Please try again.", Severity.Error);
+            }
+        }
+        catch
+        {
+            Snackbar.Add("An error occurred while saving your rating.", Severity.Error);
+        }
+        finally
+        {
+            ratingSubmitting = false;
+            StateHasChanged();
+        }
+
+        await Task.CompletedTask;
+    }
 }
