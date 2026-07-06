@@ -16,8 +16,8 @@ param containerImage string
 param containerRegistryServer string
 
 @description('Managed Identity for pulling images from ACR.')
-param managedIdentityId string
-param managedIdentityPrincipalId string
+param managedIdentityId string = ''
+param managedIdentityPrincipalId string = ''
 
 @description('The workspace for diagnostic logs.')
 param workspaceId string = ''
@@ -83,12 +83,14 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: containerAppName
   location: location
   tags: tags
-  identity: {
+  identity: any(empty(managedIdentityId) ? {
+    type: 'SystemAssigned'
+  } : {
     type: 'SystemAssigned, UserAssigned'
     userAssignedIdentities: {
       '${managedIdentityId}': {}
     }
-  }
+  })
   properties: {
     managedEnvironmentId: containerAppsEnvironmentId
     configuration: {
@@ -108,7 +110,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       registries: [
         {
           server: containerRegistryServer
-          identity: managedIdentityId
+          identity: empty(managedIdentityId) ? 'system' : managedIdentityId
         }
       ]
     }

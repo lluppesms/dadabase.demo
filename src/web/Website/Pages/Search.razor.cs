@@ -26,6 +26,12 @@ public partial class Search : ComponentBase
     private const int RecentAdditionsCount = 100;
     private bool isRecentMode = false;
 
+    private static bool MatchesSearchTerm(Joke joke, string searchTerm)
+    {
+        return (joke.JokeTxt ?? string.Empty).Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+            || (joke.Attribution ?? string.Empty).Contains(searchTerm, StringComparison.OrdinalIgnoreCase);
+    }
+
     /// <summary>
     /// Initialization
     /// </summary>
@@ -73,7 +79,7 @@ public partial class Search : ComponentBase
             var query = JokeRepository.GetRecentAdditions(RecentAdditionsCount);
             if (!string.IsNullOrEmpty(SearchTerm))
             {
-                query = query.Where(j => j.JokeTxt != null && j.JokeTxt.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(j => MatchesSearchTerm(j, SearchTerm));
             }
             myJokes = query.ToList();
         }

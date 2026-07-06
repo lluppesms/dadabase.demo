@@ -6,8 +6,8 @@ param location string = resourceGroup().location
 param appInsightsLocation string = resourceGroup().location
 param environmentCode string = 'dev'
 param commonTags object = {}
-param managedIdentityId string
-param managedIdentityPrincipalId string
+param managedIdentityId string = ''
+param managedIdentityPrincipalId string = ''
 
 @description('The workspace to store audit logs.')
 param workspaceId string = ''
@@ -39,6 +39,7 @@ var mergedAppSettings = union(baseAppSettings, customAppSettings)
 // --------------------------------------------------------------------------------
 var linuxFxVersion = webAppKind == 'linux' ? 'DOTNETCORE|10.0' : '' // 	The runtime stack of web app
 var appInsightsName = toLower('${webSiteName}-insights')
+var useUserAssignedIdentity = !empty(managedIdentityId)
 
 // --------------------------------------------------------------------------------
 resource appInsightsResource 'Microsoft.Insights/components@2020-02-02' = {
@@ -64,9 +65,11 @@ resource webSiteResource 'Microsoft.Web/sites@2024-11-01' = {
   name: webSiteName
   location: location
   kind: 'app'
-  identity: {
+  identity: useUserAssignedIdentity ? {
     type: 'SystemAssigned, UserAssigned'
     userAssignedIdentities: { '${managedIdentityId}': {} }
+  } : {
+    type: 'SystemAssigned'
   }
   tags: webSiteTags
   properties: {

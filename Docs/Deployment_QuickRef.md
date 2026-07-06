@@ -87,8 +87,16 @@ Use these optional parameters in `infra/Bicep/main.bicepparam` when you want to 
 | `existingSqlServerName` | `EXISTING_SQLSERVER_NAME` | Reuse an existing Azure SQL logical server |
 | `existingSqlDatabaseName` | `EXISTING_SQLDATABASE_NAME` | Reuse an existing Azure SQL database on that server |
 | `existingSqlServerResourceGroupName` | `EXISTING_SQLSERVER_RESOURCE_GROUP_NAME` | Optional resource group for the existing SQL server; defaults to the current resource group when empty |
+| `existingLogAnalyticsWorkspaceName` | `EXISTING_LOGANALYTICSWORKSPACE` | Reuse an existing Log Analytics Workspace instead of creating a new one |
+| `existingLogAnalyticsWorkspaceResourceGroupName` | `EXISTING_LOG_ANALYTICS_WORKSPACE_RESOURCE_GROUP_NAME` | Optional resource group for the existing Log Analytics Workspace; defaults to the current resource group when empty |
 
-Leave these values blank to keep the existing create-new behavior. SQL reuse is enabled only when both `existingSqlServerName` and `existingSqlDatabaseName` are supplied.
+Leave these values blank to keep the existing create-new behavior. SQL reuse is enabled only when both `existingSqlServerName` and `existingSqlDatabaseName` are supplied. Log Analytics reuse is enabled when `existingLogAnalyticsWorkspaceName` is supplied and optionally `existingLogAnalyticsWorkspaceResourceGroupName` when it lives in a different resource group.
+
+### Optional Deployment Control Parameters
+
+| Bicep parameter | CI/CD token | Default | Purpose |
+|---|---|---|---|
+| `createUserAssignedIdentity` | `CREATE_USER_ASSIGNED_IDENTITY` | `false` | When `true`, creates a dedicated user-assigned managed identity shared across resources. When `false` (default), each resource uses its own system-assigned identity for Key Vault, storage, and database access. |
 
 ## Environment Variables
 

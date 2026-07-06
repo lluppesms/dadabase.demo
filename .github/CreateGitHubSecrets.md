@@ -57,6 +57,9 @@ gh variable set EXISTING_SERVICEPLAN_RESOURCE_GROUP_NAME -b ''
 gh variable set EXISTING_SQLSERVER_NAME -b ''
 gh variable set EXISTING_SQLDATABASE_NAME -b ''
 gh variable set EXISTING_SQLSERVER_RESOURCE_GROUP_NAME -b ''
+gh variable set EXISTING_LOGANALYTICSWORKSPACE -b ''
+gh variable set EXISTING_LOG_ANALYTICS_WORKSPACE_RESOURCE_GROUP_NAME -b ''
+gh variable set CREATE_USER_ASSIGNED_IDENTITY -b 'false'
 
 gh variable set SQLADMIN_LOGIN_USERID -b 'youruser@yourdomain.com'
 gh variable set SQLADMIN_LOGIN_USERSID -b 'yoursid'
@@ -65,7 +68,7 @@ gh variable set SQLADMIN_LOGIN_TENANTID -b 'yourtennant'
 gh variable set ADMIN_USER_LIST -b 'user1@domain.com,user2@domain.com'
 ```
 
-Leave the `EXISTING_*` variables blank to let Bicep create a new App Service Plan and Azure SQL resources. To reuse SQL resources, set both `EXISTING_SQLSERVER_NAME` and `EXISTING_SQLDATABASE_NAME`.
+Leave the `EXISTING_*` variables blank to let Bicep create new resources. To reuse SQL resources, set both `EXISTING_SQLSERVER_NAME` and `EXISTING_SQLDATABASE_NAME`. To reuse an existing Log Analytics Workspace, set `EXISTING_LOGANALYTICSWORKSPACE` to its name and optionally `EXISTING_LOG_ANALYTICS_WORKSPACE_RESOURCE_GROUP_NAME` if it is in a different resource group. Set `CREATE_USER_ASSIGNED_IDENTITY` to `'true'` to provision a separate user-assigned managed identity; leave it `'false'` (default) to use each resource's own system-assigned identity.
 
 ---
 

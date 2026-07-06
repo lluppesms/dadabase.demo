@@ -25,6 +25,6 @@ BEGIN
 	LEFT JOIN [Dad].[JokeJokeCategory] jjc ON j.JokeId = jjc.JokeId
 	LEFT JOIN [Dad].[JokeCategory] c ON jjc.JokeCategoryId = c.JokeCategoryId
 	WHERE c.JokeCategoryTxt LIKE @category
-	  AND j.JokeTxt LIKE @searchTxt
+	  AND (j.JokeTxt LIKE @searchTxt OR ISNULL(j.Attribution, '') LIKE @searchTxt)
 	ORDER BY j.JokeTxt
 END

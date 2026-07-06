@@ -94,9 +94,6 @@ resource sqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' = if (depl
       '${userAssignedIdentityResourceId}': {}
     }
   }
-  // identity: {
-  //   type: 'SystemAssigned'
-  // }
 }
 
 resource sqlDBResource 'Microsoft.Sql/servers/databases@2024-11-01-preview' = if (deployNewServer) {
