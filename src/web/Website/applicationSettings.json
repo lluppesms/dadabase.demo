@@ -13,6 +13,7 @@
     "AdminUserList": "",
     "ApiKey": "",
     "BlobStorageAccountName": "",
+    "BackupContainerName": "backup-data",
     "AzureOpenAI": {
       "Chat": {
         "Endpoint": "https://your-project-resource.cognitiveservices.azure.com/",

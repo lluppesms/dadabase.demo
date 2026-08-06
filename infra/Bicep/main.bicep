@@ -111,6 +111,8 @@ var commonTags = {
   Environment: environmentCode
 }
 var resourceGroupName = resourceGroup().name
+// Blob container that holds the weekly joke data backups created by the BackupExportJob WebJob
+var backupContainerName = 'backup-data'
 var useSqlDataSource = toUpper(appDataSource) == 'SQL' && !websiteOnly
 var webAppConnectionString = useSqlDataSource ? sqlDbModule!.outputs.identityConnectionString : ''
 var deploymentTypeNormalized = toLower(deploymentType)
@@ -155,7 +157,7 @@ module storageModule './modules/storage/storageaccount.bicep' = {
     storageAccountName: resourceNames.outputs.storageAccountName
     location: location
     commonTags: commonTags
-    containerNames: ['input', 'output', 'backup-data', 'joke-images']
+    containerNames: ['input', 'output', backupContainerName, 'joke-images']
   }
 }
 
@@ -334,6 +336,7 @@ module containerAppModule './modules/container/containerapp.bicep' = if (deployC
       AppSettings__AzureOpenAI__Image__DeploymentName: azureOpenAIImageDeploymentName
       AppSettings__AzureOpenAI__Image__ApiKey: azureOpenAIImageApiKey
       AppSettings__BlobStorageAccountName: storageModule.outputs.name
+      AppSettings__BackupContainerName: backupContainerName
       AzureAD__Instance: adInstance
       AzureAD__Domain: adDomain
       AzureAD__TenantId: adTenantId
@@ -396,6 +399,7 @@ module webSiteModule './modules/webapp/website.bicep' = if (deployWebAppEffectiv
       AppSettings__AzureOpenAI__Image__DeploymentName: azureOpenAIImageDeploymentName
       AppSettings__AzureOpenAI__Image__ApiKey: azureOpenAIImageApiKey
       AppSettings__BlobStorageAccountName: storageModule.outputs.name
+      AppSettings__BackupContainerName: backupContainerName
       AzureAD__Instance: adInstance
       AzureAD__Domain: adDomain
       AzureAD__TenantId: adTenantId
