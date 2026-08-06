@@ -4,6 +4,7 @@ using DadABase.Web.Models.Application;
 using DadABase.Data;
 using DadABase.Data.Models;
 using DadABase.Data.Repositories;
+using DadABase.Data.Services;
 using DadABase.Web.Repositories;
 using Microsoft.OpenApi;
 
@@ -84,6 +85,12 @@ if (useSqlDataSource && !string.IsNullOrWhiteSpace(connectionString))
     // Use SQL Server database for joke storage
     builder.Services.AddDbContext<DadABaseDbContext>(options => options.UseSqlServer(connectionString));
     builder.Services.AddScoped<IJokeRepository, JokeSQLRepository>();
+
+    // ----- Backup export services (shared with the scheduled BackupExportJob WebJob) -----
+    builder.Services.AddScoped<IBackupExportService, BackupExportService>();
+    builder.Services.AddScoped<IBackupMetadataRepository, BackupMetadataRepository>();
+    builder.Services.AddSingleton<IBackupStorageService, BackupStorageService>();
+    builder.Services.AddScoped<BackupExportJob>();
 
     // Add Identity DbContext (for authentication) - always uses database if connection string exists
     builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));

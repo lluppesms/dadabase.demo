@@ -76,4 +76,15 @@
     <ProjectReference Include="..\Data\DadABase.Data.csproj" />
   </ItemGroup>
 
+  <!-- Publish the triggered backup WebJob into App_Data/jobs/triggered/BackupExportJob so that it is
+       deployed with the website and scheduled by Azure App Service using its settings.job CRON entry. -->
+  <Target Name="PublishBackupWebJob" AfterTargets="Publish">
+    <PropertyGroup>
+      <BackupWebJobProject>$(MSBuildThisFileDirectory)../Website.BackupWebJob/DadABase.BackupWebJob.csproj</BackupWebJobProject>
+      <BackupWebJobPublishDir>$([MSBuild]::EnsureTrailingSlash('$(PublishDir)'))App_Data/jobs/triggered/BackupExportJob</BackupWebJobPublishDir>
+    </PropertyGroup>
+    <Exec Command="dotnet publish &quot;$(BackupWebJobProject)&quot; --configuration $(Configuration) --output &quot;$(BackupWebJobPublishDir)&quot;" />
+    <Exec Command="chmod +x &quot;$(BackupWebJobPublishDir)/run.sh&quot;" Condition="'$(OS)' != 'Windows_NT'" />
+  </Target>
+
 </Project>

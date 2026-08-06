@@ -45,6 +45,12 @@ public class DadABaseDbContext(DbContextOptions<DadABaseDbContext> options) : Db
     public DbSet<JokeJokeCategory>? JokeJokeCategories { get; set; }
 
     /// <summary>
+    /// Gets or sets the set of backup export audit records in the database.
+    /// </summary>
+    /// <value>A <see cref="DbSet{TEntity}"/> of <see cref="BackupMetadata"/> entities.</value>
+    public DbSet<BackupMetadata>? BackupMetadataRecords { get; set; }
+
+    /// <summary>
     /// Configures the schema needed for the DadABase context.
     /// </summary>
     /// <param name="modelBuilder">The builder being used to construct the model for this context.</param>
