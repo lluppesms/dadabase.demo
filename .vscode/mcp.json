@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "agentviz": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["c:\\ghcp\\apps\\agentviz\\mcp\\server.js"]
+    }
+  }
+}

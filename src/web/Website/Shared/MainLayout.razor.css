@@ -32,29 +32,33 @@ main {
     }
 
 .theme-switcher .dropdown-toggle {
-    border: none;
-    background: transparent;
-    color: var(--bs-body-color, #212529);
-    font-size: 1.25rem;
-    padding: 0.25rem 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: #f3f9ff;
+    font-size: 1.1rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 999px;
 }
 
 .theme-switcher .dropdown-menu {
     min-width: 10rem;
-    background-color: var(--bs-dropdown-bg, #fff);
-    color: #212529;
-    border: 1px solid var(--bs-border-color, #dee2e6);
+    background-color: rgba(255, 255, 255, 0.94);
+    color: #102a43;
+    border: 1px solid rgba(16, 42, 67, 0.14);
+    border-radius: 12px;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
 }
 
 .theme-switcher .dropdown-item {
-    color: #212529 !important;
+    color: #102a43 !important;
     background-color: transparent;
 }
 
 .theme-switcher .dropdown-item:hover,
 .theme-switcher .dropdown-item:focus {
-    color: #0d6efd !important;
-    background-color: #f8f9fa !important;
+    color: #005f87 !important;
+    background-color: rgba(0, 183, 201, 0.14) !important;
 }
 
 .theme-switcher .dropdown-item i {
@@ -68,7 +72,7 @@ main {
 
 body[data-bs-theme='dark'] .theme-switcher .dropdown-menu,
 .theme-dark .theme-switcher .dropdown-menu {
-    background-color: #212529;
+    background-color: rgba(7, 22, 45, 0.95);
     color: #f8f9fa;
 }
 
@@ -81,8 +85,8 @@ body[data-bs-theme='dark'] .theme-switcher .dropdown-item:hover,
 body[data-bs-theme='dark'] .theme-switcher .dropdown-item:focus,
 .theme-dark .theme-switcher .dropdown-item:hover,
 .theme-dark .theme-switcher .dropdown-item:focus {
-    color: #0d6efd !important;
-    background-color: #343a40 !important;
+    color: #ffd166 !important;
+    background-color: rgba(0, 183, 201, 0.22) !important;
 }
 
 @media (max-width: 640.98px) {
@@ -138,7 +142,7 @@ body[data-bs-theme='dark'] .theme-switcher .dropdown-item:focus,
 
 body[data-bs-theme='dark'] .build-number,
 .theme-dark .build-number {
-    color: #252a2f;
+    color: #dcecff;
 }
 
 .build-date {

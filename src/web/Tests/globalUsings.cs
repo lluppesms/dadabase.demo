@@ -14,7 +14,6 @@ global using Microsoft.Extensions.DependencyInjection;
 global using Moq;
 global using System.Diagnostics.CodeAnalysis;
 global using System.Reflection;
-global using Xunit.Abstractions;
 global using Microsoft.Extensions.Options;
 global using Xunit;
 global using System.Data;

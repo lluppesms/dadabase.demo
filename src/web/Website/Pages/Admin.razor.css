@@ -1,0 +1,37 @@
+/* Admin Page Styles */
+
+.container {
+    max-width: 1100px;
+}
+
+.card {
+    border-radius: 12px;
+    border: 1px solid rgba(16, 42, 67, 0.14);
+    box-shadow: 0 10px 24px rgba(8, 16, 29, 0.12);
+}
+
+body[data-bs-theme='dark'] .card,
+.theme-dark .card {
+    background: rgba(7, 22, 45, 0.82);
+    border: 1px solid rgba(180, 216, 255, 0.3);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+
+body[data-bs-theme='dark'] .card-body,
+.theme-dark .card-body {
+    color: #f2fbff;
+}
+
+body[data-bs-theme='dark'] h1,
+body[data-bs-theme='dark'] h4,
+.theme-dark h1,
+.theme-dark h4 {
+    color: #f2fff7;
+}
+
+body[data-bs-theme='dark'] .card ul,
+body[data-bs-theme='dark'] .card p,
+.theme-dark .card ul,
+.theme-dark .card p {
+    color: #d8ebff;
+}

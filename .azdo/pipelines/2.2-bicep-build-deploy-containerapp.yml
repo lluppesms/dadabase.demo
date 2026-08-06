@@ -46,6 +46,10 @@ parameters:
     displayName: Run GHAS Scan
     type: boolean
     default: false
+  - name: addRoleAssignments
+    displayName: Add Role Assignments
+    type: boolean
+    default: true
 
 # ----------------------------------------------------------------------------------------------------
 variables:
@@ -67,6 +71,7 @@ stages:
       dockerContext: 'src/web'
       imageName: 'dadabase-web'
       deploymentType: 'containerapp'
+      addRoleAssignments: ${{ parameters.addRoleAssignments }}
 
 - ${{ if eq(parameters.deployToEnvironment, 'DEV-QA-PROD') }}:
   - template: stages/bicep-and-containerapp-stages.yml
@@ -81,3 +86,4 @@ stages:
       dockerContext: 'src/web'
       imageName: 'dadabase-web'
       deploymentType: 'containerapp'
+      addRoleAssignments: ${{ parameters.addRoleAssignments }}

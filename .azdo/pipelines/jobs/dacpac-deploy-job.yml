@@ -7,9 +7,8 @@
 #   ALTER ROLE db_owner ADD MEMBER yourSP
 # And your ID that runs the app will need these permissions:
 #   CREATE USER [dadabase-app-id] FROM EXTERNAL PROVIDER;
-#   ALTER ROLE db_datareader ADD MEMBER [dadabase-app-id];
-#   ALTER ROLE db_datawriter ADD MEMBER [dadabase-app-id];
-#   GRANT EXECUTE ON SCHEMA::[dbo] TO [dadabase-app-id];
+#   GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::[Dad] TO [dadabase-app-id];
+#   GRANT EXECUTE ON SCHEMA::[Dad] TO [dadabase-app-id];
 # See also https://learn.microsoft.com/en-us/azure/azure-sql/database/authentication-aad-configure?view=azuresql&tabs=azure-cli#provision-microsoft-entra-admin-sql-database
 # ----------------------------------------------------------------------------------------------------
 # If you don't you might see this error:

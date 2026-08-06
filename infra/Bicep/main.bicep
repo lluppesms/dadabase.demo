@@ -4,7 +4,7 @@
 // To deploy this Bicep manually:
 // 	 az login
 //   az account set --subscription <subscriptionId>
-//   az deployment group create -n "manual-$(Get-Date -Format 'yyyyMMdd-HHmmss')" --resource-group rg_dadabase_web_full --template-file 'main.bicep' --parameters appName=xxx-dad-full environmentCode=dev adminUserId=xxxxxxxx-xxxx-xxxx
+//   az deployment group create -n "manual-$(Get-Date -Format 'yyyyMMdd-HHmmss')" --resource-group rg_dadabase_test --template-file 'main.bicep' --parameters appName=xxx-dad-test environmentCode=test keyVaultOwnerUserId=xxxxxxxx-xxxx-xxxx
 // --------------------------------------------------------------------------------
 param appName string = ''
 param environmentCode string = 'azd'
@@ -50,7 +50,10 @@ param sqlAdminUser string = ''
 param sqlAdminPassword string = ''
 
 param existingSqlServerName string = ''
+param existingSqlDatabaseName string = ''
 param existingSqlServerResourceGroupName string = ''
+param existingLogAnalyticsWorkspaceName string = ''
+param existingLogAnalyticsWorkspaceResourceGroupName string = ''
 
 param adInstance string = environment().authentication.loginEndpoint // 'https://login.microsoftonline.com/'
 param adDomain string = ''
@@ -78,6 +81,9 @@ param azureOpenAIImageApiKey string = ''
 @description('Add Role Assignments for the user assigned identity?')
 param addRoleAssignments bool = true
 
+@description('Create a separate user-assigned managed identity. When false, each resource uses its own system-assigned identity.')
+param createUserAssignedIdentity bool = false
+
 @description('Add this Admin User Id to KeyVault Access')
 param adminUserId string = ''
 
@@ -90,7 +96,16 @@ var defaultContainerImage = 'mcr.microsoft.com/azuredocs/containerapps-helloworl
 var effectiveContainerImage = empty(trim(containerImage)) || contains(containerImage, '#{')
   ? defaultContainerImage
   : containerImage
-var commonTags = {         
+var existingServicePlanNameEffective = empty(trim(servicePlanName)) || contains(servicePlanName, '#{') ? '' : trim(servicePlanName)
+var existingServicePlanRgNameEffective = empty(trim(servicePlanResourceGroupName)) || contains(servicePlanResourceGroupName, '#{') ? '' : trim(servicePlanResourceGroupName)
+var existingSqlServerNameEffective = empty(trim(existingSqlServerName)) || contains(existingSqlServerName, '#{') ? '' : trim(existingSqlServerName)
+var existingSqlDatabaseNameEffective = empty(trim(existingSqlDatabaseName)) || contains(existingSqlDatabaseName, '#{') ? '' : trim(existingSqlDatabaseName)
+var existingSqlServerRgNameEffective = empty(trim(existingSqlServerResourceGroupName)) || contains(existingSqlServerResourceGroupName, '#{') ? '' : trim(existingSqlServerResourceGroupName)
+var existingLogAnalyticsWorkspaceNameEffective = empty(trim(existingLogAnalyticsWorkspaceName)) || contains(existingLogAnalyticsWorkspaceName, '#{') ? '' : trim(existingLogAnalyticsWorkspaceName)
+var existingLogAnalyticsWorkspaceRgNameEffective = empty(trim(existingLogAnalyticsWorkspaceResourceGroupName)) || contains(existingLogAnalyticsWorkspaceResourceGroupName, '#{') ? '' : trim(existingLogAnalyticsWorkspaceResourceGroupName)
+var effectiveManagedIdentityId = createUserAssignedIdentity ? identity!.outputs.managedIdentityId : ''
+var effectiveManagedIdentityPrincipalId = createUserAssignedIdentity ? identity!.outputs.managedIdentityPrincipalId : ''
+var commonTags = {
   LastDeployed: runDateTime
   Application: appName
   Environment: environmentCode
@@ -100,14 +115,14 @@ var useSqlDataSource = toUpper(appDataSource) == 'SQL' && !websiteOnly
 var webAppConnectionString = useSqlDataSource ? sqlDbModule!.outputs.identityConnectionString : ''
 var deploymentTypeNormalized = toLower(deploymentType)
 var deployWebAppEffective = contains(['webapp', 'all'], deploymentTypeNormalized)
-var deployContainerAppEffective = contains(['containerapp', 'all'], deploymentTypeNormalized)
 var deployWebsiteEffective = deployWebAppEffective || deployContainerAppEffective
+var deployContainerAppEffective = contains(['containerapp', 'all'], deploymentTypeNormalized)
 var deployFunctionEffective = contains(['functionapp', 'all'], deploymentTypeNormalized) && !websiteOnly
 var keyVaultApplicationUserObjectIds = deployWebsiteEffective
   ? concat(
-      deployWebAppEffective ? [ webSiteModule!.outputs.userManagedPrincipalId, webSiteModule!.outputs.systemPrincipalId ] : [],
-      deployContainerAppEffective ? [ containerAppModule!.outputs.userManagedPrincipalId, containerAppModule!.outputs.systemPrincipalId ] : [])
-  : [ identity.outputs.managedIdentityPrincipalId ]
+      deployWebAppEffective ? (createUserAssignedIdentity ? [ webSiteModule!.outputs.userManagedPrincipalId, webSiteModule!.outputs.systemPrincipalId ] : [ webSiteModule!.outputs.systemPrincipalId ]) : [],
+      deployContainerAppEffective ? (createUserAssignedIdentity ? [ containerAppModule!.outputs.userManagedPrincipalId, containerAppModule!.outputs.systemPrincipalId ] : [ containerAppModule!.outputs.systemPrincipalId ]) : [])
+  : (createUserAssignedIdentity ? [ identity!.outputs.managedIdentityPrincipalId ] : [])
 // var resourceToken = toLower(uniqueString(resourceGroup().id, location))
 
 // --------------------------------------------------------------------------------
@@ -119,11 +134,14 @@ module resourceNames 'resourcenames.bicep' = {
     instanceNumber: instanceNumber
   }
 }
+
 // --------------------------------------------------------------------------------
 module logAnalyticsWorkspaceModule './modules/monitor/loganalyticsworkspace.bicep' = {
   name: 'logAnalytics${deploymentSuffix}'
   params: {
     logAnalyticsWorkspaceName: resourceNames.outputs.logAnalyticsWorkspaceName
+    existingLogAnalyticsWorkspaceName: existingLogAnalyticsWorkspaceNameEffective
+    existingLogAnalyticsWorkspaceResourceGroupName: existingLogAnalyticsWorkspaceRgNameEffective
     location: location
     commonTags: commonTags
   }
@@ -137,7 +155,7 @@ module storageModule './modules/storage/storageaccount.bicep' = {
     storageAccountName: resourceNames.outputs.storageAccountName
     location: location
     commonTags: commonTags
-    containerNames: ['input', 'output', 'joke-images']
+    containerNames: ['input', 'output', 'backup-data', 'joke-images']
   }
 }
 
@@ -160,8 +178,9 @@ module sqlDbModule './modules/database/sqlserver.bicep' = if (!websiteOnly) {
   params: {
     sqlServerName: resourceNames.outputs.sqlServerName
     sqlDBName: sqlDatabaseName
-    existingSqlServerName: existingSqlServerName
-    existingSqlServerResourceGroupName: existingSqlServerResourceGroupName
+    existingSqlServerName: existingSqlServerNameEffective
+    existingSqlDatabaseName: existingSqlDatabaseNameEffective
+    existingSqlServerResourceGroupName: existingSqlServerRgNameEffective
     sqlSkuTier: sqlSkuTier
     sqlSkuName: sqlSkuName
     sqlSkuFamily: sqlSkuFamily
@@ -172,7 +191,7 @@ module sqlDbModule './modules/database/sqlserver.bicep' = if (!websiteOnly) {
     adAdminUserId: sqlAdminLoginUserId
     adAdminUserSid: sqlAdminLoginUserSid
     adAdminTenantId: sqlAdminLoginTenantId
-    userAssignedIdentityResourceId: identity.outputs.managedIdentityId
+    userAssignedIdentityResourceId: effectiveManagedIdentityId
     sqlAdminUser:sqlAdminUser
     sqlAdminPassword: sqlAdminPassword
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
@@ -180,19 +199,19 @@ module sqlDbModule './modules/database/sqlserver.bicep' = if (!websiteOnly) {
   }
 }
 
-
 // --------------------------------------------------------------------------------
-module identity './modules/iam/identity.bicep' = {
+module identity './modules/iam/identity.bicep' = if (createUserAssignedIdentity) {
   name: 'appIdentity${deploymentSuffix}'
   params: {
     identityName: resourceNames.outputs.userAssignedIdentityName
     location: location
   }
 }
-module appRoleAssignments './modules/iam/roleassignments.bicep' = if (addRoleAssignments) {
+
+module appRoleAssignments './modules/iam/roleassignments.bicep' = if (addRoleAssignments && createUserAssignedIdentity) {
   name: 'appRoleAssignments${deploymentSuffix}'
   params: {
-    identityPrincipalId: identity.outputs.managedIdentityPrincipalId
+    identityPrincipalId: identity!.outputs.managedIdentityPrincipalId
     principalType: 'ServicePrincipal'
     storageAccountName: storageModule.outputs.name
     keyVaultName:  keyVaultModule.outputs.name
@@ -217,23 +236,14 @@ module appRoleAssignments2Container './modules/iam/roleassignments.bicep' = if (
   }
 }
 // also add rights to the function storage account
-module appRoleAssignments3 './modules/iam/roleassignments.bicep' = if (addRoleAssignments && deployFunctionEffective) {
+module appRoleAssignments3 './modules/iam/roleassignments.bicep' = if (addRoleAssignments && deployFunctionEffective && createUserAssignedIdentity) {
   name: 'appRoleAssignments-function-storage${deploymentSuffix}'
   params: {
-    identityPrincipalId: identity.outputs.managedIdentityPrincipalId
+    identityPrincipalId: identity!.outputs.managedIdentityPrincipalId
     principalType: 'ServicePrincipal'
     storageAccountName: functionStorageModule!.outputs.name
   }
 }
-// module adminRoleAssignments './modules/iam/roleassignments.bicep' = if (addRoleAssignments) {
-//   name: 'userRoleAssignments${deploymentSuffix}'
-//   params: {
-//     identityPrincipalId: adminUserId
-//     principalType: 'User'
-//     storageAccountName: storageModule.outputs.name
-//     keyVaultName:  keyVaultModule.outputs.name
-//   }
-// }
 
 // --------------------------------------------------------------------------------
 module keyVaultModule './modules/security/keyvault.bicep' = {
@@ -243,7 +253,7 @@ module keyVaultModule './modules/security/keyvault.bicep' = {
     location: location
     commonTags: commonTags
     keyVaultOwnerUserId: adminUserId
-    adminUserObjectIds: [ identity.outputs.managedIdentityPrincipalId ]
+    adminUserObjectIds: createUserAssignedIdentity ? [ identity!.outputs.managedIdentityPrincipalId ] : []
     applicationUserObjectIds: keyVaultApplicationUserObjectIds
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
     publicNetworkAccess: 'Enabled'
@@ -298,8 +308,8 @@ module containerAppModule './modules/container/containerapp.bicep' = if (deployC
     containerAppsEnvironmentId: containerAppsEnvironmentModule!.outputs.id
     containerImage: effectiveContainerImage
     containerRegistryServer: containerRegistryModule!.outputs.loginServer
-    managedIdentityId: identity.outputs.managedIdentityId
-    managedIdentityPrincipalId: identity.outputs.managedIdentityPrincipalId
+    managedIdentityId: effectiveManagedIdentityId
+    managedIdentityPrincipalId: effectiveManagedIdentityPrincipalId
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
     minReplicas: 1
     maxReplicas: 3
@@ -342,9 +352,9 @@ module appServicePlanModule './modules/webapp/websiteserviceplan.bicep' = if (de
     location: location
     commonTags: commonTags
     sku: webSiteSku
-    appServicePlanName: servicePlanName == '' ? resourceNames.outputs.webSiteAppServicePlanName : servicePlanName
-    existingServicePlanName: servicePlanName
-    existingServicePlanResourceGroupName: servicePlanResourceGroupName
+    appServicePlanName: empty(existingServicePlanNameEffective) ? resourceNames.outputs.webSiteAppServicePlanName : existingServicePlanNameEffective
+    existingServicePlanName: existingServicePlanNameEffective
+    existingServicePlanResourceGroupName: existingServicePlanRgNameEffective
     webAppKind: webAppKind
   }
 }
@@ -358,8 +368,8 @@ module webSiteModule './modules/webapp/website.bicep' = if (deployWebAppEffectiv
     commonTags: commonTags
     environmentCode: environmentCode
     webAppKind: webAppKind
-    managedIdentityId: identity.outputs.managedIdentityId
-    managedIdentityPrincipalId: identity.outputs.managedIdentityPrincipalId
+    managedIdentityId: effectiveManagedIdentityId
+    managedIdentityPrincipalId: effectiveManagedIdentityPrincipalId
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
     appServicePlanName: appServicePlanModule!.outputs.name
     appServicePlanResourceGroupName: appServicePlanModule!.outputs.resourceGroupName
@@ -449,5 +459,4 @@ output WEB_HOST_NAME string = deployWebAppEffective ? webSiteModule!.outputs.hos
 output WEB_URL string = deployWebAppEffective ? 'https://${webSiteModule!.outputs.hostName}' : (deployContainerAppEffective ? containerAppModule!.outputs.url : '')
 output CONTAINER_REGISTRY_NAME string = deployContainerAppEffective ? containerRegistryModule!.outputs.name : ''
 output CONTAINER_REGISTRY_LOGIN_SERVER string = deployContainerAppEffective ? containerRegistryModule!.outputs.loginServer : ''
-//output FUNCTION_HOST_NAME string = functionModule.outputs.hostname
 

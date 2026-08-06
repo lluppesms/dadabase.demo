@@ -24,6 +24,14 @@ public interface IJokeRepository
     IQueryable<Joke> ListAll(string activeInd = "Y", string requestingUserName = "ANON");
 
     /// <summary>
+    /// Gets the count of joke records.
+    /// </summary>
+    /// <param name="activeInd">The active indicator used to filter jokes. The default is "Y".</param>
+    /// <param name="requestingUserName">The username of the user requesting the count. The default is "ANON".</param>
+    /// <returns>The number of joke records that match the filter.</returns>
+    int CountAll(string activeInd = "Y", string requestingUserName = "ANON");
+
+    /// <summary>
     /// Returns the most recently modified jokes, limited to the specified count.
     /// For SQL repositories, results are ordered by <see cref="Joke.ChangeDateTime"/> descending.
     /// For JSON repositories, jokes are ordered by <see cref="Joke.ChangeDateTime"/> descending then limited to <paramref name="count"/> entries.

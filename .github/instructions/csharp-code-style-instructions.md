@@ -6,31 +6,33 @@ applyTo: "**/*.cs,**/*.razor"
 
 ## General Code Style
 
-- Prefer `async`/`await` over direct `Task` handling
-- Use nullable reference types
-- Use `var` over explicit type declarations
-- Always implement `IDisposable` when dealing with event handlers or subscriptions
-- Use latest C# features (e.g., records, pattern matching, expression-bodied members)
-- Use consistent naming conventions: `PascalCase` for public members, `camelCase` for private members
-- Use meaningful names for variables, methods, and classes
-- Use dependency injection for services and components
-- Use interfaces for service contracts and put them in a unique file
-- Use file-scoped namespaces in C# — namespaces are PascalCased
-- Prefer explicit access modifiers (`public`, `private`, etc.) for all members
+- Prefer `async`/`await` over manual `Task` composition.
+- Use modern C# language features when they improve clarity.
+- Keep methods focused and small enough to read without scrolling excessively.
+- Use `PascalCase` for types/members, `camelCase` for local variables/parameters, and `_camelCase` for private fields if fields are used.
+- Use dependency injection for services and avoid static service locators.
+- Keep behavior-safe defaults and explicit error handling; do not swallow exceptions silently.
+- Keep comments for non-obvious intent only.
 
 ## Using Directives
 
-- Place `using` directives at the top of files, outside namespaces
-- If a `using` directive is used in more than one file, move it to a `globalUsings.cs` file in the project root
-- Organize `using` directives:
-  - Put `System` namespaces first
-  - Put `Microsoft` namespaces second
-  - Put application namespaces last
-  - Remove unused `using` directives
-  - Sort `using` directives alphabetically within each group
+- Place `using` directives at the top of files, outside namespaces.
+- Keep cross-project common imports in `globalUsings.cs` at project root.
+- Keep `using` groups ordered consistently:
+  - `System*`
+  - `Microsoft*`
+  - third-party packages
+  - project namespaces
 
 ## Namespace & Folder Structure
 
-- Organize code into clear namespaces reflecting folder structure (e.g., `DadABase.Web`, `DadABase.Tests`)
-- Group related files into folders: `API`, `Components`, `Data`, `Helpers`, `Models`, `Pages`, `Repositories`, `Shared`
-- Keep test code in dedicated test projects/folders using clear naming (e.g., `Category_API_Tests.cs`)
+- Keep namespaces aligned with folder paths.
+- Group by feature/role folders (for example: `API`, `Components`, `Helpers`, `Models`, `Repositories`, `Pages`, `Shared`).
+- Keep one primary type per file.
+- Keep test code in dedicated test projects with clear folder segmentation (`APITests`, `RepositoryTests`, `ModelTests`, shared test data).
+
+## DI and Startup Pattern
+
+- Keep service registration centralized in startup/Program composition.
+- Register interfaces and concrete implementations explicitly.
+- Keep environment/configuration loading deterministic and early in startup.

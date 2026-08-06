@@ -12,7 +12,7 @@ namespace DadABase.Data.Models;
 /// Represents a junction table for associating jokes with categories in the database.
 /// </summary>
 [ExcludeFromCodeCoverage]
-[Table("JokeJokeCategory")]
+[Table("JokeJokeCategory", Schema = "Dad")]
 public class JokeJokeCategory
 {
     /// <summary>

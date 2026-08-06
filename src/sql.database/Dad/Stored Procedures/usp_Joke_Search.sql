@@ -1,0 +1,30 @@
+CREATE PROCEDURE [Dad].[usp_Joke_Search] (
+  @category as varchar(255) = NULL,
+  @searchTxt as varchar(255) = NULL
+) AS
+/*
+Example Usage:
+  exec usp_Joke_Search @category = 'Chuck Norris'
+  exec usp_Joke_Search @SearchTxt = 'Sun'
+  exec usp_Joke_Search @category = 'Chuck Norris', @SearchTxt = 'Sun'
+*/
+BEGIN
+  SET @category = '%' + ISNULL(@category, '') + '%'
+  SET @searchTxt = '%' + ISNULL(@searchTxt, '') + '%'
+	SELECT DISTINCT j.JokeId,
+	  -- Multiple categories field (comma-separated)
+	  STUFF((SELECT ', ' + c.JokeCategoryTxt
+	         FROM [Dad].[JokeJokeCategory] jjc
+	         INNER JOIN [Dad].[JokeCategory] c ON jjc.JokeCategoryId = c.JokeCategoryId
+	         WHERE jjc.JokeId = j.JokeId
+	         ORDER BY c.JokeCategoryTxt
+	         FOR XML PATH('')), 1, 2, '') AS Categories,
+	  j.JokeTxt, j.ImageTxt, j.Rating, j.ActiveInd, j.Attribution, j.VoteCount, j.SortOrderNbr,
+	  j.CreateDateTime, j.CreateUserName, j.ChangeDateTime, j.ChangeUserName
+	FROM [Dad].[Joke] j
+	LEFT JOIN [Dad].[JokeJokeCategory] jjc ON j.JokeId = jjc.JokeId
+	LEFT JOIN [Dad].[JokeCategory] c ON jjc.JokeCategoryId = c.JokeCategoryId
+	WHERE c.JokeCategoryTxt LIKE @category
+	  AND (j.JokeTxt LIKE @searchTxt OR ISNULL(j.Attribution, '') LIKE @searchTxt)
+	ORDER BY j.JokeTxt
+END

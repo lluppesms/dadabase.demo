@@ -11,7 +11,7 @@ namespace JokeAnalyzer.Models;
 /// <summary>
 /// Joke Table
 /// </summary>
-[Table("Joke")]
+[Table("Joke", Schema = "Dad")]
 public class Joke
 {
     /// <summary>

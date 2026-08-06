@@ -16,6 +16,7 @@
     "privateEndpointAbbreviation": "pe",
     "publicIpAbbreviation": "pip",
     "serviceBus": "svcbus",
+    "signalRSuffix": "sigr",
     "sqlAbbreviation": "sql",
     "storageAccountSuffix": "st",
     "vnetAbbreviation": "vnet",

@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------------------------------------------------
 # GHA Workflow to run the smoke tests only
 # ------------------------------------------------------------------------------------------------------------------------
-# FYI: You need to set up some secrets before running this workflows - see CreateGitHubSecrets.md for details.
+# FYI: You need to set up some secrets before running this workflow - see CreateGitHubSecrets.md for details.
 # ------------------------------------------------------------------------------------------------------------------------
 name: 8.smoke.test
 run-name: '8. Smoke Test by @${{ github.actor }} using ENV ${{ inputs.deployEnvironment }} '
@@ -14,15 +14,9 @@ on:
         required: true
         default: 'dev' 
         type: environment
-      logLevel:
-        description: Log level
-        required: false
-        default: 'warning' 
-        type: choice
-        options:
-          - info
-          - warning
-          - debug 
+  # schedule:
+  #   # Run daily at 6:00 AM UTC (1:00 AM CST)
+  #   - cron: '0 6 * * *'
     
 # ------------------------------------------------------------------------------------------------------------------------
 jobs:

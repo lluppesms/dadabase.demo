@@ -31,32 +31,44 @@ The human owner will review and merge PRs into `main`. Agents do not have permis
 - Any actual source code should be located in the src folder. Organize each project into its own folder within src.
 - Any infrastructure code should be located in the infra folder, and put each type of IaC code into it's own folder, such as Bicep in the infra/bicep folder and Terraform in the infra/tf folder.
 - Any code for the GitHub Actions workflows should be located in the .github/workflows folder.
-- Any code for Azure DevOps pipelines should be located in the .azuredevops/pipelines folder.
+- Any code for Azure DevOps pipelines should be located in the .azdo/pipelines folder (legacy repos may also use .azuredevops/pipelines).
 - Keep documentation and images in a Docs folder.
 
 ## Blazor & CSS
 
-When making changes to Blazor components or CSS, refer to [.github/instructions/blazor-css-instructions.md](.github/instructions/blazor-css-instructions.md) for detailed guidelines on component structure, scoped CSS, theming, and CSS best practices.
+When making changes to Blazor components or CSS, refer to [instructions/blazor-css-instructions.md](instructions/blazor-css-instructions.md) for detailed guidelines on component structure, scoped CSS, theming, and CSS best practices.
 
 ## C# Code Style
 
-When writing or modifying C# code, refer to [.github/instructions/csharp-code-style-instructions.md](.github/instructions/csharp-code-style-instructions.md) for naming conventions, `using` directive organization, namespace structure, and folder layout.
+When writing or modifying C# code, refer to [instructions/csharp-code-style-instructions.md](instructions/csharp-code-style-instructions.md) for naming conventions, `using` directive organization, namespace structure, and folder layout.
+
+## .NET Project Structure
+
+When creating or modifying .NET projects and solutions, refer to [instructions/dotnet-project-structure-instructions.md](instructions/dotnet-project-structure-instructions.md) for project layout, naming, and composition guidance.
 
 ## Bicep Infrastructure
 
-When writing or modifying Bicep IaC files, refer to [.github/instructions/bicep-instructions.md](.github/instructions/bicep-instructions.md) for module structure, naming, comments, and Azure best practices.
+When writing or modifying Bicep IaC files, refer to [instructions/bicep-instructions.md](instructions/bicep-instructions.md) for module structure, naming, parameter design, and composition patterns.
 
 ## GitHub Actions & Azure DevOps Pipelines
 
-When creating or modifying CI/CD pipeline files, refer to [.github/instructions/pipeline-instructions.md](.github/instructions/pipeline-instructions.md) for workflow structure, secrets handling, action pinning, and reuse patterns.
+When creating or modifying GitHub Actions workflows, refer to [instructions/github-actions-instructions.md](instructions/github-actions-instructions.md) for reusable workflow structure, contracts, and deployment patterns.
+
+## Azure DevOps YAML Pipelines
+
+When creating or modifying Azure DevOps YAML files under `.azdo/pipelines/`, refer to [instructions/azure-devops-pipeline-instructions.md](instructions/azure-devops-pipeline-instructions.md) for stage/job/step/vars template layering and environment promotion patterns.
+
+## SQL Database and DACPAC
+
+When creating or modifying SQL database source, schema objects, DACPAC build/deploy workflows, or SQL patch scripts, refer to [instructions/sql-database-dacpac-instructions.md](instructions/sql-database-dacpac-instructions.md).
 
 ## Testing
 
-When writing tests, refer to [.github/instructions/testing-instructions.md](.github/instructions/testing-instructions.md) for test framework, project location, and scope guidelines.
+When writing tests, refer to [instructions/testing-instructions.md](instructions/testing-instructions.md) for test framework, project location, and scope guidelines.
 
 ## General Best Practices
 
-For error handling, performance, security, accessibility, and documentation standards, refer to [.github/instructions/general-best-practices-instructions.md](.github/instructions/general-best-practices-instructions.md).
+For error handling, performance, security, accessibility, and documentation standards, refer to [instructions/general-best-practices-instructions.md](instructions/general-best-practices-instructions.md).
 
 ---
 

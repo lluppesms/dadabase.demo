@@ -100,6 +100,7 @@ Use these examples after building images from the included Dockerfiles.
 Build commands:
 
 ~~~powershell
+cd \src\mcp
 docker build -f DadJokeMCPStdIO/Dockerfile -t dadjokemcp:local .
 docker build -f DadJokeMCPSSE/Dockerfile -t dadjokemcp-sse:local .
 ~~~

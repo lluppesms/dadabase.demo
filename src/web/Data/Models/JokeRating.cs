@@ -14,10 +14,10 @@ namespace DadABase.Data.Models;
 /// Represents a joke rating entity.
 /// </summary>
 [ExcludeFromCodeCoverage]
-[Table("JokeRating")]
+[Table("JokeRating", Schema = "Dad")]
 public class JokeRating
 {
-    //CREATE TABLE [dbo].[JokeRating](
+    //CREATE TABLE [Dad].[JokeRating](
     //	[JokeRatingId] [int] IDENTITY(1,1) NOT NULL,
     //	[JokeId] [int] NOT NULL,
     //	[UserRating] [int] NOT NULL,

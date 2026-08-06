@@ -344,7 +344,7 @@ public class AIHelper : IAIHelper
             if (await blobClient.ExistsAsync())
             {
                 Console.WriteLine($"    Found existing image {blobName} in Storage Account: {blobStorageAccountName} Container: {blobContainerName}");
-                return blobClient.Uri.ToString();
+                return GetJokeImageRoute(jokeId);
             }
             Console.WriteLine($"    Did NOT find Image {blobName} in Storage Account: {blobStorageAccountName} Container: {blobContainerName}");
         }
@@ -426,8 +426,8 @@ public class AIHelper : IAIHelper
                 return string.Empty;
             }
 
-            // Create container if it doesn't exist
-            await containerClient.CreateIfNotExistsAsync(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
+            // Create the private container if it doesn't exist. The app serves images through Managed Identity.
+            await containerClient.CreateIfNotExistsAsync();
 
             var blobName = $"{jokeId}.png";
             var blobClient = containerClient.GetBlobClient(blobName);
@@ -436,7 +436,7 @@ public class AIHelper : IAIHelper
             await blobClient.UploadAsync(stream, overwrite: true);
 
             Console.WriteLine($"Uploaded blob: {blobClient.Uri}");
-            return blobClient.Uri.ToString();
+            return GetJokeImageRoute(jokeId);
         }
         catch (Exception ex)
         {
@@ -445,6 +445,8 @@ public class AIHelper : IAIHelper
             return string.Empty;
         }
     }
+
+    private static string GetJokeImageRoute(int jokeId) => $"/api/images/jokes/{jokeId}.png";
 
     #region Helper Methods
     /// <summary>

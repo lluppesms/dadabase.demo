@@ -62,6 +62,12 @@ public class JokeJsonRepository : IJokeRepository
         _jokeCategories = allCategories.Order().ToList();
     }
 
+    private static bool MatchesSearchText(Joke joke, string searchTxt)
+    {
+        return (joke.JokeTxt ?? string.Empty).Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase)
+            || (joke.Attribution ?? string.Empty).Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase);
+    }
+
     /// <summary>
     /// Gets a random joke from the in-memory collection.
     /// </summary>
@@ -118,7 +124,7 @@ public class JokeJsonRepository : IJokeRepository
                     if (string.IsNullOrEmpty(joke.Categories)) return false;
                     var jokeCategories = joke.Categories.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                     return jokeCategoryList!.Any(category => jokeCategories.Contains(category, StringComparer.OrdinalIgnoreCase))
-                        && (joke.JokeTxt ?? string.Empty).Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase);
+                        && MatchesSearchText(joke, searchTxt);
                 })
                 .ToList();
             return jokesByTermAndCategory.AsQueryable();
@@ -142,7 +148,7 @@ public class JokeJsonRepository : IJokeRepository
         if (string.IsNullOrEmpty(jokeCategoryTxt) && !string.IsNullOrEmpty(searchTxt))
         {
             var jokesByTerm = _jokes
-                .Where(joke => (joke.JokeTxt ?? string.Empty).Contains(searchTxt, StringComparison.InvariantCultureIgnoreCase))
+                .Where(joke => MatchesSearchText(joke, searchTxt))
                 .ToList();
             return jokesByTerm.AsQueryable();
         }
@@ -170,6 +176,17 @@ public class JokeJsonRepository : IJokeRepository
     public IQueryable<Joke> ListAll(string activeInd = "Y", string requestingUserName = "ANON")
     {
         return _jokes.AsQueryable();
+    }
+
+    /// <summary>
+    /// Gets the count of jokes contained in the JSON repository.
+    /// </summary>
+    /// <param name="activeInd">The active indicator filter, ignored for the JSON repository.</param>
+    /// <param name="requestingUserName">The username of the caller requesting the count.</param>
+    /// <returns>The number of jokes in the repository.</returns>
+    public int CountAll(string activeInd = "Y", string requestingUserName = "ANON")
+    {
+        return _jokes.Count;
     }
 
     /// <summary>
@@ -269,40 +286,50 @@ public class JokeJsonRepository : IJokeRepository
         sb.AppendLine("BEGIN");
         sb.AppendLine("  PRINT ''");
         sb.AppendLine("  PRINT 'Removing previous set of jokes...'");
-        sb.AppendLine("  DELETE FROM JokeRating");
-        sb.AppendLine("  DELETE FROM JokeJokeCategory");
-        sb.AppendLine("  DELETE FROM JokeCategory");
-        sb.AppendLine("  DELETE FROM Joke");
-        sb.AppendLine("  DBCC CHECKIDENT('JokeRating', RESEED, 0)");
-        sb.AppendLine("  DBCC CHECKIDENT('JokeCategory', RESEED, 0)");
-        sb.AppendLine("  DBCC CHECKIDENT('Joke', RESEED, 0)");
+        sb.AppendLine("  DELETE FROM [Dad].[JokeRating]");
+        sb.AppendLine("  DELETE FROM [Dad].[JokeJokeCategory]");
+        sb.AppendLine("  DELETE FROM [Dad].[JokeCategory]");
+        sb.AppendLine("  DELETE FROM [Dad].[Joke]");
+        sb.AppendLine("  BEGIN TRY");
+        sb.AppendLine("    DBCC CHECKIDENT('[Dad].[JokeRating]', RESEED, 0)");
+        sb.AppendLine("    DBCC CHECKIDENT('[Dad].[JokeCategory]', RESEED, 0)");
+        sb.AppendLine("    DBCC CHECKIDENT('[Dad].[Joke]', RESEED, 0)");
+        sb.AppendLine("  END TRY");
+        sb.AppendLine("  BEGIN CATCH");
+        sb.AppendLine("    BEGIN TRY");
+        sb.AppendLine("      EXEC [Dad].[usp_Joke_Reseed_Identities]");
+        sb.AppendLine("    END TRY");
+        sb.AppendLine("    BEGIN CATCH");
+        sb.AppendLine("      PRINT 'Warning: identity reseed skipped: ' + ERROR_MESSAGE()");
+        sb.AppendLine("    END CATCH");
+        sb.AppendLine("  END CATCH");
         sb.AppendLine("END");
         sb.AppendLine();
         sb.AppendLine("DECLARE @CategoryCount int");
         sb.AppendLine("SELECT @CategoryCount = Count(DISTINCT JokeCategoryTxt) From @TmpJokes");
         sb.AppendLine("PRINT ''");
         sb.AppendLine("PRINT 'Inserting ' + CAST(@CategoryCount as varchar) + ' fresh categories...'");
-        sb.AppendLine("INSERT INTO JokeCategory (JokeCategoryTxt) ");
-        sb.AppendLine("  SELECT DISTINCT JokeCategoryTxt From @tmpJokes Where JokeCategoryTxt NOT IN (Select JokeCategoryTxt From JokeCategory)");
+        sb.AppendLine("INSERT INTO [Dad].[JokeCategory] (JokeCategoryTxt) ");
+        sb.AppendLine("  SELECT DISTINCT JokeCategoryTxt From @tmpJokes Where JokeCategoryTxt NOT IN (Select JokeCategoryTxt FROM [Dad].[JokeCategory])");
         sb.AppendLine();
         sb.AppendLine("DECLARE @JokeCount int");
         sb.AppendLine("SELECT @JokeCount = Count(*) From @TmpJokes");
         sb.AppendLine("PRINT ''");
         sb.AppendLine("PRINT 'Inserting ' + CAST(@JokeCount as varchar) + ' fresh jokes...'");
-        sb.AppendLine("INSERT INTO Joke (JokeTxt, Attribution, ImageTxt, Rating, VoteCount) ");
+        sb.AppendLine("INSERT INTO [Dad].[Joke] (JokeTxt, Attribution, ImageTxt, Rating, VoteCount) ");
         sb.AppendLine("  SELECT j.JokeTxt, j.Attribution, j.ImageTxt, 0, 0");
         sb.AppendLine("  FROM @tmpJokes j");
-        sb.AppendLine("  WHERE j.JokeTxt NOT IN (Select JokeTxt From Joke)");
+        sb.AppendLine("  WHERE j.JokeTxt NOT IN (Select JokeTxt FROM [Dad].[Joke])");
         sb.AppendLine();
         sb.AppendLine("PRINT ''");
         sb.AppendLine("PRINT 'Populating JokeJokeCategory junction table...'");
-        sb.AppendLine("INSERT INTO JokeJokeCategory (JokeId, JokeCategoryId)");
+        sb.AppendLine("INSERT INTO [Dad].[JokeJokeCategory] (JokeId, JokeCategoryId)");
         sb.AppendLine("  SELECT DISTINCT jk.JokeId, c.JokeCategoryId");
-        sb.AppendLine("  FROM Joke jk");
+        sb.AppendLine("  FROM [Dad].[Joke] jk");
         sb.AppendLine("  INNER JOIN @tmpJokes tj ON jk.JokeTxt = tj.JokeTxt");
-        sb.AppendLine("  INNER JOIN JokeCategory c ON tj.JokeCategoryTxt = c.JokeCategoryTxt");
+        sb.AppendLine("  INNER JOIN [Dad].[JokeCategory] c ON tj.JokeCategoryTxt = c.JokeCategoryTxt");
         sb.AppendLine("  WHERE NOT EXISTS (");
-        sb.AppendLine("    SELECT 1 FROM JokeJokeCategory jjc ");
+        sb.AppendLine("    SELECT 1 FROM [Dad].[JokeJokeCategory] jjc ");
         sb.AppendLine("    WHERE jjc.JokeId = jk.JokeId AND jjc.JokeCategoryId = c.JokeCategoryId");
         sb.AppendLine("  )");
         sb.AppendLine();
@@ -310,13 +337,13 @@ public class JokeJsonRepository : IJokeRepository
         sb.AppendLine("PRINT 'Displaying All Jokes...'");
         sb.AppendLine("SELECT j.JokeId, ");
         sb.AppendLine("  STUFF((SELECT ', ' + c.JokeCategoryTxt");
-        sb.AppendLine("         FROM JokeJokeCategory jjc");
-        sb.AppendLine("         INNER JOIN JokeCategory c ON jjc.JokeCategoryId = c.JokeCategoryId");
+        sb.AppendLine("         FROM [Dad].[JokeJokeCategory] jjc");
+        sb.AppendLine("         INNER JOIN [Dad].[JokeCategory] c ON jjc.JokeCategoryId = c.JokeCategoryId");
         sb.AppendLine("         WHERE jjc.JokeId = j.JokeId");
         sb.AppendLine("         ORDER BY c.JokeCategoryTxt");
         sb.AppendLine("         FOR XML PATH('')), 1, 2, '') AS Categories,");
         sb.AppendLine("  j.JokeTxt, j.ImageTxt, j.Rating, j.CreateDateTime ");
-        sb.AppendLine("FROM Joke j ");
+        sb.AppendLine("FROM [Dad].[Joke] j ");
         sb.AppendLine("ORDER BY Categories, j.JokeTxt");
 
         return sb.ToString();

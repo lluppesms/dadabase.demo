@@ -1,8 +1,5 @@
 // --------------------------------------------------------------------------------
 // This BICEP file will create KeyVault secret for a storage account connection
-//   if existingSecretNames list is supplied: 
-//     ONLY create if secretName is not in existingSecretNames list
-//     OR forceSecretCreation is true
 // --------------------------------------------------------------------------------
 param keyVaultName string = 'myKeyVault'
 param secretName string = 'mySecretName'

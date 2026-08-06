@@ -14,7 +14,7 @@ namespace DadABase.Data;
 /// JokeJokeCategory Junction Table
 /// </summary>
 [ExcludeFromCodeCoverage]
-[Table("JokeJokeCategory")]
+[Table("JokeJokeCategory", Schema = "Dad")]
 public class JokeJokeCategory
 {
     /// <summary>

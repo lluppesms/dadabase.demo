@@ -30,6 +30,14 @@
                     </Authorized>
                 </AuthorizeView>
             </div>
+            @if (jokeCount > 0)
+            {
+                <p class="joke-tagline">
+                    @(isNinetiesTheme
+                        ? $"Totally radical! We've got {jokeCount} gnarly jokes in da house! 🕺"
+                        : $"Warning: {jokeCount} groan-worthy dad jokes on tap — side effects may include eye-rolling and uncontrollable chuckling! 😄")
+                </p>
+            }
             @if (isNinetiesTheme)
             {
                 <div style="text-align: center; margin-top: 20px;">

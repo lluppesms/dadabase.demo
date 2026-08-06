@@ -55,13 +55,13 @@ public class Export_Repository_Tests : BaseTest
         // Check for key SQL elements
         Assert.Contains("Declare @RemovePreviousJokes", sqlContent);
         Assert.Contains("INSERT INTO @tmpJokes", sqlContent);
-        Assert.Contains("DELETE FROM JokeRating", sqlContent);
-        Assert.Contains("DELETE FROM JokeJokeCategory", sqlContent);
-        Assert.Contains("DELETE FROM JokeCategory", sqlContent);
-        Assert.Contains("DELETE FROM Joke", sqlContent);
-        Assert.Contains("INSERT INTO JokeCategory", sqlContent);
-        Assert.Contains("INSERT INTO Joke", sqlContent);
-        Assert.Contains("INSERT INTO JokeJokeCategory", sqlContent);
+        Assert.Contains("DELETE FROM [Dad].[JokeRating]", sqlContent);
+        Assert.Contains("DELETE FROM [Dad].[JokeJokeCategory]", sqlContent);
+        Assert.Contains("DELETE FROM [Dad].[JokeCategory]", sqlContent);
+        Assert.Contains("DELETE FROM [Dad].[Joke]", sqlContent);
+        Assert.Contains("INSERT INTO [Dad].[JokeCategory]", sqlContent);
+        Assert.Contains("INSERT INTO [Dad].[Joke]", sqlContent);
+        Assert.Contains("INSERT INTO [Dad].[JokeJokeCategory]", sqlContent);
 
         output.WriteLine($"SQL content length: {sqlContent.Length} characters");
         output.WriteLine("First 500 characters:");
