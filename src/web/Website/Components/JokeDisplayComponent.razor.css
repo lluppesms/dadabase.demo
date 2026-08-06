@@ -5,18 +5,34 @@
 
 .JokeCard {
     position: relative;
+    overflow: hidden;
     background: linear-gradient(175deg, rgba(255, 255, 255, 0.72), rgba(228, 245, 248, 0.82));
     border: 1px solid var(--surface-border-light);
     box-shadow: var(--shadow-md);
     color: var(--text-primary-light);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.22, 1), box-shadow 0.28s cubic-bezier(0.2, 0.9, 0.22, 1);
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
 }
 
+.JokeCard::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 -55%;
+    width: 38%;
+    background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+    transform: skewX(-18deg);
+    transition: left 0.55s cubic-bezier(0.2, 0.9, 0.22, 1);
+    pointer-events: none;
+}
+
 .JokeCard:hover {
-    transform: translateY(-2px);
+    transform: translateY(-4px);
     box-shadow: var(--shadow-lg);
+}
+
+.JokeCard:hover::after {
+    left: 120%;
 }
 
 body[data-bs-theme='dark'] .JokeCard,

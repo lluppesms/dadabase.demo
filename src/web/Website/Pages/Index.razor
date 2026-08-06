@@ -6,7 +6,9 @@
 
 <div class="page-container">
     <MudContainer MaxWidth="MaxWidth.Large">
-        <h1>@(isNinetiesTheme ? "Tell me a Joke, Grandpa!" : "Tell me a Joke, Dad!")</h1>
+        <div class="home-heading">
+            <h1>@(isNinetiesTheme ? "Tell me a Joke, Grandpa!" : "Tell me a Joke, Dad!")</h1>
+        </div>
         @if (jokeLoading)
         {
             <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
@@ -20,12 +22,12 @@
             </div>
         }
             <div class="button-group">
-                <button class="btn btn-primary" @onclick="ExecuteRandom" disabled="@imageLoading">Tell me another one!</button>
+                <button type="button" class="btn btn-primary" @onclick="ExecuteRandom" disabled="@imageLoading">Tell me another one!</button>
                 <AuthorizeView>
                     <Authorized>
                         @if (!isNinetiesTheme)
                         {
-                            <button class="btn btn-primary" @onclick="GenerateAIImage" disabled="@(imageLoading || imageGenerated)" title="Let the DadJoke AI imagine this scenario for you!">@(string.IsNullOrEmpty(myJoke?.ImageTxt) ? "AI Image Generator" : "AI Imagine-a-tor")</button>
+                            <button type="button" class="btn btn-primary" @onclick="GenerateAIImage" disabled="@(imageLoading || imageGenerated)" title="Let the DadJoke AI imagine this scenario for you!">@(string.IsNullOrEmpty(myJoke?.ImageTxt) ? "AI Image Generator" : "AI Imagine-a-tor")</button>
                         }
                     </Authorized>
                 </AuthorizeView>
@@ -46,27 +48,31 @@
                     </a>
                 </div>
             }
-            <div class="joke-image-section">
-                <p class="image-message">@jokeImageMessage</p>
-                @if (imageLoading)
-                {
-                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-                    @if (!string.IsNullOrEmpty(jokeImageDescription))
+            @if (imageLoading || !string.IsNullOrWhiteSpace(jokeImageUrl) || !string.IsNullOrWhiteSpace(jokeImageDescription) || !string.IsNullOrWhiteSpace(jokeImageMessage))
+            {
+                <div class="joke-image-section">
+                    <p class="image-message">@jokeImageMessage</p>
+                    @if (imageLoading)
                     {
-                        <p class="image-note">@jokeImageDescription</p>
+                        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                        @if (!string.IsNullOrEmpty(jokeImageDescription))
+                        {
+                            <p class="image-note">@jokeImageDescription</p>
+                        }
+                    }
+                    else
+                    {
+                        @if (!string.IsNullOrEmpty(jokeImageUrl)) {
+                          <img src="@jokeImageUrl" class="joke-image" width="400" style="cursor: pointer;" @onclick="ShowImageDescriptionPopup" title="@jokeImageDescription" />
+                        }
+                        else if (!string.IsNullOrEmpty(jokeImageDescription))
+                        {
+                            <p class="image-note">@jokeImageDescription</p>
+                        }
                     }
                 }
-                else
-                {
-                    @if (!string.IsNullOrEmpty(jokeImageUrl)) {
-                      <img src="@jokeImageUrl" class="joke-image" width="400" style="cursor: pointer;" @onclick="ShowImageDescriptionPopup" title="@jokeImageDescription" />
-                    }
-                    else if (!string.IsNullOrEmpty(jokeImageDescription))
-                    {
-                        <p class="image-note">@jokeImageDescription</p>
-                    }
-                }
-            </div>
+                </div>
+            }
         <MudDialog @bind-Visible="@imageDescriptionDialogVisible">
             <TitleContent>
                 <MudText Typo="Typo.h6">Image Description</MudText>
