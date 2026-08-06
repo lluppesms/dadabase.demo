@@ -49,15 +49,6 @@ public class BackupStorageService : IBackupStorageService
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="BackupStorageService"/> class with a specific container client.
-    /// </summary>
-    /// <param name="containerClient">The blob container client that holds the backups.</param>
-    public BackupStorageService(BlobContainerClient containerClient)
-    {
-        _containerClient = containerClient ?? throw new ArgumentNullException(nameof(containerClient));
-    }
-
-    /// <summary>
     /// Uploads a compressed backup to blob storage.
     /// </summary>
     /// <param name="blobName">The name (path) of the blob to create.</param>

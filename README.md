@@ -280,6 +280,7 @@ Same great taste, GitHub flavor:
 | Topic | Link |
 |-------|------|
 | 📖 Coding Standards | [Coding_Standards.md](./Docs/Coding_Standards.md) |
+| 💾 Scheduled Backups | [ScheduledBackups.md](./Docs/ScheduledBackups.md) |
 | 🏗️ Infrastructure as Code | [Bicep Instructions](./.github/instructions/bicep-instructions.md) |
 | 🗃️ SQL DACPAC Deployment | [SQL/DACPAC Instructions](./.github/instructions/sql-database-dacpac-instructions.md) |
 | 🔄 Azure DevOps Pipelines | [AzDO Pipeline Instructions](./.github/instructions/azure-devops-pipeline-instructions.md) |

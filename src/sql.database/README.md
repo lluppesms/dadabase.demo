@@ -24,7 +24,8 @@ sql.database/
 │   │   ├── Joke.sql              # Main jokes table
 │   │   ├── JokeCategory.sql      # Joke categories
 │   │   ├── JokeJokeCategory.sql  # Joke/category relationships
-│   │   └── JokeRating.sql        # User ratings for jokes
+│   │   ├── JokeRating.sql        # User ratings for jokes
+│   │   └── BackupMetadata.sql    # Backup export audit trail
 │   ├── Views/
 │   │   └── vw_Jokes.sql          # Simplified view of active jokes
 │   ├── Pre.Deployment.sql        # Drops legacy dbo objects for offline migration
@@ -58,6 +59,11 @@ sql.database/
 - Stores individual user ratings for jokes
 - Fields: JokeRatingId, JokeId, UserRating, CreateDateTime, CreateUserName
 - CHECK constraint: UserRating BETWEEN 1 AND 5
+
+**BackupMetadata**
+- Audit trail of scheduled/manual backup exports created by the BackupExportJob WebJob
+- Fields: BackupMetadataId, ExportType, LastExportedAtUtc, LastExportedMaxChangeDateTimeUtc, LastExportedJokeCount, BackupBlobUri, Checksum, Status, ErrorMessage, CreatedAtUtc
+- CHECK constraint: Status IN ('Success', 'Skipped', 'Failed')
 
 ### Views
 
