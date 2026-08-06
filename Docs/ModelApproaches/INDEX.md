@@ -143,9 +143,10 @@
      - IBackupMetadataRepository interface (C#)
      - Data model classes
    
-   - **Azure Function Layer**:
-     - BackupExportFunction.cs (complete implementation)
-     - ExecuteWeeklyExportAsync() method (150+ lines)
+   - **WebJob Layer** (hosted inside the existing App Service, no new Function App):
+     - BackupExportJob.cs + Program.cs (complete implementation)
+     - settings.job CRON schedule (Sun 03:00 UTC)
+     - RunAsync() method (150+ lines)
      - HasDataChangedAsync() method (60+ lines)
      - RotateBackupsAsync() method (70+ lines)
      - Helper methods (checksums, compression, logging)
@@ -195,7 +196,7 @@
 ### For Developers
 1. Start with **COMBINED_APPROACH.md** (implementation focus)
 2. Reference service interfaces (section 3)
-3. Copy Azure Function implementation (section 3)
+3. Copy WebJob implementation (section 3)
 4. Follow database schema (section 3)
 5. Use testing strategy for unit tests
 
@@ -247,7 +248,7 @@ All documents have been:
 - [ ] Team reviews all 5 documents
 - [ ] Architecture approved by stakeholders
 - [ ] Development capacity allocated (15 days)
-- [ ] Azure resources provisioned (storage account, function app)
+- [ ] Azure resources provisioned (storage account only — WebJob deploys inside the existing App Service)
 - [ ] Database access confirmed
 
 ### Database Phase (Days 1-2)
@@ -264,10 +265,10 @@ All documents have been:
 - [ ] Unit test service layer
 - [ ] Validate with existing export functionality
 
-### Function Phase (Days 6-8)
-- [ ] Create Azure Function project
-- [ ] Copy BackupExportFunction implementation
-- [ ] Configure TimerTrigger binding
+### WebJob Phase (Days 6-8)
+- [ ] Create BackupWebJob console project (referenced by the Website project)
+- [ ] Copy BackupExportJob implementation
+- [ ] Configure settings.job CRON schedule
 - [ ] Test locally with Azure Storage Emulator
 - [ ] Integration test end-to-end flow
 

@@ -2,6 +2,7 @@
 
 **Status**: Final Implementation Blueprint  
 **Synthesis Date**: 2026-05-21  
+**Last Updated**: 2026-08-06 (switched scheduling/runtime layer from an Azure Function to an in-process Azure App Service WebJob)  
 **Combining**: Opus (Cloud-Native) + GPT-5.4-Codex (Hybrid Efficiency)  
 **Target Effort**: 15 days (3 weeks) development + testing
 
@@ -17,6 +18,9 @@ This document represents the **optimal synthesis** of two AI-generated architect
 - ✅ Stores metadata in SQL for audit trail and compliance
 - ✅ Uses shared service for code reuse across export methods
 - ✅ Implements comprehensive error handling and logging
+- ✅ Runs as a **WebJob hosted inside the existing Dadabase App Service** — no separate Azure Function App (or any other new compute resource) needs to be provisioned or paid for
+
+> **Why a WebJob instead of an Azure Function?** The original proposals both called for a standalone Azure Function App. Since Dadabase already runs on an App Service Plan with the web app, a scheduled **Azure WebJob** can be deployed as part of the same App Service deployment package (`App_Data/jobs/triggered/...`), runs under the same App Service Plan/compute, and shares the app's Managed Identity, connection strings, and Application Insights instrumentation automatically. This removes an entire resource (Function App + its own storage/hosting requirements) from the architecture while keeping identical business logic, schedule, and monitoring.
 
 ---
 
@@ -24,20 +28,25 @@ This document represents the **optimal synthesis** of two AI-generated architect
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Azure Functions (Timer Trigger)              │
-│                    Weekly: Sunday 03:00 UTC                      │
+│           Dadabase App Service (existing, single resource)      │
 │                                                                   │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │  BackupExportFunction.ExecuteWeeklyExportAsync()          │  │
-│  │                                                             │  │
-│  │  1. Check if data changed (query → DB metadata)           │  │
-│  │  2. If changed: Build backup data (shared service)        │  │
-│  │  3. Compress & upload to Blob Storage                     │  │
-│  │  4. Update DB metadata with export details                │  │
-│  │  5. Rotate backups (keep 10, delete old)                  │  │
-│  │  6. Log success/skip/failure to App Insights              │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                                                                   │
+│   ┌─────────────────────────┐   ┌─────────────────────────────┐ │
+│   │  Website (Blazor app)   │   │  WebJob: BackupExportJob     │ │
+│   │  (always running)       │   │  Triggered WebJob            │ │
+│   │                         │   │  Schedule: Sun 03:00 UTC     │ │
+│   │                         │   │  (CRON via settings.job)      │ │
+│   │                         │   │                               │ │
+│   │                         │   │  1. Check if data changed     │ │
+│   │                         │   │     (query → DB metadata)     │ │
+│   │                         │   │  2. If changed: Build backup  │ │
+│   │                         │   │     data (shared service)     │ │
+│   │                         │   │  3. Compress & upload to Blob │ │
+│   │                         │   │  4. Update DB metadata        │ │
+│   │                         │   │  5. Rotate backups (keep 10)  │ │
+│   │                         │   │  6. Log success/skip/failure  │ │
+│   │                         │   │     to App Insights           │ │
+│   └─────────────────────────┘   └─────────────────────────────┘ │
+│              Shared Managed Identity · Shared App Settings       │
 └─────────────────────────────────────────────────────────────────┘
          ↓                           ↓                        ↓
     ┌─────────┐        ┌──────────────────────┐    ┌──────────────┐
@@ -205,36 +214,120 @@ public interface IBackupMetadataRepository
 
 ---
 
-### 3. Azure Function Implementation
+### 3. WebJob Implementation (hosted inside the existing App Service)
 
-#### BackupExportFunction.cs
+Instead of a separate Azure Function App, the export logic is packaged as an **Azure WebJob** — a small .NET console application deployed to `App_Data/jobs/triggered/BackupExportJob/` inside the same App Service as the Dadabase web app. Azure App Service natively schedules Triggered WebJobs via a CRON expression in a `settings.job` file, so no external scheduler, Function App, or Consumption plan is required.
+
+#### Project layout
+
+```
+src/web/
+├── Website/                       # existing Blazor app (DadABase.Web.csproj)
+├── Website.BackupWebJob/          # NEW: console app, published into Website's App_Data/jobs
+│   ├── Program.cs
+│   ├── settings.job               # { "schedule": "0 0 3 * * 0" }
+│   └── Website.BackupWebJob.csproj
+```
+
+The WebJob project references the same `DadABase.Data` class library as the web app, so `IBackupExportService`, `IBackupStorageService`, and `IBackupMetadataRepository` are shared — no duplicated business logic between the web app and the backup job.
+
+#### settings.job (CRON schedule, evaluated by the App Service WebJobs scheduler)
+```json
+{
+  "schedule": "0 0 3 * * 0"
+}
+```
+
+#### Website.BackupWebJob.csproj (publishes into the Website's App_Data/jobs folder)
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- Places the published output where Azure App Service auto-discovers Triggered WebJobs -->
+    <WebJobName>BackupExportJob</WebJobName>
+    <IsWebJobProject>true</IsWebJobProject>
+    <WebJobType>Triggered</WebJobType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Data\DadABase.Data.csproj" />
+  </ItemGroup>
+</Project>
+```
+
+> The Website project references this WebJob project so `dotnet publish`/`az webapp deploy` for the Website automatically stages the compiled job under `App_Data/jobs/triggered/BackupExportJob/` in the same deployment package/zip — one deployment, one App Service, one CI/CD pipeline stage.
+
+#### Program.cs
 ```csharp
-[Functions("WeeklyBackupExportFunction")]
-public class BackupExportFunction
+public static class Program
+{
+    /// <summary>
+    /// Entry point for the Triggered WebJob. Azure App Service invokes this executable
+    /// on the schedule defined in settings.job ("0 0 3 * * 0" = every Sunday 03:00 UTC).
+    /// The process runs once per invocation and exits — no long-running host required.
+    /// </summary>
+    public static async Task<int> Main(string[] args)
+    {
+        var host = Host.CreateDefaultBuilder(args)
+            .ConfigureAppConfiguration(config => config.AddEnvironmentVariables())
+            .ConfigureServices((context, services) =>
+            {
+                // Reuses the same DI registrations (DbContext, repositories, Blob client via
+                // Managed Identity, Application Insights) as the Website project.
+                services.AddDadabaseDataServices(context.Configuration);
+                services.AddSingleton<IBackupExportService, BackupExportService>();
+                services.AddSingleton<IBackupStorageService, BackupStorageService>();
+                services.AddSingleton<IBackupMetadataRepository, BackupMetadataRepository>();
+                services.AddApplicationInsightsTelemetryWorkerService();
+            })
+            .Build();
+
+        var logger = host.Services.GetRequiredService<ILogger<BackupExportJob>>();
+        var job = new BackupExportJob(
+            host.Services.GetRequiredService<IBackupExportService>(),
+            host.Services.GetRequiredService<IBackupStorageService>(),
+            host.Services.GetRequiredService<IBackupMetadataRepository>(),
+            logger);
+
+        try
+        {
+            await job.RunAsync();
+            return 0; // Exit code 0 = success, surfaced in the WebJob run history
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Weekly backup export failed");
+            return 1; // Non-zero exit code marks the WebJob run as failed
+        }
+    }
+}
+```
+
+#### BackupExportJob.cs
+```csharp
+public class BackupExportJob
 {
     private readonly IBackupExportService _exportService;
     private readonly IBackupStorageService _storageService;
     private readonly IBackupMetadataRepository _metadataRepo;
     private readonly ILogger _logger;
     
-    public BackupExportFunction(
+    public BackupExportJob(
         IBackupExportService exportService,
         IBackupStorageService storageService,
         IBackupMetadataRepository metadataRepo,
-        ILoggerFactory loggerFactory)
+        ILogger logger)
     {
         _exportService = exportService;
         _storageService = storageService;
         _metadataRepo = metadataRepo;
-        _logger = loggerFactory.CreateLogger<BackupExportFunction>();
+        _logger = logger;
     }
     
     /// <summary>
-    /// Timer trigger: Every Sunday at 03:00 UTC
-    /// CRON: "0 0 3 * * 0"
+    /// Executed once per Triggered WebJob invocation (schedule defined in settings.job)
     /// </summary>
-    [TimerTrigger("0 0 3 * * 0")] TimerInfo timer)
-    public async Task Run(TimerInfo timer)
+    public async Task RunAsync()
     {
         _logger.LogInformation("Weekly backup export started at {UtcNow}", DateTime.UtcNow);
         
@@ -323,7 +416,7 @@ public class BackupExportFunction
         {
             _logger.LogError(ex, "Weekly backup export failed");
             await RecordFailedExportAsync(ex.Message);
-            throw;  // Rethrow for Azure Functions error handling
+            throw;  // Rethrow so Main() returns a non-zero exit code, marking the WebJob run as Failed
         }
     }
     
@@ -479,36 +572,38 @@ public class BackupExportFunction
 
 ## Deployment & Infrastructure
 
-### Bicep Module: Managed Identity RBAC
+No new App Service, Function App, or hosting plan is required — the WebJob deploys as part of the existing Website's publish output. The only infrastructure changes needed are: (1) grant the **existing App Service's** Managed Identity access to the backup blob container, and (2) ensure the backup container exists. `AlwaysOn` should already be enabled on the App Service Plan (recommended for Triggered WebJobs so the scheduler stays warm); if not already set, enable it as part of this change.
+
+### Bicep Module: Managed Identity RBAC (existing App Service, no new compute resource)
 
 ```bicep
-// modules/function-backup-identity.bicep
-param functionAppName string
+// modules/webapp-backup-identity.bicep
+param appServiceName string   // existing Dadabase App Service (hosts Website + BackupExportJob WebJob)
 param storageAccountName string
 param backupContainerName string
 
-// Get existing resources
-resource functionApp 'Microsoft.Web/sites@2023-01-01' existing = {
-  name: functionAppName
+// Get existing resources — no Function App, no new App Service Plan
+resource appService 'Microsoft.Web/sites@2023-01-01' existing = {
+  name: appServiceName
 }
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' existing = {
   name: storageAccountName
 }
 
-// Get system-assigned identity
-var functionIdentityId = functionApp.identity.principalId
+// Reuse the App Service's system-assigned identity (already used by the web app)
+var appServiceIdentityId = appService.identity.principalId
 
 // Assign Storage Blob Data Contributor role
 resource roleAssignment 'Microsoft.Authorization/roleAssignments@2023-04-01-preview' = {
   scope: storageAccount
-  name: guid(storageAccount.id, functionIdentityId, 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
+  name: guid(storageAccount.id, appServiceIdentityId, 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
   properties: {
     roleDefinitionId: subscriptionResourceId(
       'Microsoft.Authorization/roleDefinitions',
       'ba92f5b4-2d11-453d-a403-e96b0029c9fe'  // Storage Blob Data Contributor
     )
-    principalId: functionIdentityId
+    principalId: appServiceIdentityId
     principalType: 'ServicePrincipal'
   }
 }
@@ -518,6 +613,15 @@ resource backupContainer 'Microsoft.Storage/storageAccounts/blobServices/contain
   name: '${storageAccountName}/default/${backupContainerName}'
   properties: {
     publicAccess: 'None'
+  }
+}
+
+// Ensure AlwaysOn is enabled so the Triggered WebJob scheduler remains active
+resource appServiceConfig 'Microsoft.Web/sites/config@2023-01-01' = {
+  parent: appService
+  name: 'web'
+  properties: {
+    alwaysOn: true
   }
 }
 
@@ -576,7 +680,7 @@ customMetrics
 
 ```csharp
 [TestClass]
-public class BackupExportFunctionTests
+public class BackupExportJobTests
 {
     [TestMethod]
     public async Task HasDataChangedAsync_WhenNoMetadata_ReturnsTrue()
@@ -654,7 +758,7 @@ public async Task RestoreFromBackupAsync(string blobName)
 ## Next Steps
 
 1. **Week 1**: Database schema migration + service interfaces
-2. **Week 2**: Azure Function implementation + Bicep infrastructure
+2. **Week 2**: WebJob implementation + Bicep infrastructure (existing App Service identity/RBAC only)
 3. **Week 3**: Testing, monitoring setup, documentation
 4. **Deployment**: Staging validation, then production rollout
 

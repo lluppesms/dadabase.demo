@@ -50,7 +50,7 @@ I've successfully analyzed the weekly export backup feature requirement and deli
 **COMBINED_APPROACH.md** - Production-Ready Blueprint
 - **Pattern Name**: "Database-Primary Hybrid"
 - **Architecture Diagram**: Visual overview of all components
-- **Complete Implementation**: Ready-to-code Azure Function
+- **Complete Implementation**: Ready-to-code WebJob (hosted inside the existing App Service)
 - **Database Design**: SQL schema + stored procedures
 - **Service Interfaces**: C# code for shared services
 - **Monitoring**: Application Insights queries + alert rules
@@ -63,9 +63,9 @@ I've successfully analyzed the weekly export backup feature requirement and deli
 ## 🏗️ Architecture at a Glance
 
 ```
-Weekly Timer Trigger (Sunday 03:00 UTC)
+Weekly WebJob Trigger — App Service CRON schedule (Sunday 03:00 UTC)
         ↓
-Azure Function: BackupExportFunction
+WebJob (Triggered): BackupExportJob (deployed inside existing App Service)
         ↓
 ┌──────────────────────────────────────┐
 │ 1. Check for data changes            │  (Query SQL: MAX(ChangeDateTime))
@@ -90,7 +90,7 @@ Azure Function: BackupExportFunction
 | **Change Detection** | SQL timestamp comparison | Efficient, leverages existing ChangeDateTime |
 | **Metadata Storage** | SQL BackupMetadata table | Audit trail, compliance, transaction safety |
 | **Export Service** | Shared BuildBackupData() | Code reuse, maintainability |
-| **Schedule** | Azure Timer Trigger (Sun 03:00 UTC) | Lightweight, serverless, built-in Azure |
+| **Schedule** | App Service WebJob CRON (Sun 03:00 UTC) | Lightweight, built into existing App Service, no new resource |
 | **Blob Format** | Hierarchical {year}/{month}/{file} | Enables lifecycle policies, date queries |
 | **Compression** | Gzip enabled | 70% storage reduction, standard format |
 | **Authentication** | Managed Identity + RBAC | No secrets, automatic rotation |
@@ -115,8 +115,8 @@ Azure Function: BackupExportFunction
 - [ ] Create `IBackupMetadataRepository` interface + implementation
 - [ ] Dependency injection setup
 
-### Phase 3: Azure Function (3 days)
-- [ ] Create `BackupExportFunction` with TimerTrigger
+### Phase 3: WebJob (3 days)
+- [ ] Create `BackupExportJob` console app + `settings.job` CRON schedule
 - [ ] Implement `ExecuteWeeklyExportAsync()` orchestration
 - [ ] Implement `HasDataChangedAsync()` change detection
 - [ ] Implement `RotateBackupsAsync()` cleanup logic
@@ -198,8 +198,8 @@ Copy interfaces and implementation stubs from `COMBINED_APPROACH.md`:
 - `IBackupStorageService`
 - `IBackupMetadataRepository`
 
-### Step 4: Azure Function
-Copy `BackupExportFunction.cs` pseudocode from `COMBINED_APPROACH.md` and fill in implementation details
+### Step 4: WebJob
+Copy `BackupExportJob.cs` / `Program.cs` pseudocode from `COMBINED_APPROACH.md` and fill in implementation details
 
 ### Step 5: Bicep Infrastructure
 Deploy managed identity RBAC using provided Bicep module
@@ -263,7 +263,7 @@ Located in: `C:\Projects\Dadabase\dadabase.demo.gh\Docs\ModelApproaches\`
 4. **COMBINED_APPROACH.md** (22.5 KB)
    - Production-ready blueprint
    - Complete service interfaces (C#)
-   - Full Azure Function implementation code
+   - Full WebJob implementation code (hosted inside the existing App Service)
    - Database schema + stored procedures
    - Bicep infrastructure module
    - Monitoring queries and alert rules
@@ -337,7 +337,7 @@ A: Download the .json.gz blob, decompress, validate checksum, import via existin
 | 2026-05-21 | Implementation Planning | ✅ COMPLETE |
 | TBD | Database Deployment | ⏳ Pending |
 | TBD | Service Development | ⏳ Pending |
-| TBD | Function Implementation | ⏳ Pending |
+| TBD | WebJob Implementation | ⏳ Pending |
 | TBD | Testing & Deployment | ⏳ Pending |
 
 ---
