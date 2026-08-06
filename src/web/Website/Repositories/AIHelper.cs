@@ -7,41 +7,9 @@ public class AIHelper : IAIHelper
 {
     private readonly IAiChatService aiChatService;
     private readonly IAiImageService aiImageService;
-
-    private const string JokeCategoryClassifierPrompt =
-        "You are a joke classification assistant. Given a joke, identify which categories from a provided list best describe it. " +
-        "Select a MAXIMUM of TWO categories - choose only the most relevant and applicable ones. " +
-        "Return ONLY the names of matching categories as a comma-separated list with no other text. " +
-        "Only return categories that are actually in the provided list - do not invent new ones. " +
-        "If no categories match well, return the single most appropriate one from the list. " +
-        "Prioritize quality over quantity - fewer, more accurate categories are better than multiple loosely-related ones.";
-
-    private const string JokeImageGeneratorPrompt =
-        "You are going to be told a funny joke or a humorous line or an insightful quote. " +
-        "It is your responsibility to describe that joke so that an artist can draw a picture of the mental image that this joke creates. " +
-        "Give clear instructions on how the scene should look and what objects should be included in the scene." +
-        "Instruct the artist to draw it in a humorous cartoon format." +
-        "Make sure the description does not ask for anything violent, sexual, or political so that it does not violate safety rules. " +
-        "Keep the scene description under 250 words or less.";
-
-    private const string JokeAnalyzerPrompt =
-        "You are a joke analysis assistant. Given a joke and a list of available categories, you will provide two things:\n" +
-        "1. Suggest up to TWO most relevant categories from the provided list (choose the best matches only)\n" +
-        "2. Create a scene description for an artist to draw a humorous cartoon representation of the joke\n\n" +
-        "Format your response EXACTLY as follows:\n" +
-        "CATEGORIES: category1, category2\n" +
-        "SCENE: [your scene description here]\n\n" +
-        "Guidelines for categories:\n" +
-        "- Select MAXIMUM of TWO categories from the provided list\n" +
-        "- Only use categories that are in the provided list\n" +
-        "- Choose the most relevant and applicable ones\n" +
-        "- Prioritize quality over quantity\n\n" +
-        "Guidelines for scene description:\n" +
-        "- Describe what an artist should draw to represent this joke\n" +
-        "- Give clear instructions on the scene, objects, and setting\n" +
-        "- Request a humorous cartoon format\n" +
-        "- Avoid anything violent, sexual, or political\n" +
-        "- Keep description under 250 words";
+    private readonly string jokeCategoryClassifierPrompt;
+    private readonly string jokeImageGeneratorPrompt;
+    private readonly string jokeAnalyzerPrompt;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AIHelper"/> class.
@@ -50,6 +18,15 @@ public class AIHelper : IAIHelper
     {
         this.aiChatService = aiChatService;
         this.aiImageService = aiImageService;
+        jokeCategoryClassifierPrompt = ReadPromptFile("JokeCategoryClassifierPrompt.txt");
+        jokeImageGeneratorPrompt = ReadPromptFile("JokeImageGeneratorPrompt.txt");
+        jokeAnalyzerPrompt = ReadPromptFile("JokeAnalyzerPrompt.txt");
+    }
+
+    private static string ReadPromptFile(string fileName)
+    {
+        var promptPath = Path.Combine(AppContext.BaseDirectory, "Data", fileName);
+        return File.ReadAllText(promptPath);
     }
 
     /// <summary>
@@ -61,7 +38,7 @@ public class AIHelper : IAIHelper
 
         try
         {
-            imageDescription = await aiChatService.CompleteAsync(JokeImageGeneratorPrompt, jokeText);
+            imageDescription = await aiChatService.CompleteAsync(jokeImageGeneratorPrompt, jokeText);
 
             Console.WriteLine($"Joke: {jokeText} \nImage description {imageDescription}");
             return (imageDescription, true, string.Empty);
@@ -83,7 +60,7 @@ public class AIHelper : IAIHelper
         try
         {
             var message = $"Joke: {jokeText}\n\nAvailable categories: {string.Join(", ", availableCategories)}\n\nWhich categories from the list above best fit this joke? Return only the matching category names as a comma-separated list.";
-            var responseText = await aiChatService.CompleteAsync(JokeCategoryClassifierPrompt, message);
+            var responseText = await aiChatService.CompleteAsync(jokeCategoryClassifierPrompt, message);
 
             var categoryList = availableCategories.ToList();
             var suggestions = responseText.Split(',')
@@ -141,7 +118,7 @@ public class AIHelper : IAIHelper
         try
         {
             var message = $"Joke: {jokeText}\n\nAvailable categories: {string.Join(", ", availableCategories)}\n\nAnalyze this joke and provide category suggestions and a scene description.";
-            var responseText = await aiChatService.CompleteAsync(JokeAnalyzerPrompt, message);
+            var responseText = await aiChatService.CompleteAsync(jokeAnalyzerPrompt, message);
 
             Console.WriteLine($"Joke analysis response: {responseText}");
 
