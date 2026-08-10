@@ -6,6 +6,7 @@ using DadABase.Data.Models;
 using DadABase.Data.Repositories;
 using DadABase.Web.Repositories;
 using Microsoft.OpenApi;
+using DadABase.Web.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -108,6 +109,7 @@ else
     builder.Services.AddSingleton<IJokeRepository>(sp => new JokeJsonRepository(jsonFilePath));
 }
 
+builder.Services.AddAiServices(builder.Configuration);
 builder.Services.AddSingleton<IAIHelper, AIHelper>();
 builder.Services.AddSingleton<IJokeImageQueue, JokeImageQueue>();
 builder.Services.AddHostedService<JokeImageQueueService>();
