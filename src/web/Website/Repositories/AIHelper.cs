@@ -1,3 +1,5 @@
+using DadABase.Web.Helpers;
+
 namespace DadABase.Web.Repositories;
 
 /// <summary>
@@ -18,6 +20,7 @@ public class AIHelper : IAIHelper
     {
         this.aiChatService = aiChatService;
         this.aiImageService = aiImageService;
+
         jokeCategoryClassifierPrompt = ReadPromptFile("JokeCategoryClassifierPrompt.txt");
         jokeImageGeneratorPrompt = ReadPromptFile("JokeImageGeneratorPrompt.txt");
         jokeAnalyzerPrompt = ReadPromptFile("JokeAnalyzerPrompt.txt");

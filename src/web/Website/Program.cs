@@ -6,6 +6,7 @@ using DadABase.Data.Models;
 using DadABase.Data.Repositories;
 using DadABase.Web.Repositories;
 using Microsoft.OpenApi;
+using DadABase.Web.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -1,4 +1,4 @@
-namespace DadABase.Web.Services;
+namespace DadABase.Web.Helpers;
 
 /// <summary>
 /// Registers AI service abstractions and provider implementations.

@@ -6,7 +6,7 @@
 // Joke Editor Page Code-Behind
 // </summary>
 //-----------------------------------------------------------------------
-using MudBlazor;
+using DadABase.Web.Helpers;
 
 namespace DadABase.Web.Pages;
 
@@ -349,7 +349,7 @@ public partial class JokeEditor : ComponentBase
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Joke analysis failed: {Helpers.Utilities.GetExceptionMessage(ex)}");
+            Console.WriteLine($"Joke analysis failed: {Utilities.GetExceptionMessage(ex)}");
             editMessage = "Unable to analyze joke. Please select categories and enter a description manually, or try again.";
             editAlertClass = "alert-warning";
         }
@@ -385,7 +385,7 @@ public partial class JokeEditor : ComponentBase
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Category suggestion failed: {Helpers.Utilities.GetExceptionMessage(ex)}");
+            Console.WriteLine($"Category suggestion failed: {Utilities.GetExceptionMessage(ex)}");
             editMessage = "Unable to suggest categories. Please try again or select categories manually.";
             editAlertClass = "alert-warning";
         }
@@ -425,7 +425,7 @@ public partial class JokeEditor : ComponentBase
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Scenario generation failed: {Helpers.Utilities.GetExceptionMessage(ex)}");
+            Console.WriteLine($"Scenario generation failed: {Utilities.GetExceptionMessage(ex)}");
             editMessage = "Unable to generate a scenario description. You can enter one manually or try again.";
             editAlertClass = "alert-warning";
         }
@@ -514,7 +514,7 @@ public partial class JokeEditor : ComponentBase
         }
         catch (Exception ex)
         {
-            editMessage = $"Error saving joke: {Helpers.Utilities.GetExceptionMessage(ex)}";
+            editMessage = $"Error saving joke: {Utilities.GetExceptionMessage(ex)}";
             editAlertClass = "alert-danger";
         }
         finally
@@ -593,7 +593,7 @@ public partial class JokeEditor : ComponentBase
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Image generation failed: {Helpers.Utilities.GetExceptionMessage(ex)}");
+            Console.WriteLine($"Image generation failed: {Utilities.GetExceptionMessage(ex)}");
             editMessage = "Unable to generate an image. You can continue and save the joke without an image.";
             editAlertClass = "alert-warning";
         }
@@ -629,7 +629,7 @@ public partial class JokeEditor : ComponentBase
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Scenario regeneration failed: {Helpers.Utilities.GetExceptionMessage(ex)}");
+            Console.WriteLine($"Scenario regeneration failed: {Utilities.GetExceptionMessage(ex)}");
             editMessage = "Unable to regenerate scenario. Please try again or edit the description manually.";
             editAlertClass = "alert-warning";
         }
@@ -670,7 +670,7 @@ public partial class JokeEditor : ComponentBase
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Image regeneration failed: {Helpers.Utilities.GetExceptionMessage(ex)}");
+            Console.WriteLine($"Image regeneration failed: {Utilities.GetExceptionMessage(ex)}");
             editMessage = "Unable to regenerate image. Please try again.";
             editAlertClass = "alert-warning";
         }
@@ -828,7 +828,7 @@ public partial class JokeEditor : ComponentBase
         }
         catch (Exception ex)
         {
-            editMessage = $"Error saving joke: {Helpers.Utilities.GetExceptionMessage(ex)}";
+            editMessage = $"Error saving joke: {Utilities.GetExceptionMessage(ex)}";
             editAlertClass = "alert-danger";
         }
         finally
@@ -915,7 +915,7 @@ public partial class JokeEditor : ComponentBase
         }
         catch (Exception ex)
         {
-            editMessage = $"Error deleting joke: {Helpers.Utilities.GetExceptionMessage(ex)}";
+            editMessage = $"Error deleting joke: {Utilities.GetExceptionMessage(ex)}";
             editAlertClass = "alert-danger";
         }
         finally

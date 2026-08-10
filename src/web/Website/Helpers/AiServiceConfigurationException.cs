@@ -1,4 +1,4 @@
-namespace DadABase.Web.Services;
+namespace DadABase.Web.Helpers;
 
 /// <summary>
 /// Represents missing or invalid AI service configuration.

@@ -1,5 +1,7 @@
 namespace DadABase.Tests;
 
+using Azure.Identity;
+using DadABase.Web.Helpers;
 using DadABase.Web.Repositories;
 using DadABase.Web.Services;
 using Microsoft.Extensions.Configuration;

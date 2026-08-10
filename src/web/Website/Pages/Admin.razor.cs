@@ -6,8 +6,7 @@
 // Admin Page Code-Behind
 // </summary>
 //-----------------------------------------------------------------------
-using DadABase.Data.Helpers;
-using DadABase.Web.Models.Application;
+using DadABase.Web.Helpers;
 
 namespace DadABase.Web.Pages;
 
@@ -89,7 +88,7 @@ public partial class Admin : ComponentBase
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error loading admin page! {Helpers.Utilities.GetExceptionMessage(ex)}");
+                    Console.WriteLine($"Error loading admin page! {Utilities.GetExceptionMessage(ex)}");
                 }
             }
             else

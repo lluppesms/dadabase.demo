@@ -1,7 +1,6 @@
 using Azure.AI.OpenAI;
+using DadABase.Web.Helpers;
 using Microsoft.Agents.AI;
-using Microsoft.Agents.AI.OpenAI;
-using OpenAI;
 using OpenAI.Chat;
 using System.ClientModel;
 using System.Collections.Concurrent;
