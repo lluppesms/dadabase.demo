@@ -46,25 +46,28 @@ public partial class Admin : ComponentBase
             {
                 try
                 {
+                    var appDataSource = Configuration["AppSettings:DataSource"];
+
                     //var buildInfo = await buildInfoService.GetBuildInfoAsync();
                     apiKeyInfo = string.IsNullOrEmpty(Settings.ApiKey) ? string.Empty : Settings.ApiKey[..1] + "...";
                     if (!string.IsNullOrEmpty(Settings.DefaultConnection))
                     {
                         var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(Settings.DefaultConnection);
-                        dataSource = $"SQL Server: {builder.DataSource}, Database: {builder.InitialCatalog}";
+                        dataSource = $"{appDataSource}: SQL Server: {builder.DataSource}, Database: {builder.InitialCatalog}";
                     }
                     else
                     {
-                        dataSource = "JSON File";
+                        dataSource = "{appDataSource}: JSON File";
                     }
 
                     // Get AI Chat configuration
                     var aiChatEndpoint = Configuration["AppSettings:AzureOpenAI:Chat:Endpoint"];
                     var aiChatModel = Configuration["AppSettings:AzureOpenAI:Chat:DeploymentName"];
+                    var aiServiceProvider = Configuration["AppSettings:AiServiceProvider"];
                     if (!string.IsNullOrEmpty(aiChatEndpoint) && !string.IsNullOrEmpty(aiChatModel))
                     {
                         var endpointUri = new Uri(aiChatEndpoint);
-                        aiChatInfo = $"{endpointUri.Host} / {aiChatModel}";
+                        aiChatInfo = $"{aiServiceProvider} -> {aiChatModel} -> {endpointUri.Host}";
                     }
                     else
                     {
@@ -77,7 +80,7 @@ public partial class Admin : ComponentBase
                     if (!string.IsNullOrEmpty(aiImageEndpoint) && !string.IsNullOrEmpty(aiImageModel))
                     {
                         var endpointUri = new Uri(aiImageEndpoint);
-                        aiImageInfo = $"{endpointUri.Host} / {aiImageModel}";
+                        aiImageInfo = $"{aiServiceProvider} -> {aiImageModel} -> {endpointUri.Host}";
                     }
                     else
                     {

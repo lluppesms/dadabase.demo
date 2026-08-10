@@ -7,8 +7,8 @@
     "DataSource": "JSON",
     "EnableSwagger": true,
     "DetailedErrors": true,
-    "AiServiceProvider": "AgentFramework",
-    
+    "AiServiceProvider": "CopilotSDK", // "AgentFramework","CopilotSDK"
+
     "NOTSET-USE-JSON-DefaultConnection": "",
     "DefaultConnection": "",
     "AdminUserList": "",
