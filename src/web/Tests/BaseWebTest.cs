@@ -8,6 +8,9 @@
 */
 namespace DadABase.Tests;
 
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Hosting;
+
 [ExcludeFromCodeCoverage]
 public abstract class BaseWebTesting
 {
@@ -15,6 +18,7 @@ public abstract class BaseWebTesting
     protected ProjectEntities db;
     protected AppSettings appSettings;
     protected HttpClient _client;
+    protected IHost _host;
 
     protected async Task SetupInitialize()
     {
@@ -24,38 +28,28 @@ public abstract class BaseWebTesting
         {
             UserName = testData.UserName
         };
-        _client = GetClient();
+        _client = await GetClientAsync();
     }
 
-    protected class ConsoleWriter : StringWriter
-    {
-#pragma warning disable IDE0044 // Add readonly modifier
-        private ITestOutputHelper output;
-#pragma warning restore IDE0044 // Add readonly modifier
-        public ConsoleWriter(ITestOutputHelper output)
-        {
-            this.output = output;
-        }
-
-        public override void WriteLine(string m)
-        {
-            output.WriteLine(m);
-        }
-    }
-
-    protected HttpClient GetClient()
+    protected async Task<HttpClient> GetClientAsync()
     {
         var startupAssembly = Assembly.GetExecutingAssembly();
         //  OLD: var startupAssembly = typeof(Startup).GetTypeInfo().Assembly;
         var contentRoot = GetProjectPath(string.Empty, startupAssembly);
-        var builder = new WebHostBuilder()
-            .UseContentRoot(contentRoot)
-            .ConfigureServices(InitializeServices)
-            // ====>   do I need this for authentication.... ?????       .UseStartup<TestingStartup>()
-            .UseEnvironment("Testing"); // ensure ConfigureTesting is called in Startup
-        var server = new TestServer(builder);
-        var client = server.CreateClient();
-        return client;
+
+        var builder = new HostBuilder()
+            .ConfigureWebHost(webHost =>
+            {
+                webHost
+                    .UseContentRoot(contentRoot)
+                    .ConfigureServices(InitializeServices)
+                    // ====>   do I need this for authentication.... ?????       .UseStartup<TestingStartup>()
+                    .UseEnvironment("Testing") // ensure ConfigureTesting is called in Startup
+                    .UseTestServer();
+            });
+
+        _host = await builder.StartAsync();
+        return _host.GetTestClient();
     }
 
     protected virtual void InitializeServices(IServiceCollection services)

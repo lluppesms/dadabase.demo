@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-06T14:23:32.9437516-05:00",
+  "title": "Design System: Dad-A-Base",
+  "extensions": {
+    "colorMeta": {
+      "fresh-green": {
+        "role": "primary",
+        "displayName": "Fresh Green",
+        "canonical": "#2bcf6c",
+        "tonalRamp": ["#d7f7a1", "#67d98f", "#2bcf6c", "#0d9f4f", "#0b8f4d"]
+      },
+      "sky-pulse": {
+        "role": "secondary",
+        "displayName": "Sky Pulse",
+        "canonical": "#00b7c9",
+        "tonalRamp": ["#d9eff7", "#00b7c9", "#0089c7"]
+      },
+      "night-ink": {
+        "role": "neutral",
+        "displayName": "Night Ink",
+        "canonical": "#08111f",
+        "tonalRamp": ["#11213a", "#08111f", "#060d19"]
+      },
+      "paper-mist": {
+        "role": "neutral",
+        "displayName": "Paper Mist",
+        "canonical": "#edf6f4",
+        "tonalRamp": ["#ffffff", "#edf6f4", "#d9eff7"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Public page titles and primary joke-discovery moments."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Reading, search, supporting content, and operational surfaces."
+      },
+      "label": {
+        "displayName": "Signal Label",
+        "purpose": "Compact navigation, categories, and utility labels."
+      }
+    },
+    "shadows": [
+      {
+        "name": "soft-lift",
+        "value": "0 8px 18px rgba(13, 33, 57, 0.08)",
+        "purpose": "Small contextual surfaces and category chips."
+      },
+      {
+        "name": "panel-lift",
+        "value": "0 14px 30px rgba(13, 33, 57, 0.14)",
+        "purpose": "Default primary panels and buttons."
+      },
+      {
+        "name": "hero-lift",
+        "value": "0 24px 48px rgba(8, 16, 29, 0.24)",
+        "purpose": "Hovered cards and high-emphasis moments."
+      }
+    ],
+    "motion": [
+      {
+        "name": "smooth-signal",
+        "value": "all 0.28s cubic-bezier(0.2, 0.9, 0.22, 1)",
+        "purpose": "Default transition for interactive default-theme surfaces."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0.01ms, 1 iteration",
+        "purpose": "Global override for users who prefer reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile",
+        "value": "768px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "A direct, celebratory call to action for fetching or progressing through the dad-joke experience.",
+      "html": "<button class=\"ds-btn-primary\">Tell me another one!</button>",
+      "css": ".ds-btn-primary { color: #09131f; background: linear-gradient(130deg, #d7f7a1, #67d98f 45%, #2bcf6c); border: 1px solid rgba(11, 143, 77, 0.56); border-radius: 999px; box-shadow: 0 14px 30px rgba(13, 33, 57, 0.14); font: 600 0.9rem 'Space Grotesk', sans-serif; letter-spacing: 0.04em; padding: 0.78rem 1.75rem; transition: all 0.28s cubic-bezier(0.2, 0.9, 0.22, 1); } .ds-btn-primary:hover { background: linear-gradient(130deg, #e7ffb7, #8ce3ae 42%, #1ca95a); box-shadow: 0 24px 48px rgba(8, 16, 29, 0.24); transform: translateY(-2px) scale(1.01); }"
+    },
+    {
+      "name": "Joke Card",
+      "kind": "card",
+      "refersTo": "joke-card",
+      "description": "The signature glassy vessel for an individual joke and its category signal.",
+      "html": "<article class=\"ds-joke-card\"><span class=\"ds-category\">PUN</span><p>A joke belongs here.</p></article>",
+      "css": ".ds-joke-card { background: rgba(255, 255, 255, 0.84); border: 1px solid rgba(15, 58, 96, 0.18); border-radius: 18px; box-shadow: 0 14px 30px rgba(13, 33, 57, 0.14); color: #102a43; padding: 2rem; position: relative; } .ds-joke-card::before { background: linear-gradient(90deg, #2bcf6c, #d7f7a1, #35d07f); content: ''; height: 4px; inset: 0 0 auto; position: absolute; } .ds-category { background: linear-gradient(135deg, #2bcf6c, #0d9f4f); border-radius: 999px; color: white; display: inline-block; font: 600 0.75rem 'IBM Plex Mono', monospace; letter-spacing: 0.5px; padding: 8px 16px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Playful Signal Lab",
+    "overview": "Dad-A-Base uses a luminous green-and-cyan signal palette, translucent surfaces, and practical type roles to support both joke discovery and technical demonstration. The default system is bright and celebratory without becoming a generic enterprise dashboard; the 90s theme remains a separate, intentionally maximal escape hatch.",
+    "keyCharacteristics": [
+      "Luminous green-and-cyan signal color over light and deep-blue gradient fields.",
+      "Ambiently lifted translucent panels with soft blur and responsive motion.",
+      "Bold uppercase display headlines balanced by pragmatic grotesk and mono utility text.",
+      "Playful discovery cues that do not obscure real controls or product status."
+    ],
+    "rules": [
+      {
+        "name": "The Signal, Not Spreadsheet Rule",
+        "body": "Use green and cyan to orient people toward actions, focus, and delight; do not turn the default experience into a muted, dense enterprise dashboard.",
+        "section": "colors"
+      },
+      {
+        "name": "The Three-Voice Rule",
+        "body": "Use Bebas Neue for the big public statement, Space Grotesk for reading and operating, and IBM Plex Mono only for compact signals and labels.",
+        "section": "typography"
+      },
+      {
+        "name": "The Float With Purpose Rule",
+        "body": "Use elevation to confirm interaction or isolate a meaningful surface; do not layer cards inside cards just to create visual activity.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use Fresh Green for primary action and active state while reserving Sky Pulse for focus, subtle interactive fields, and ambient background energy.",
+      "Do preserve the default light/dark system as paired experiences with the same hierarchy and readable contrast.",
+      "Do keep the 90s theme visually self-contained as a deliberate celebratory alternate mode."
+    ],
+    "donts": [
+      "Don't replace the green-and-cyan signal language with muted dashboard neutrals or data-grid-heavy composition on public discovery surfaces.",
+      "Don't use Bebas Neue for dense paragraph text or IBM Plex Mono for long-form reading.",
+      "Don't introduce motion that ignores the global prefers-reduced-motion safeguard.",
+      "Don't blend the 90s theme's hard-border, blinking, or pixel-art language into the default system."
+    ]
+  }
+}

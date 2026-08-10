@@ -1,4 +1,4 @@
-﻿global using AutoMapper;
+global using AutoMapper;
 global using Azure.Identity;
 global using Blazored.LocalStorage;
 global using MudBlazor;
@@ -11,6 +11,7 @@ global using DadABase.Helpers;
 global using DadABase.Web;
 global using DadABase.Web.Attributes;
 global using DadABase.Web.Repositories;
+global using DadABase.Web.Services;
 global using Microsoft.AspNetCore.Authentication;
 global using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 global using Microsoft.AspNetCore.Components;

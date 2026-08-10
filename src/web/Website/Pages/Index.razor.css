@@ -18,7 +18,23 @@ body[data-bs-theme='dark'] .page-container,
 .page-container h1 {
     font-size: clamp(2.4rem, 4.8vw, 4rem);
     line-height: 1.02;
-    margin-bottom: 0.85rem;
+    margin: 0;
+}
+
+.home-heading {
+    display: inline-block;
+    margin-bottom: 1.6rem;
+}
+
+.home-heading::after {
+    content: "";
+    display: block;
+    width: min(13rem, 58%);
+    height: 0.35rem;
+    margin-top: 0.75rem;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--primary-gradient-start), var(--highlight-color), var(--accent-color));
+    box-shadow: 0 5px 14px rgba(43, 207, 108, 0.26);
 }
 
 .image-message {
@@ -56,16 +72,26 @@ body[data-bs-theme='dark'] .image-note,
 }
 
 .joke-tagline {
-    font-size: 1.06rem;
+    position: relative;
+    max-width: 70ch;
+    padding-left: 1.35rem;
+    font-size: 1.02rem;
     font-style: normal;
     color: var(--text-secondary-light);
-    margin-top: 0.75rem;
-    margin-bottom: 1.5rem;
-    opacity: 0.95;
-    border-left: 4px solid var(--accent-color);
-    padding: 0.75rem 1rem;
-    background: rgba(255, 255, 255, 0.55);
-    border-radius: 0 12px 12px 0;
+    margin: 1.25rem 0 1.75rem;
+    line-height: 1.55;
+}
+
+.joke-tagline::before {
+    content: "";
+    position: absolute;
+    top: 0.5em;
+    left: 0;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: var(--accent-color);
+    box-shadow: 0 0 0 0.28rem rgba(43, 207, 108, 0.16);
 }
 
 body[data-bs-theme='dark'] .joke-tagline,
@@ -91,8 +117,14 @@ body[data-bs-theme='dark'] .joke-tagline,
 .button-group {
     display: flex;
     gap: 1rem;
-    margin-top: 2rem;
+    margin-top: 2.25rem;
     flex-wrap: wrap;
+    align-items: center;
+}
+
+.button-group .btn-primary {
+    min-height: 3.45rem;
+    padding-inline: 2rem;
 }
 
 .joke-image-section {
@@ -141,8 +173,13 @@ body[data-bs-theme='dark'] .joke-tagline,
 
 body[data-bs-theme='dark'] .joke-tagline,
 .theme-dark .joke-tagline {
-    background: rgba(6, 20, 38, 0.72);
-    border-left-color: var(--highlight-color);
+    color: var(--text-secondary-dark);
+}
+
+body[data-bs-theme='dark'] .joke-tagline::before,
+.theme-dark .joke-tagline::before {
+    background: var(--highlight-color);
+    box-shadow: 0 0 0 0.28rem rgba(215, 247, 161, 0.13);
 }
 
 body[data-bs-theme='dark'] .joke-image-section,
@@ -154,6 +191,10 @@ body[data-bs-theme='dark'] .joke-image-section,
 @media (max-width: 768px) {
     .page-container {
         padding-top: 2.2rem;
+    }
+
+    .home-heading {
+        margin-bottom: 1.35rem;
     }
 
     .button-group {

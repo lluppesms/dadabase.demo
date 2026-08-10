@@ -7,9 +7,8 @@
 // </summary>
 //-----------------------------------------------------------------------
 using Azure.Core;
-using Azure.Identity;
 
-namespace DadABase.Helpers;
+namespace DadABase.Web.Helpers;
 
 /// <summary>
 /// Utilities
