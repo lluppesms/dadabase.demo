@@ -99,7 +99,7 @@ jobs:
       # For details on how to authenticate, see: https://github.com/Azure/sql-action/blob/master/CONNECTION.md#azure-active-directory-managed-identity-authentication
       - name: Deploy DACPAC - Service Principal
         if: inputs.loginAccountType == 'SVC_PRINCIPAL'
-        uses: azure/sql-action@v2.3
+        uses: azure/sql-action@v2.4
         with:
           connection-string: 'Server=${{ env.FQDN_SERVER_NAME }};Database=${{ env.SQL_DATABASE_NAME }};Authentication=Active Directory Default; Encrypt=True;TrustServerCertificate=False;Connection Timeout=120;'
           # connection-string: 'Server=${{ env.fqdnServerName }};Database=${{ vars.SQL_DATABASE_NAME }};Authentication=Active Directory Service Principal;'
@@ -109,7 +109,7 @@ jobs:
       # Deploy using SQL Local User (SQL Authentication)
       - name: Deploy DACPAC - Local SQL User
         if: inputs.loginAccountType == 'LOCAL_SQL'
-        uses: azure/sql-action@v2.3
+        uses: azure/sql-action@v2.4
         with:
           connection-string: 'Server=${{ env.FQDN_SERVER_NAME }};Database=${{ env.SQL_DATABASE_NAME }};User Id=${{ secrets.SQL_ADMIN_USER }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};'
           path: './dacpac/${{ inputs.appProjectName }}.dacpac'
