@@ -889,6 +889,8 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
             }
             command.CommandText = "EXEC [Dad].[usp_Joke_Import] @tsvData, @RemovePreviousJokes";
             command.CommandType = System.Data.CommandType.Text;
+            // Replace-all imports can take longer than the default 30s command timeout.
+            command.CommandTimeout = 300;
 
             var paramTsv = command.CreateParameter();
             paramTsv.ParameterName = "@tsvData";
@@ -910,6 +912,12 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
                 ? $"Successfully replaced all existing jokes with {importedCount} joke(s) from the file."
                 : $"Successfully imported {importedCount} new joke(s) from {totalLines} record(s) in the file.";
             return (true, importedCount, actionMsg);
+        }
+        catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == -2)
+        {
+            const string timeoutMessage = "Import timed out while executing the database import procedure. Try importing a smaller file, or run the import again after reducing contention on the SQL database.";
+            Console.WriteLine($"Error importing jokes via stored procedure: {timeoutMessage}");
+            return (false, 0, timeoutMessage);
         }
         catch (Exception ex)
         {
