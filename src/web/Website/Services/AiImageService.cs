@@ -206,11 +206,17 @@ public class AiImageService : IAiImageService
     {
         if (string.IsNullOrEmpty(blobStorageAccountName))
         {
+            Console.WriteLine("[DIAGNOSTIC] Blob storage account name is empty - cannot create BlobContainerClient");
             return null;
         }
         var blobOptions = new BlobClientOptions { Retry = { MaxRetries = 1 } };
-        var blobServiceClient = new BlobServiceClient(new Uri($"https://{blobStorageAccountName}.blob.core.windows.net"), azureCredential, blobOptions);
-        return blobServiceClient.GetBlobContainerClient(blobContainerName);
+        var blobUri = new Uri($"https://{blobStorageAccountName}.blob.core.windows.net");
+        Console.WriteLine($"[DIAGNOSTIC] Creating BlobServiceClient with URI: {blobUri}");
+        Console.WriteLine($"[DIAGNOSTIC] Using managed identity credential chain for blob authentication");
+        var blobServiceClient = new BlobServiceClient(blobUri, azureCredential, blobOptions);
+        var containerClient = blobServiceClient.GetBlobContainerClient(blobContainerName);
+        Console.WriteLine($"[DIAGNOSTIC] Created BlobContainerClient for container: {blobContainerName}");
+        return containerClient;
     }
 
     private async Task<string> GetJokeImageUrlAsync(int jokeId)

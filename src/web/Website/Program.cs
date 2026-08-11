@@ -45,13 +45,17 @@ builder.Services.AddSingleton<DefaultAzureCredential>(provider =>
     var visualStudioTenantId = builder.Configuration["VisualStudioTenantId"];
     if (!string.IsNullOrEmpty(visualStudioTenantId))
     {
-        Console.WriteLine($"Overwriting tenant for local development credentials...");
+        Console.WriteLine($"[DIAGNOSTIC] Overwriting tenant for local development credentials. TenantId: {visualStudioTenantId}");
         creds = new DefaultAzureCredential(new DefaultAzureCredentialOptions
         {
             ExcludeEnvironmentCredential = true,
             ExcludeManagedIdentityCredential = true,
             TenantId = visualStudioTenantId
         });
+    }
+    else
+    {
+        Console.WriteLine("[DIAGNOSTIC] VisualStudioTenantId not configured - using DefaultAzureCredential with full credential chain (including Managed Identity)");
     }
     return creds;
 });
