@@ -108,9 +108,11 @@ jobs:
     
   - task: DotNetCoreCLI@2
     displayName: 'Restore Project'
+    retryCountOnTaskFailure: 2
     inputs:
       command: 'restore'
       projects: '$(projectFullName)'
+      arguments: --disable-parallel
 
   - task: DotNetCoreCLI@2
     displayName: 'Build Project'
