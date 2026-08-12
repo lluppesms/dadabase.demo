@@ -31,6 +31,31 @@
                     <li>AI Chat: @aiChatInfo</li>
                     <li>AI Image: @aiImageInfo</li>
                 </ul>
+
+                <h4 class="mt-4 mb-3">Data Source Test</h4>
+                <div class="mb-3">
+                    <button class="btn btn-secondary" @onclick="RunDataSourceTestAsync" disabled="@dataTestRunning">
+                        <i class="fas fa-database me-2"></i>@(dataTestRunning ? "Testing..." : "Test Data Source")
+                    </button>
+                </div>
+                @if (dataTestRunning)
+                {
+                    <div class="alert alert-info" role="status">Retrieving a random joke from the data source...</div>
+                }
+                else if (dataTestSucceeded)
+                {
+                    <div class="alert alert-success" role="status">
+                        <strong>Data source is working.</strong>
+                        <div>@dataTestMessage</div>
+                    </div>
+                }
+                else if (!string.IsNullOrEmpty(dataTestError))
+                {
+                    <div class="alert alert-danger" role="alert">
+                        <strong>Data source test failed.</strong>
+                        <pre class="mb-0" style="white-space: pre-wrap;">@dataTestError</pre>
+                    </div>
+                }
             </AuthorizeView>
         </div>
     </div>

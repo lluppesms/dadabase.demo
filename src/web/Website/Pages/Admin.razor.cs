@@ -19,6 +19,7 @@ public partial class Admin : ComponentBase
     [Inject] IConfiguration Configuration { get; set; }
     [Inject] HttpContextAccessor Context { get; set; }
     [Inject] IJSRuntime JsInterop { get; set; }
+    [Inject] IJokeRepository JokeRepository { get; set; }
     //[Inject] BuildInfoService buildInfoService{ get; set; }
 
     private string userName = string.Empty;
@@ -27,6 +28,11 @@ public partial class Admin : ComponentBase
     private string aiChatInfo = string.Empty;
     private string aiImageInfo = string.Empty;
     private bool isInAdminRole = false;
+
+    private bool dataTestRunning = false;
+    private bool dataTestSucceeded = false;
+    private string dataTestMessage = string.Empty;
+    private string dataTestError = string.Empty;
 
     /// <summary>
     /// Initialization
@@ -90,6 +96,8 @@ public partial class Admin : ComponentBase
                 {
                     Console.WriteLine($"Error loading admin page! {Utilities.GetExceptionMessage(ex)}");
                 }
+
+                await RunDataSourceTestAsync();
             }
             else
             {
@@ -114,6 +122,47 @@ public partial class Admin : ComponentBase
             StateHasChanged();
         }
     }
+    /// <summary>
+    /// Verifies the configured data source actually works by requesting a single random joke.
+    /// </summary>
+    private async Task RunDataSourceTestAsync()
+    {
+        if (!isInAdminRole) { return; }
+
+        dataTestRunning = true;
+        dataTestSucceeded = false;
+        dataTestMessage = string.Empty;
+        dataTestError = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var timer = Stopwatch.StartNew();
+            var joke = await Task.Run(() => JokeRepository.GetRandomJoke(string.IsNullOrEmpty(userName) ? "ADMIN" : userName));
+            timer.Stop();
+
+            if (joke == null || string.IsNullOrWhiteSpace(joke.JokeTxt))
+            {
+                dataTestError = "The data source responded but returned no data.";
+            }
+            else
+            {
+                dataTestSucceeded = true;
+                dataTestMessage = $"Retrieved joke #{joke.JokeId} in {timer.ElapsedMilliseconds} ms";
+            }
+        }
+        catch (Exception ex)
+        {
+            dataTestError = Utilities.GetExceptionMessage(ex);
+            Console.WriteLine($"Admin data source test failed! {dataTestError}");
+        }
+        finally
+        {
+            dataTestRunning = false;
+            StateHasChanged();
+        }
+    }
+
     private string FormatBuildDate(string buildDate)
     {
         if (DateTime.TryParse(buildDate, out var date))
