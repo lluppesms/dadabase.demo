@@ -70,41 +70,53 @@ az pipelines variable-group create \
   --name Dadabase.Demo \
   --variables \
       APP_NAME='full-dadabase' \
+      
       RESOURCE_GROUP_LOCATION='centralus' \
       RESOURCE_GROUP_PREFIX='rg-dadabase' \
+      
+      WEB_API_KEY='somesecretstring' \
+      
       INSTANCE_NUMBER='1' \
-      API_KEY='somesecretstring' \
+      
       ADMIN_USER_LIST='user1@domain.com,user2@domain.com' \
       AZURE_TENANT_ID='yourTenantId' \
       AZURE_SUBSCRIPTION_ID='yourSubscriptionId' \
       AZURE_CLIENT_ID='yourClientId' \
+      
+      AI_SERVICE_PROVIDER='CopilotSDK' \
       OPENAI_CHAT_DEPLOYMENTNAME='gpt-5-mini' \
       OPENAI_CHAT_MAXTOKENS='300' \
       OPENAI_CHAT_TEMPERATURE='0.7' \
       OPENAI_CHAT_TOPP='0.95' \
-      AI_SERVICE_PROVIDER='CopilotSDK' \
       OPENAI_IMAGE_DEPLOYMENTNAME='gpt-image-1.5' \
       OPENAI_IMAGE_ENDPOINT='https://<yourendpoint>.openai.azure.com/' \
       OPENAI_CHAT_ENDPOINT='https://<yourendpoint>.cognitiveservices.azure.com/' \
       OPENAI_IMAGE_APIKEY='yourkey' \
       OPENAI_CHAT_APIKEY='yourkey' \
+      
       SQL_SERVER_NAME_PREFIX='your-dadabase-server-prefix' \
       SQL_DATABASE_NAME='DadABase' \
       SQLADMIN_LOGIN_USERID='youruser@yourdomain.com' \
       SQLADMIN_LOGIN_USERSID='yoursid' \
       SQLADMIN_LOGIN_TENANTID='yourtennant' \
+      
       LOGIN_CLIENTID='yourADClientId' \
       LOGIN_DOMAIN='<yourdomain>.onmicrosoft.com' \
       LOGIN_INSTANCEENDPOINT='https://login.microsoftonline.com/' \
       LOGIN_TENANTID='yourTenantId' \
+
       KEYVAULT_OWNER_USERID='yourAccountSid' \
+
       EXISTING_SERVICEPLAN_NAME='' \
       EXISTING_SERVICEPLAN_RESOURCE_GROUP_NAME='' \
+
       EXISTING_SQLSERVER_NAME='' \
       EXISTING_SQLDATABASE_NAME='' \
       EXISTING_SQLSERVER_RESOURCE_GROUP_NAME='' \
+
       EXISTING_LOGANALYTICSWORKSPACE='' \
       EXISTING_LOG_ANALYTICS_WORKSPACE_RESOURCE_GROUP_NAME='' \
+
       CREATE_USER_ASSIGNED_IDENTITY='false'
 ```
 
