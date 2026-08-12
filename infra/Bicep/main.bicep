@@ -68,6 +68,9 @@ param adminUserList string = ''
 param appDataSource string = 'JSON'
 param appSwaggerEnabled string = 'true'
 
+@description('AI service provider used by the web application. "CopilotSDK" or "AgentFramework"')
+param aiServiceProvider string = ''
+
 param azureOpenAIChatEndpoint string = ''
 param azureOpenAIChatDeploymentName string = ''
 param azureOpenAIChatApiKey string = ''
@@ -324,6 +327,7 @@ module containerAppModule './modules/container/containerapp.bicep' = if (deployC
       AppSettings__DataSource: appDataSource
       AppSettings__ApiKey: webApiKey
       AppSettings__AdminUserList: adminUserList
+      AppSettings__AiServiceProvider: aiServiceProvider
       AppSettings__AzureOpenAI__Chat__Endpoint: azureOpenAIChatEndpoint
       AppSettings__AzureOpenAI__Chat__DeploymentName: azureOpenAIChatDeploymentName
       AppSettings__AzureOpenAI__Chat__ApiKey: azureOpenAIChatApiKey
@@ -386,6 +390,7 @@ module webSiteModule './modules/webapp/website.bicep' = if (deployWebAppEffectiv
       AppSettings__DataSource: appDataSource
       AppSettings__ApiKey: webApiKey
       AppSettings__AdminUserList: adminUserList
+      AppSettings__AiServiceProvider: aiServiceProvider
       AppSettings__AzureOpenAI__Chat__Endpoint: azureOpenAIChatEndpoint
       AppSettings__AzureOpenAI__Chat__DeploymentName: azureOpenAIChatDeploymentName
       AppSettings__AzureOpenAI__Chat__ApiKey: azureOpenAIChatApiKey

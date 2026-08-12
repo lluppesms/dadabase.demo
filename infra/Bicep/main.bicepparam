@@ -40,6 +40,7 @@ param containerImage = '#{CONTAINER_IMAGE}#'
 param containerRegistrySku = 'Basic'
 param pipelineServicePrincipalObjectId = '#{PIPELINE_SERVICE_PRINCIPAL_OBJECT_ID}#'
 
+param aiServiceProvider = '#{AI_SERVICE_PROVIDER}#'
 param azureOpenAIChatEndpoint = '#{OPENAI_CHAT_ENDPOINT}#'
 param azureOpenAIChatDeploymentName = '#{OPENAI_CHAT_DEPLOYMENTNAME}#'
 param azureOpenAIChatApiKey = '#{OPENAI_CHAT_APIKEY}#'
