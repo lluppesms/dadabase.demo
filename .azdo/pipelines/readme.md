@@ -82,6 +82,7 @@ az pipelines variable-group create \
       OPENAI_CHAT_MAXTOKENS='300' \
       OPENAI_CHAT_TEMPERATURE='0.7' \
       OPENAI_CHAT_TOPP='0.95' \
+      AI_SERVICE_PROVIDER='CopilotSDK' \
       OPENAI_IMAGE_DEPLOYMENTNAME='gpt-image-1.5' \
       OPENAI_IMAGE_ENDPOINT='https://<yourendpoint>.openai.azure.com/' \
       OPENAI_CHAT_ENDPOINT='https://<yourendpoint>.cognitiveservices.azure.com/' \

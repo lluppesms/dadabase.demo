@@ -57,6 +57,7 @@ gh secret set LOGIN_DOMAIN -b '<yourdomain>.onmicrosoft.com'
 gh secret set LOGIN_INSTANCEENDPOINT -b 'https://login.microsoftonline.com/'
 gh secret set LOGIN_TENANTID -b '<yourTenantId>'
 
+gh variable set AI_SERVICE_PROVIDER -b 'CopilotSDK'
 gh variable set OPENAI_CHAT_DEPLOYMENTNAME -b 'gpt-5-mini'
 gh variable set OPENAI_CHAT_MAXTOKENS -b '300'
 gh variable set OPENAI_CHAT_TEMPERATURE -b '0.7'
