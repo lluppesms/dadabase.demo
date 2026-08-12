@@ -860,6 +860,9 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
     /// <returns>A tuple with success flag, count of newly inserted jokes, and a status message.</returns>
     public (bool Success, int ImportedCount, string Message) ImportFromTabDelimitedViaSproc(string tabData, bool removePreviousJokes = false, string requestingUserName = "ANON")
     {
+        var importStopwatch = new System.Diagnostics.Stopwatch();
+        var totalLines = 0;
+
         try
         {
             if (string.IsNullOrWhiteSpace(tabData))
@@ -868,7 +871,7 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
             }
 
             // Count non-header, non-empty lines so we can include the total in the message
-            var totalLines = tabData
+            totalLines = tabData
                 .Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries)
                 .Count(l => !string.IsNullOrWhiteSpace(l)
                     && !l.TrimStart().StartsWith("JokeId", StringComparison.OrdinalIgnoreCase));
@@ -902,27 +905,34 @@ public class JokeSQLRepository(DadABaseDbContext context) : IJokeRepository
             paramReplace.Value = removePreviousJokes ? 1 : 0;
             command.Parameters.Add(paramReplace);
 
+            Console.WriteLine($"Calling [Dad].[usp_Joke_Import] with {totalLines} joke(s) in the input file.");
+            importStopwatch.Start();
             using var reader = command.ExecuteReader();
+            importStopwatch.Stop();
             if (reader.Read())
             {
                 importedCount = reader.GetInt32(0);
             }
 
+            Console.WriteLine($"[Dad].[usp_Joke_Import] completed in {importStopwatch.Elapsed}ms. Input file contained {totalLines} joke(s).");
+
             var actionMsg = removePreviousJokes
-                ? $"Successfully replaced all existing jokes with {importedCount} joke(s) from the file."
-                : $"Successfully imported {importedCount} new joke(s) from {totalLines} record(s) in the file.";
+                ? $"Successfully replaced all existing jokes with {importedCount} joke(s) from the file in {importStopwatch.Elapsed}ms."
+                : $"Successfully imported {importedCount} new joke(s) from {totalLines} record(s) in the file in {importStopwatch.Elapsed}ms.";
             return (true, importedCount, actionMsg);
         }
         catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == -2)
         {
+            importStopwatch.Stop();
             const string timeoutMessage = "Import timed out while executing the database import procedure. Try importing a smaller file, or run the import again after reducing contention on the SQL database.";
-            Console.WriteLine($"Error importing jokes via stored procedure: {timeoutMessage}");
+            Console.WriteLine($"[Dad].[usp_Joke_Import] timed out after {importStopwatch.Elapsed}ms. Input file contained {totalLines} joke(s). {timeoutMessage}");
             return (false, 0, timeoutMessage);
         }
         catch (Exception ex)
         {
+            importStopwatch.Stop();
             var msg = Utilities.GetExceptionMessage(ex);
-            Console.WriteLine($"Error importing jokes via stored procedure: {msg}");
+            Console.WriteLine($"[Dad].[usp_Joke_Import] failed after {importStopwatch.Elapsed}. Input file contained {totalLines} joke(s). {msg}");
             return (false, 0, $"Error importing jokes: {msg}");
         }
     }
