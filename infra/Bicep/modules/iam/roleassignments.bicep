@@ -31,13 +31,13 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2022-05-01' existing 
   name: storageAccountName
 }
 resource storage_Role_BlobContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (addStorageRoles) {
-  name: guid(storageAccount.id, identityPrincipalId, roleDefinitions.storage.blobDataContributorRoleId)
+  name: guid(storageAccount.id, identityPrincipalId, roleDefinitions.storage.blobDataOwnerRoleId)
   scope: storageAccount
   properties: {
     principalId: identityPrincipalId
     principalType: principalType
-    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', roleDefinitions.storage.blobDataContributorRoleId)
-    description: 'Permission for ${principalType} ${identityPrincipalId} to write to the storage account ${storageAccountName} Blob'
+    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', roleDefinitions.storage.blobDataOwnerRoleId)
+    description: 'Permission for ${principalType} ${identityPrincipalId} to manage blobs in the storage account ${storageAccountName}'
   }
 }
 resource storage_Role_TableContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (addStorageRoles) {
