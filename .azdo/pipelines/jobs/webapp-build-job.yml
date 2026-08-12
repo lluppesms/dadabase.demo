@@ -92,6 +92,16 @@ jobs:
     inputs:
       version: 10.0.x
 
+  - task: Bash@3
+    displayName: 'Sanitize Assembly Version'
+    inputs:
+      targetType: 'inline'
+      script: |
+        # Build.BuildNumber carries an environment suffix (e.g. "2026.08.12.4 DEV") that is not a valid version and breaks NuGet restore
+        cleanVersion=$(echo "$(Build.BuildNumber)" | grep -oE '^[0-9]+(\.[0-9]+){0,3}')
+        echo "appVersion=$cleanVersion"
+        echo "##vso[task.setvariable variable=appVersion]$cleanVersion"
+
   - task: Assembly-Info-NetCore@3
     displayName: 'Update Assembly Version'
     inputs:
@@ -102,17 +112,14 @@ jobs:
       WriteBOM: true
       FailOnWarning: true
       PackageVersion: '$(appVersion)'
-      UpdateBuildNumber: '$(appVersion)'
       AddBuildTag: 'v$(appVersion)'
     continueOnError: true
     
   - task: DotNetCoreCLI@2
     displayName: 'Restore Project'
-    retryCountOnTaskFailure: 2
     inputs:
       command: 'restore'
       projects: '$(projectFullName)'
-      arguments: --disable-parallel
 
   - task: DotNetCoreCLI@2
     displayName: 'Build Project'
