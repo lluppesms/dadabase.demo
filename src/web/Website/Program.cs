@@ -234,6 +234,11 @@ if (enableAuth)
     app.UseAuthorization();
 }
 
+// Set invariant culture to prevent culture-related exceptions during server-side rendering
+var cultureInfo = System.Globalization.CultureInfo.GetCultureInfo("en-US");
+System.Globalization.CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+
 app.MapControllers();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");

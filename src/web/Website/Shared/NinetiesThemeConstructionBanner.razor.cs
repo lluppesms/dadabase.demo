@@ -33,6 +33,16 @@ public partial class NinetiesThemeConstructionBanner : ComponentBase, IDisposabl
         if (firstRender)
         {
             var theme = await JS.InvokeAsync<string>("localStorage.getItem", ThemeKey);
+
+            // Validate theme value
+            var validModes = new[] { "light", "dark", "nineties", "system" };
+            if (!string.IsNullOrEmpty(theme) && !validModes.Contains(theme))
+            {
+                Console.WriteLine($"Warning: Invalid theme mode '{theme}' in localStorage, clearing.");
+                await JS.InvokeVoidAsync("localStorage.removeItem", ThemeKey);
+                theme = null;
+            }
+
             isNinetiesTheme = theme == "nineties";
             StateHasChanged();
         }
@@ -50,6 +60,16 @@ public partial class NinetiesThemeConstructionBanner : ComponentBase, IDisposabl
     public async Task UpdateThemeStatus()
     {
         var theme = await JS.InvokeAsync<string>("localStorage.getItem", ThemeKey);
+
+        // Validate theme value
+        var validModes = new[] { "light", "dark", "nineties", "system" };
+        if (!string.IsNullOrEmpty(theme) && !validModes.Contains(theme))
+        {
+            Console.WriteLine($"Warning: Invalid theme mode '{theme}' in localStorage, clearing.");
+            await JS.InvokeVoidAsync("localStorage.removeItem", ThemeKey);
+            theme = null;
+        }
+
         isNinetiesTheme = theme == "nineties";
         await InvokeAsync(StateHasChanged);
     }

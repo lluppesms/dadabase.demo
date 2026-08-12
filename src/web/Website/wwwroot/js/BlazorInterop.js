@@ -1,4 +1,28 @@
 ﻿
+window.validateAndCleanupStorage = function() {
+    // Validate theme-mode
+    const validThemeModes = ['light', 'dark', 'nineties', 'system'];
+    const themeMode = localStorage.getItem('theme-mode');
+    if (themeMode && !validThemeModes.includes(themeMode)) {
+        console.warn(`Invalid theme-mode value '${themeMode}', clearing.`);
+        localStorage.removeItem('theme-mode');
+    }
+    
+    // Validate hit-counter (should be a number)
+    const hitCount = localStorage.getItem('hit-counter');
+    if (hitCount && isNaN(parseInt(hitCount))) {
+        console.warn(`Invalid hit-counter value '${hitCount}', clearing.`);
+        localStorage.removeItem('hit-counter');
+    }
+}
+
+// Run validation on page load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', window.validateAndCleanupStorage);
+} else {
+    window.validateAndCleanupStorage();
+}
+
 function focusOnInputField(input) {
     if (input) {
         let element = document.getElementById(input);

@@ -35,6 +35,16 @@ public partial class NinetiesThemeDecorations : ComponentBase, IDisposable
         if (firstRender)
         {
             var theme = await JS.InvokeAsync<string>("localStorage.getItem", ThemeKey);
+
+            // Validate theme value
+            var validModes = new[] { "light", "dark", "nineties", "system" };
+            if (!string.IsNullOrEmpty(theme) && !validModes.Contains(theme))
+            {
+                Console.WriteLine($"Warning: Invalid theme mode '{theme}' in localStorage, clearing.");
+                await JS.InvokeVoidAsync("localStorage.removeItem", ThemeKey);
+                theme = null;
+            }
+
             isNinetiesTheme = theme == "nineties";
 
             if (isNinetiesTheme)
@@ -57,6 +67,16 @@ public partial class NinetiesThemeDecorations : ComponentBase, IDisposable
     public async Task UpdateThemeStatus()
     {
         var theme = await JS.InvokeAsync<string>("localStorage.getItem", ThemeKey);
+
+        // Validate theme value
+        var validModes = new[] { "light", "dark", "nineties", "system" };
+        if (!string.IsNullOrEmpty(theme) && !validModes.Contains(theme))
+        {
+            Console.WriteLine($"Warning: Invalid theme mode '{theme}' in localStorage, clearing.");
+            await JS.InvokeVoidAsync("localStorage.removeItem", ThemeKey);
+            theme = null;
+        }
+
         var wasNineties = isNinetiesTheme;
         isNinetiesTheme = theme == "nineties";
 
@@ -75,9 +95,18 @@ public partial class NinetiesThemeDecorations : ComponentBase, IDisposable
     private async Task IncrementHitCounter()
     {
         var countStr = await JS.InvokeAsync<string>("localStorage.getItem", HitCountKey);
+
+        // Validate hit counter value
         if (int.TryParse(countStr, out var count))
         {
             hitCount = count + 1;
+        }
+        else if (!string.IsNullOrEmpty(countStr))
+        {
+            // Invalid hit counter value - clear it and start fresh
+            Console.WriteLine($"Warning: Invalid hit-counter value '{countStr}' in localStorage, clearing.");
+            await JS.InvokeVoidAsync("localStorage.removeItem", HitCountKey);
+            hitCount = 1337;
         }
         else
         {

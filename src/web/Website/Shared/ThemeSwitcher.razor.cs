@@ -40,12 +40,21 @@ public partial class ThemeSwitcher : ComponentBase
             try
             {
                 var mode = await JS.InvokeAsync<string>("localStorage.getItem", ThemeKey);
-                if (!string.IsNullOrEmpty(mode))
+
+                // Validate the stored mode - only accept valid theme modes
+                var validModes = new[] { "light", "dark", "nineties", "system" };
+                if (!string.IsNullOrEmpty(mode) && validModes.Contains(mode))
                 {
                     await ApplyTheme(mode);
                 }
                 else
                 {
+                    // Invalid or missing value - clear it and use system default
+                    if (!string.IsNullOrEmpty(mode))
+                    {
+                        Console.WriteLine($"Warning: Invalid theme mode '{mode}' in localStorage, clearing and using default.");
+                        await JS.InvokeVoidAsync("localStorage.removeItem", ThemeKey);
+                    }
                     await ApplyTheme("system");
                 }
             }

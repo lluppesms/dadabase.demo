@@ -26,6 +26,24 @@
     <link rel="icon" type="image/png" href="favicon.png" />
 </head>
 <body>
+    <script>
+        // Validate and cleanup localStorage before Blazor initializes
+        (function() {
+            const validThemeModes = ['light', 'dark', 'nineties', 'system'];
+            const themeMode = localStorage.getItem('theme-mode');
+            if (themeMode && !validThemeModes.includes(themeMode)) {
+                console.warn(`Invalid theme-mode value '${themeMode}', clearing.`);
+                localStorage.removeItem('theme-mode');
+            }
+            
+            const hitCount = localStorage.getItem('hit-counter');
+            if (hitCount && isNaN(parseInt(hitCount))) {
+                console.warn(`Invalid hit-counter value '${hitCount}', clearing.`);
+                localStorage.removeItem('hit-counter');
+            }
+        })();
+    </script>
+
     <component type="typeof(App)" render-mode="ServerPrerendered" />
 
     <div id="blazor-error-ui">

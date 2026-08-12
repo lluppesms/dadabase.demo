@@ -58,6 +58,16 @@ public partial class Index : ComponentBase, IDisposable
         {
             await JsInterop.InvokeVoidAsync("syncHeaderTitle");
             var theme = await JsInterop.InvokeAsync<string>("localStorage.getItem", "theme-mode");
+
+            // Validate theme value
+            var validModes = new[] { "light", "dark", "nineties", "system" };
+            if (!string.IsNullOrEmpty(theme) && !validModes.Contains(theme))
+            {
+                Console.WriteLine($"Warning: Invalid theme mode '{theme}' in localStorage, clearing.");
+                await JsInterop.InvokeVoidAsync("localStorage.removeItem", "theme-mode");
+                theme = null;
+            }
+
             isNinetiesTheme = theme == "nineties";
             jokeCount = JokeRepository.CountAll();
             await ExecuteRandom();
@@ -68,6 +78,16 @@ public partial class Index : ComponentBase, IDisposable
     private async void HandleThemeChanged()
     {
         var theme = await JsInterop.InvokeAsync<string>("localStorage.getItem", "theme-mode");
+
+        // Validate theme value
+        var validModes = new[] { "light", "dark", "nineties", "system" };
+        if (!string.IsNullOrEmpty(theme) && !validModes.Contains(theme))
+        {
+            Console.WriteLine($"Warning: Invalid theme mode '{theme}' in localStorage, clearing.");
+            await JsInterop.InvokeVoidAsync("localStorage.removeItem", "theme-mode");
+            theme = null;
+        }
+
         isNinetiesTheme = theme == "nineties";
         await InvokeAsync(StateHasChanged);
     }

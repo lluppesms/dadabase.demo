@@ -48,6 +48,16 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
         if (firstRender)
         {
             var theme = await JS.InvokeAsync<string>("localStorage.getItem", ThemeKey);
+
+            // Validate theme value
+            var validModes = new[] { "light", "dark", "nineties", "system" };
+            if (!string.IsNullOrEmpty(theme) && !validModes.Contains(theme))
+            {
+                Console.WriteLine($"Warning: Invalid theme mode '{theme}' in localStorage, clearing.");
+                await JS.InvokeVoidAsync("localStorage.removeItem", ThemeKey);
+                theme = null;
+            }
+
             isNinetiesTheme = theme == "nineties";
             StateHasChanged();
         }
@@ -56,6 +66,16 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
     private async void HandleThemeChanged()
     {
         var theme = await JS.InvokeAsync<string>("localStorage.getItem", ThemeKey);
+
+        // Validate theme value
+        var validModes = new[] { "light", "dark", "nineties", "system" };
+        if (!string.IsNullOrEmpty(theme) && !validModes.Contains(theme))
+        {
+            Console.WriteLine($"Warning: Invalid theme mode '{theme}' in localStorage, clearing.");
+            await JS.InvokeVoidAsync("localStorage.removeItem", ThemeKey);
+            theme = null;
+        }
+
         isNinetiesTheme = theme == "nineties";
         await InvokeAsync(StateHasChanged);
     }
