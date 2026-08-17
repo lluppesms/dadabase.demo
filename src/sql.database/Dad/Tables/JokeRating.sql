@@ -8,6 +8,7 @@ CREATE TABLE [Dad].[JokeRating](
 	[UserRating] [int] NOT NULL,
 	[CreateDateTime] [datetime] NOT NULL,
 	[CreateUserName] [nvarchar](255) NOT NULL,
+	[RatingUserKey] [nvarchar](255) NOT NULL,
  CONSTRAINT [PK_JokeRating] PRIMARY KEY CLUSTERED ([JokeRatingId] ASC)
 )
 GO
@@ -17,9 +18,16 @@ ALTER TABLE [Dad].[JokeRating] ADD CONSTRAINT [DF_JokeRating_CreateDateTime] DEF
 GO
 ALTER TABLE [Dad].[JokeRating] ADD CONSTRAINT [DF_JokeRating_CreateUserName] DEFAULT (N'UNKNOWN') FOR [CreateUserName]
 GO
+ALTER TABLE [Dad].[JokeRating] ADD CONSTRAINT [DF_JokeRating_RatingUserKey] DEFAULT (N'ANON_LEGACY') FOR [RatingUserKey]
+GO
 
 -- Check constraints
 ALTER TABLE [Dad].[JokeRating] ADD CONSTRAINT [CK_JokeRating_UserRating] CHECK ([UserRating] >= 1 AND [UserRating] <= 5)
+GO
+
+-- A user can have only one effective rating for each joke.
+CREATE UNIQUE NONCLUSTERED INDEX [UX_JokeRating_JokeId_RatingUserKey]
+ON [Dad].[JokeRating] ([JokeId], [RatingUserKey])
 GO
 
 -- Foreign key constraint to Joke
