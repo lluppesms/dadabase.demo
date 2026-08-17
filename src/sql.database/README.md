@@ -56,7 +56,7 @@ sql.database/
 
 **JokeRating**
 - Stores individual user ratings for jokes
-- Fields: JokeRatingId, JokeId, UserRating, CreateDateTime, CreateUserName
+- Fields: JokeRatingId, JokeId, UserRating, RatingUserKey, CreateDateTime, CreateUserName
 - CHECK constraint: UserRating BETWEEN 1 AND 5
 
 ### Views

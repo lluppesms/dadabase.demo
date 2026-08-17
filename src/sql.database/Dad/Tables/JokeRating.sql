@@ -6,10 +6,15 @@ CREATE TABLE [Dad].[JokeRating](
 	[JokeRatingId] [int] IDENTITY(1,1) NOT NULL,
 	[JokeId] [int] NOT NULL,
 	[UserRating] [int] NOT NULL,
+	[RatingUserKey] [nvarchar](255) NOT NULL,
 	[CreateDateTime] [datetime] NOT NULL,
 	[CreateUserName] [nvarchar](255) NOT NULL,
  CONSTRAINT [PK_JokeRating] PRIMARY KEY CLUSTERED ([JokeRatingId] ASC)
 )
+GO
+
+CREATE UNIQUE INDEX [UX_JokeRating_JokeId_RatingUserKey]
+	ON [Dad].[JokeRating] ([JokeId] ASC, [RatingUserKey] ASC)
 GO
 
 -- Default constraints
