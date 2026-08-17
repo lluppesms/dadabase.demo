@@ -90,4 +90,6 @@ Read the relevant reference file based on the user's task. Each file contains co
 | `references/variables-and-agents.md` | Pipeline variables, agent pools | Pipeline variables, Variable groups, Pipeline folders, Agent pools/queues |
 | `references/org-and-security.md` | Projects, teams, users, permissions, wikis | Projects, Extensions, Teams, Users, Security groups/permissions, Service endpoints, Wikis, Admin |
 | `references/advanced-usage.md` | Output formatting, JMESPath queries | Output formats, JMESPath queries (basic + advanced), Global args, Common params, Git aliases |
-| `references/workflows-and-patterns.md` | Automation scripts, best practices, error handling | Common workflows, Best practices, Error handling, Scripting patterns, Real-world examples |
+| `references/workflows-and-patterns.md` | Automation scripts, best practices, error handling | Common workflows, Best practices, **Windows/PowerShell multi-line argument truncation pitfall**, Error handling, Scripting patterns, Real-world examples |
+
+> ⚠️ **Windows/PowerShell users:** Before passing multi-line text (descriptions, acceptance criteria, any rich-text field) to `az boards work-item create/update` or similar commands, read the "Windows/PowerShell Pitfall" section in `references/workflows-and-patterns.md`. Raw newlines in an argument get silently truncated by cmd.exe with no error — build single-line strings using `<br/>` instead.

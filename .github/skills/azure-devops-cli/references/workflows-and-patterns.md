@@ -3,9 +3,61 @@
 ## Table of Contents
 - [Common Workflows](#common-workflows)
 - [Best Practices](#best-practices)
+- [Windows/PowerShell Pitfall: Multi-line Arguments Get Truncated](#windowspowershell-pitfall-multi-line-arguments-get-truncated)
 - [Error Handling & Retry Patterns](#error-handling--retry-patterns)
 - [Scripting Patterns for Idempotent Operations](#scripting-patterns-for-idempotent-operations)
 - [Real-World Workflows](#real-world-workflows)
+
+## Windows/PowerShell Pitfall: Multi-line Arguments Get Truncated
+
+**Symptom:** `az boards work-item create/update --description "..."` (or any `--fields "Field=Value"`)
+silently produces a truncated value — cut off mid-sentence at the first line break — and multi-field
+`--fields` arguments can be dropped entirely with no error and exit code 0.
+
+**Root cause:** On Windows, `az` is a shim (`az.cmd`) executed through `cmd.exe`. Any argument containing
+a **raw newline** character gets mangled by cmd.exe's argument parsing — text after the first newline is
+lost. This bites you specifically when a PowerShell **here-string** (`@'...'@`) or any multi-line
+variable is passed directly as a CLI argument (e.g. `--description $multilineText`), even when using
+array splatting (`az @cliArgs`) instead of string interpolation.
+
+**Fix:** Never pass a string containing real `` `r`n `` / `` `n `` characters to `az` on Windows. Build
+rich-text fields (Description, Acceptance Criteria, PR descriptions, etc.) as a **single-line string**,
+using `<br/>` (for ADO rich-text HTML fields) or a literal `\n`-as-text where the target field is plain
+text, then join fragments with no separator:
+
+```powershell
+function Join-Html {
+    param([Parameter(Mandatory)] [string[]]$Lines)
+    ($Lines -join '')
+}
+
+$description = Join-Html @(
+    '<p>As a developer, I need...</p>'
+    '<p><b>Guidance:</b><br/>'
+    '- First point.<br/>'
+    '- Second point.</p>'
+)
+
+az boards work-item create --title "My Story" --type "User Story" --description $description
+```
+
+Do **not** write the field content as a here-string and then try to "fix" it with
+`-replace "\r?\n", " "` as an afterthought — it works, but it's easy to forget on the next field. Prefer
+authoring content as an array of single-line fragments from the start (as above) so there is never a raw
+newline in the value.
+
+**Always verify** what actually got stored after creating/updating rich-text fields — `az` reports
+success (exit code 0) even when an argument was silently truncated or dropped:
+
+```powershell
+az boards work-item show --id $id --output json | ConvertFrom-Json |
+    Select-Object -ExpandProperty fields |
+    Select-Object 'System.Description', 'Microsoft.VSTS.Common.AcceptanceCriteria' |
+    Format-List
+```
+
+This is a Windows/cmd.exe-specific issue — bash/zsh on macOS/Linux do not have this limitation when
+passing multi-line strings as arguments.
 
 ---
 
