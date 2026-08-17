@@ -4,7 +4,7 @@ The GitHub repository is `lluppesms/dadabase.demo`. The primary branch is `main`
 
 ## Living Project Document
 
-`MAP.md` is the living project document for this repository.
+[MAP.md](../MAP.md) is the living project document for this repository.
 
 Read `MAP.md` before exploring broadly. Update it whenever a source project, public behavior, data flow, configuration key, test location, workflow, pipeline, skill, agent, prompt, command, or branching/build convention changes. Prompt the user to review or update `MAP.md` any time the project is altered.
 
