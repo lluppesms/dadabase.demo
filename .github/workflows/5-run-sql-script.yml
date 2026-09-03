@@ -49,16 +49,25 @@ on:
 # ------------------------------------------------------------------------------------------------------------------------
 jobs:
   # ----------------------------------------------------------------------------------------------------
+  # Load Project Configuration
+  # ----------------------------------------------------------------------------------------------------
+  load-config:
+    name: Load Project Config
+    uses: ./.github/workflows/template-load-config.yml
+    secrets: inherit
+
+  # ----------------------------------------------------------------------------------------------------
   # Run SQL Script
   # ----------------------------------------------------------------------------------------------------
   run-sql:
     name: Run SQL
     uses: ./.github/workflows/template-run-sql.yml
+    needs: load-config
     permissions:
       id-token: write  
     with:
       envCode: ${{ inputs.deployEnvironment }}
-      sqlFolderName: 'src/sql.database/Patch'
+      sqlFolderName: '${{ needs.load-config.outputs.sql_rootDirectory }}/Patch'
       sqlFileName: ${{ inputs.scriptName }}
       loginAccountType: ${{ inputs.loginAccountType }}
       resourceGroupName: ${{ inputs.resourceGroupName }}

@@ -29,7 +29,7 @@ Once the credentials are set up, customize and run this command to create these 
 gh auth login
 
 gh secret set --env dev AZURE_TENANT_ID -b <GUID>
-gh secret set --env dev CICD_CLIENT_ID -b <GUID>
+gh secret set --env dev AZURE_CLIENT_ID -b <GUID>
 gh secret set --env dev AZURE_SUBSCRIPTION_ID -b <yourAzureSubscriptionId>
 ```
 
@@ -37,7 +37,9 @@ gh secret set --env dev AZURE_SUBSCRIPTION_ID -b <yourAzureSubscriptionId>
 
 ## Bicep Configuration Values
 
-These variables and secrets are used by the Bicep templates to configure the resource names that are deployed.  Make sure the APP_NAME variable is unique to your deploy. It will be used as the basis for the website name and for all the other Azure resources, which must be globally unique.
+These variables and secrets are used by the Bicep templates to configure the resource names that are deployed. The token-replacement step (`Replace Tokens` in [template-bicep-deploy.yml](workflows/template-bicep-deploy.yml)) substitutes every `#{TOKEN_NAME}#` placeholder in [main.bicepparam](../infra/Bicep/main.bicepparam) with a matching GitHub Actions `env`, `vars`, or `secrets` value of the same name — so every token below must exist as **either** a repository/environment **secret** or **variable** with that *exact* name. Make sure `APP_NAME` is unique to your deploy; it is used as the basis for the website name and all other globally-unique Azure resource names.
+
+> Tip: values that are sensitive (credentials, connection strings, API keys) should be GitHub **Secrets** (`gh secret set`). Everything else (names, flags, numeric limits) can be a GitHub **Variable** (`gh variable set`) so they're visible in the Actions UI for troubleshooting.
 
 To create these additional secrets and variables, customize and run this command:
 

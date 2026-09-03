@@ -139,7 +139,7 @@ jobs:
 
     - name: Replace Tokens
       if: ${{ inputs.runCreateInfra && inputs.parameterFileReplaceTokens == 'true' }}
-      uses: qetza/replacetokens-action@v1
+      uses: qetza/replacetokens-action@v2
       with:
         sources: '${{ inputs.templatePath }}${{ inputs.parameterFile }}; !local/ => ${{ inputs.parameterFile }}'
         variables: '[${{ toJSON(env) }},${{ toJSON(vars) }},${{ toJSON(secrets) }}]' # use environment & variables & secrets

@@ -63,7 +63,7 @@ jobs:
       continue-on-error: true
 
     - name: Replace Tokens in Config
-      uses: qetza/replacetokens-action@v1
+      uses: qetza/replacetokens-action@v2
       with:
         sources: './${{ env.configFileName }}; !local/ => ${{ env.configFileName }}'
         variables: '[${{ toJSON(env) }},${{ toJSON(vars) }},${{ toJSON(secrets) }}]' # use environment & variables & secrets
